@@ -1594,7 +1594,7 @@ All patient data is processed in accordance with:
 
 **Built with ❤️ for healthcare equity and responsible AI**
 
-*Last updated: January 2024*
+*Last updated: June 2025*
 
 <div style="text-align: center">⁂</div>
 
