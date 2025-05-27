@@ -398,7 +398,6 @@ def main():
     print_debug("  ✅ NLTK - Text tokenization, POS tagging, sentiment analysis")
     print_debug("  ✅ TextBlob - Simple NLP operations")
     print_debug("  ✅ Hugging Face Transformers - Advanced medical models")
-    print_debug("  ✅ PyTorch - Deep learning framework")
     print_debug("")
     print_debug("🚀 Next Steps:")
     print_debug("  1. Test NLTK: python -c 'import nltk; print(\"NLTK ready!\")'")

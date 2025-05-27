@@ -35,7 +35,8 @@ opencv-python
 opencv-contrib-python
 Pillow
 imageio
-
+# Database with LLM compatiblity
+chromadb
 # Medical Data Processing
 wfdb
 pydicom
