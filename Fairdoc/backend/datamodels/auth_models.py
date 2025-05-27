@@ -4,13 +4,13 @@ Enhanced with comprehensive timestamp tracking for authentication events and aud
 """
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
-from uuid import UUID
-from pydantic import BaseModel, Field, EmailStr, validator, SecretStr
+from uuid import uuid4, UUID
+from pydantic import BaseModel, Field, EmailStr, field_validator, SecretStr
 from enum import Enum
 
 from .base_models import (
     BaseEntity, BaseResponse, TimestampMixin, UUIDMixin, 
-    ValidationMixin, MetadataMixin, Gender, Ethnicity
+    ValidationMixin, MetadataMixin, Gender, Ethnicity, uuid4
 )
 
 # ============================================================================
@@ -263,7 +263,7 @@ class NHSCredentials(BaseModel):
     date_of_birth: datetime = Field(..., description="Date of birth for NHS verification")
     postcode: str = Field(..., min_length=5, max_length=8, description="UK postcode")
     
-    @validator('nhs_number')
+    @field_validator('nhs_number')
     def validate_nhs_number(cls, v):
         """Validate NHS number format and checksum."""
         nhs_clean = v.replace(' ', '')
