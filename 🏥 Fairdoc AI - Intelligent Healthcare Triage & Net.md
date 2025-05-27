@@ -1503,8 +1503,8 @@ git push origin feature/bias-improvement
 
 ### 🏥 Healthcare Integration Support
 
-- **Email**: <tamoghnadas.12@gmail.com>
-- **Phone**: +44 9087858644
+- **Email**: healthcare@fairdoc.ai
+- **Phone**: +44 20 7946 0958
 - **NHS Partnership**: nhs-partnerships@fairdoc.ai
 
 
