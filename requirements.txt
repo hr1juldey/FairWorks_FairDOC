@@ -1,129 +1,125 @@
 # =============================================================================
-# NHS Chest Pain AI Triage System - EDI Enhanced
-# Requirements for DevPost RAI Hackathon 2024
+# NHS Chest Pain AI Triage System - EDI Enhanced with Medical NLP
+# Requirements for Python 3.13.3 - May 2025 - PYTHON 3.13 COMPATIBLE
+# Medical NLP Setup WITHOUT spaCy - Full Python 3.13 Support
 # =============================================================================
 
 # Core Framework & API
-fastapi>=0.104.1,<0.110.0
-uvicorn[standard]>=0.24.0,<0.26.0
-pydantic>=2.5.0,<2.6.0
-pydantic-settings>=2.1.0,<2.2.0
-python-multipart>=0.0.6,<0.1.0
-python-jose[cryptography]>=3.3.0,<3.4.0
-passlib[bcrypt]>=1.7.4,<1.8.0
+fastapi[standard]
+uvicorn[standard]
+pydantic
+pydantic-settings
+python-multipart
+python-jose[cryptography]
+passlib[bcrypt]
 
-# Machine Learning & AI
-transformers>=4.35.0,<4.36.0
-accelerate>=0.24.0,<0.25.0
-bitsandbytes>=0.41.1,<0.42.0
-peft>=0.6.0,<0.7.0
-scikit-learn>=1.3.0,<1.4.0
-scipy>=1.11.0,<1.12.0
-numpy>=1.24.0,<1.26.0
-pandas>=2.1.0,<2.2.0
+# Machine Learning & AI - Python 3.13 Compatible
+transformers
+accelerate
+bitsandbytes
+peft
+scikit-learn
+scipy
+numpy
+pandas
 
-# NLP & Language Processing
-spacy>=3.7.0,<3.8.0
-https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl#egg=en_core_web_sm
-https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.7.1/en_core_web_md-3.7.1-py3-none-any.whl#egg=en_core_web_md
+# Medical NLP & Language Processing - Hugging Face Only
+# Note: spaCy removed due to Python 3.13 incompatibility
+# Use transformers library for medical NLP tasks
+
+# Enhanced Medical Text Processing
+# Note: Using Hugging Face medical models instead of spaCy/scispacy
 
 # Computer Vision & Medical Imaging
-opencv-python>=4.8.0,<4.9.0
-opencv-contrib-python>=4.8.0,<4.9.0
-Pillow>=10.0.0,<10.1.0
-imageio>=2.31.0,<2.32.0
+opencv-python
+opencv-contrib-python
+Pillow
+imageio
 
 # Medical Data Processing
-wfdb>=4.1.0,<4.2.0
-pydicom>=2.4.0,<2.5.0
-nibabel>=5.1.0,<5.2.0
-SimpleITK>=2.3.0,<2.4.0
+wfdb
+pydicom
+nibabel
+SimpleITK
 
 # Task Queue & Background Processing
-celery>=5.3.0,<5.4.0
-redis>=5.0.0,<5.1.0
-flower>=2.0.0,<2.1.0
+celery
+redis
+flower
 
 # Messaging & Communication APIs
-python-telegram-bot>=20.6,<20.7
-yowsup-celery>=0.2.0  # WhatsApp client
-twilio>=8.10.0,<8.11.0
-pyngrok>=7.0.0,<7.1.0  # For webhook tunneling
+python-telegram-bot
+twilio
+pyngrok
 
 # Google APIs & Authentication
-google-auth>=2.23.0,<2.24.0
-google-auth-oauthlib>=1.1.0,<1.2.0
-google-api-python-client>=2.100.0,<2.101.0
-
+google-auth
+google-auth-oauthlib
+google-api-python-client
 
 # Document Generation & Reports
-reportlab>=4.0.0,<4.1.0
-matplotlib>=3.7.0,<3.8.0
-seaborn>=0.12.0,<0.13.0
-plotly>=5.17.0,<5.18.0
-kaleido>=0.2.1,<0.3.0  # For plotly static image export
+reportlab
+matplotlib
+seaborn
+plotly
+kaleido
 
 # Database & Storage
-sqlalchemy>=2.0.0,<2.1.0
-alembic>=1.12.0,<1.13.0
-asyncpg>=0.29.0,<0.30.0  # PostgreSQL async driver
-psycopg2-binary>=2.9.0,<2.10.0  # PostgreSQL sync driver
-redis>=5.0.0,<5.1.0
+sqlalchemy
+alembic
+asyncpg
+psycopg2-binary
 
 # FHIR & Healthcare Standards
-fhir.resources>=7.0.0,<7.1.0
-fhirclient>=4.1.0,<4.2.0
+fhir.resources
+fhirclient
 
-
-# MCP (Model Context Protocol) Servers
-# Note: These are hypothetical packages based on your requirements
-# Replace with actual MCP server packages when available
-mcp-server>=0.1.0  # Placeholder for MCP server implementation
-anthropic>=0.3.0,<0.4.0  # For Claude integration if using Anthropic's MCP
-
-# MIT NANDA Integration
-# Note: NANDA (North American Nursing Diagnosis Association) integration
-# This might need custom implementation or specific medical packages
-# py-nanda>=0.1.0  # Placeholder - replace with actual NANDA package
+# MCP (Model Context Protocol)
+mcp
+fastmcp
+anthropic
 
 # Web Dashboard & UI
-streamlit>=1.28.0,<1.29.0
-streamlit-option-menu>=0.3.6,<0.4.0
-streamlit-aggrid>=0.3.4,<0.4.0
+mesop
 
 # Data Validation & Type Safety
-email-validator>=2.1.0,<2.2.0
-python-dateutil>=2.8.0,<2.9.0
-pytz>=2023.3,<2024.0
+email-validator
+python-dateutil
+pytz
 
 # Security & Encryption
-cryptography>=41.0.0,<42.0.0
-python-dotenv>=1.0.0,<1.1.0
-bcrypt>=4.0.0,<4.1.0
+cryptography
+python-dotenv
+bcrypt
 
 # Monitoring & Logging
-structlog>=23.2.0,<23.3.0
-loguru>=0.7.0,<0.8.0
-sentry-sdk>=1.38.0,<1.39.0
+structlog
+loguru
+sentry-sdk
 
 # Testing & Development
-pytest>=7.4.0,<7.5.0
-pytest-asyncio>=0.21.0,<0.22.0
-pytest-cov>=4.1.0,<4.2.0
-httpx>=0.25.0,<0.26.0
-faker>=19.0.0,<20.0.0
+pytest
+pytest-asyncio
+pytest-cov
+httpx
+faker
 
 # Code Quality & Formatting
-black>=23.0.0,<24.0.0
-ruff>=0.1.0,<0.2.0
-mypy>=1.6.0,<1.7.0
-pre-commit>=3.5.0,<3.6.0
+black
+ruff
+mypy
+pre-commit
 
 # Development Tools
-ipython>=8.16.0,<8.17.0
-jupyter>=1.0.0,<1.1.0
-notebook>=7.0.0,<7.1.0
+ipython
+jupyter
+notebook
 
 # Memory Optimization for RTX 4070
-psutil>=5.9.0,<5.10.0
-GPUtil>=1.4.0,<1.5.0
+psutil
+GPUtil
+
+
+# Additional Medical NLP Libraries (Python 3.13 compatible)
+nltk
+textblob
