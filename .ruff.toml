@@ -1,0 +1,61 @@
+# .ruff.toml — Lilypad EV Admin Panel (FastAPI + Pydantic V2, Python 3.13.3)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 1) Core Settings (metadata)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Target exactly Python 3.13 (py313)
+target-version = "py313"       # ensures syntax rules match your interpreter :contentReference[oaicite:0]{index=0}
+
+# Maximum line length
+line-length = 121              # overrides default (88) to match your style :contentReference[oaicite:1]{index=1}
+
+# Safe vs. Unsafe fixes
+# - false: only “safe” fixes (never change behavior)  
+# - true: include “unsafe” fixes (may alter semantics) :contentReference[oaicite:2]{index=2}
+unsafe-fixes = true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 2) Lint Settings (all under [lint] to avoid deprecation)
+# ─────────────────────────────────────────────────────────────────────────────
+
+[lint]
+# Which rule sets to enable
+select = [
+  "E",     # pycodestyle errors
+  "F",     # pyflakes
+  "W",     # pycodestyle warnings (incl. W293) :contentReference[oaicite:3]{index=3}
+  "C90",   # complexity (McCabe) :contentReference[oaicite:4]{index=4}
+  "B",     # bugbear checks
+  "PT",    # pydantic-v2 plugin rules
+]
+
+# Disable specific checks
+ignore = [
+  "B904",  # raise without from inside except (ensures exception chaining) :contentReference[oaicite:5]{index=5}
+  "B008",  # function call in default argument (avoids shared mutable defaults) :contentReference[oaicite:6]{index=6}
+  "C901",  # too complex structures (McCabe threshold) :contentReference[oaicite:7]{index=7}
+  "E203",  # whitespace before punctuation (Black-compatible) :contentReference[oaicite:8]{index=8}
+  "E302",  # missing blank lines between top-level defs (PEP 8) :contentReference[oaicite:9]{index=9}
+  "E303",  # too many blank lines (PEP 8) :contentReference[oaicite:10]{index=10}
+  "E501",  # line-too-long (handled by line-length)
+  "F401",  # unused imports (often typing-only)
+  "D",     # disable all docstring rules
+  "W293",  # blank line contains whitespace (auto-fixable) :contentReference[oaicite:11]{index=11}
+]
+
+# Files & directories to skip entirely
+exclude = [
+  ".git",
+  "__pycache__",
+  "build",
+  "dist",
+  ".venv",
+  "migrations",
+  "static",
+]
+
+# Per-file overrides
+[lint.per-file-ignores]
+"tests/**/*.py"  = ["S101"]  # allow assert in tests
+"**/__init__.py" = ["F401"]  # allow unused imports in __init__.py
