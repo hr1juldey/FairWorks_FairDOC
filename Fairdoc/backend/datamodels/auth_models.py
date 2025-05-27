@@ -9,8 +9,8 @@ from pydantic import BaseModel, Field, EmailStr, field_validator, SecretStr
 from enum import Enum
 
 from .base_models import (
-    BaseEntity, BaseResponse, TimestampMixin, UUIDMixin, 
-    ValidationMixin, MetadataMixin, Gender, Ethnicity, uuid4
+    BaseEntity, BaseResponse, TimestampMixin, 
+    ValidationMixin, MetadataMixin, uuid4
 )
 
 # ============================================================================
