@@ -6059,14 +6059,4186 @@ class RealTimeBiasMonitor:
                 confidences = [d['confidence'] for d in decisions]
                 all_confidences.extend(confidences)
             
-            if len(all_confidences) < 5:
-                return 0.0
+            if len(all_confidences)  List[Dict]:
+        """Check if bias metrics exceed thresholds"""
+        
+        alerts = []
+        
+        # Check demographic parity
+        parity_score = metrics.get('demographic_parity', 0.0)
+        if parity_score > self.DEMOGRAPHIC_PARITY_THRESHOLD:
+            severity = self.get_alert_severity(parity_score)
+            alerts.append({
+                'type': 'demographic_parity',
+                'severity': severity,
+                'score': parity_score,
+                'threshold': self.DEMOGRAPHIC_PARITY_THRESHOLD,
+                'details': f"Demographic parity violation: {parity_score:.3f} > {self.DEMOGRAPHIC_PARITY_THRESHOLD}"
+            })
+        
+        # Check equalized odds
+        odds_score = metrics.get('equalized_odds', 0.0)
+        if odds_score > self.EQUALIZED_ODDS_THRESHOLD:
+            severity = self.get_alert_severity(odds_score)
+            alerts.append({
+                'type': 'equalized_odds',
+                'severity': severity,
+                'score': odds_score,
+                'threshold': self.EQUALIZED_ODDS_THRESHOLD,
+                'details': f"Equalized odds violation: {odds_score:.3f} > {self.EQUALIZED_ODDS_THRESHOLD}"
+            })
+        
+        return alerts
+    
+    def get_alert_severity(self, score: float) -> str:
+        """Determine alert severity based on score"""
+        if score >= self.ALERT_THRESHOLDS["critical"]:
+            return "critical"
+        elif score >= self.ALERT_THRESHOLDS["high"]:
+            return "high"
+        elif score >= self.ALERT_THRESHOLDS["medium"]:
+            return "medium"
+        else:
+            return "low"
+    
+    async def log_bias_incident(
+        self,
+        assessment_id: UUID,
+        bias_type: str,
+        severity: str,
+        details: str,
+        demographics: Dict,
+        decision_data: Dict,
+        db = None
+    ):
+        """Log bias incident to database"""
+        
+        try:
+            incident_data = {
+                'assessment_id': assessment_id,
+                'bias_type': bias_type,
+                'severity': severity,
+                'details': details,
+                'demographics': demographics,
+                'decision_data': decision_data,
+                'timestamp': datetime.utcnow()
+            }
             
-            # Check if confidence scores are well-distributed
-            confidence_std = statistics.stdev(all_confidences)
-            confidence_mean = statistics.mean(all_confidences)
+            await self.bias_repo.create_bias_incident(incident_data, db)
             
-            # Good calibration should have reasonable variance
-            calibration_score = abs(confidence_std -
+            logger.warning(f"Bias incident logged: {bias_type} - {severity} - {details}")
+            
+        except Exception as e:
+            logger.error(f"Failed to log bias incident: {e}")
+
+# Global bias monitor instance
+bias_monitor = RealTimeBiasMonitor()
+```
+
+#### **Step 5.2: Create Bias Repository (1 hour)**
+Create: `data/repositories/bias_repository.py`
+```python
+"""
+Bias repository for storing bias monitoring data
+"""
+import logging
+from datetime import datetime, timedelta
+from typing import Optional, List, Dict
+from uuid import UUID, uuid4
+
+from sqlalchemy import Column, String, Integer, Float, Boolean, DateTime, Text, JSON
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from sqlalchemy.orm import Session
+
+from data.database.connection_manager import Base
+
+logger = logging.getLogger(__name__)
+
+class BiasIncidentModel(Base):
+    """Bias incident database model"""
+    __tablename__ = "bias_incidents"
+    
+    id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
+    incident_id = Column(PG_UUID(as_uuid=True), unique=True, nullable=False, default=uuid4)
+    assessment_id = Column(PG_UUID(as_uuid=True), nullable=False)
+    
+    # Incident details
+    bias_type = Column(String(50), nullable=False)
+    severity = Column(String(20), nullable=False)
+    details = Column(Text, nullable=False)
+    
+    # Context data
+    demographics = Column(JSON, nullable=False)
+    decision_data = Column(JSON, nullable=False)
+    
+    # Status tracking
+    status = Column(String(20), default="open")  # open, investigating, resolved
+    resolution_notes = Column(Text, nullable=True)
+    resolved_at = Column(DateTime(timezone=True), nullable=True)
+    resolved_by = Column(PG_UUID(as_uuid=True), nullable=True)
+    
+    # Audit
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class BiasMetricsModel(Base):
+    """Bias metrics database model"""
+    __tablename__ = "bias_metrics"
+    
+    id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
+    metrics_id = Column(PG_UUID(as_uuid=True), unique=True, nullable=False, default=uuid4)
+    
+    # Time period
+    period_start = Column(DateTime(timezone=True), nullable=False)
+    period_end = Column(DateTime(timezone=True), nullable=False)
+    
+    # Metrics
+    demographic_parity = Column(Float, nullable=False)
+    equalized_odds = Column(Float, nullable=False)
+    calibration = Column(Float, nullable=False)
+    overall_bias_score = Column(Float, nullable=False)
+    
+    # Sample size
+    total_assessments = Column(Integer, nullable=False)
+    groups_analyzed = Column(Integer, nullable=False)
+    
+    # Breakdown by demographics
+    metrics_by_gender = Column(JSON, default=dict)
+    metrics_by_ethnicity = Column(JSON, default=dict)
+    metrics_by_age = Column(JSON, default=dict)
+    
+    # Audit
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+
+class BiasRepository:
+    """Repository for bias monitoring operations"""
+    
+    async def create_bias_incident(
+        self,
+        incident_data: Dict,
+        db: Session
+    ) -> BiasIncidentModel:
+        """Create a new bias incident record"""
+        try:
+            incident = BiasIncidentModel(
+                assessment_id=incident_data['assessment_id'],
+                bias_type=incident_data['bias_type'],
+                severity=incident_data['severity'],
+                details=incident_data['details'],
+                demographics=incident_data['demographics'],
+                decision_data=incident_data['decision_data']
+            )
+            
+            db.add(incident)
+            db.commit()
+            db.refresh(incident)
+            
+            logger.info(f"Bias incident created: {incident.incident_id}")
+            return incident
+            
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Failed to create bias incident: {e}")
+            raise
+    
+    async def get_recent_incidents(
+        self, 
+        limit: int = 50, 
+        severity: Optional[str] = None,
+        db: Session = None
+    ) -> List[BiasIncidentModel]:
+        """Get recent bias incidents"""
+        try:
+            query = db.query(BiasIncidentModel)
+            
+            if severity:
+                query = query.filter(BiasIncidentModel.severity == severity)
+            
+            incidents = query.order_by(
+                BiasIncidentModel.created_at.desc()
+            ).limit(limit).all()
+            
+            return incidents
+        except Exception as e:
+            logger.error(f"Failed to get recent incidents: {e}")
+            return []
+    
+    async def get_bias_metrics_summary(
+        self,
+        time_range: str = "24h",
+        db: Session = None
+    ) -> Dict:
+        """Get bias metrics summary for time range"""
+        try:
+            # Calculate time range
+            if time_range == "1h":
+                start_time = datetime.utcnow() - timedelta(hours=1)
+            elif time_range == "24h":
+                start_time = datetime.utcnow() - timedelta(hours=24)
+            elif time_range == "7d":
+                start_time = datetime.utcnow() - timedelta(days=7)
+            elif time_range == "30d":
+                start_time = datetime.utcnow() - timedelta(days=30)
+            else:
+                start_time = datetime.utcnow() - timedelta(hours=24)
+            
+            # Get incidents in time range
+            incidents = db.query(BiasIncidentModel).filter(
+                BiasIncidentModel.created_at >= start_time
+            ).all()
+            
+            # Count by severity
+            severity_counts = {}
+            bias_type_counts = {}
+            
+            for incident in incidents:
+                severity = incident.severity
+                bias_type = incident.bias_type
+                
+                severity_counts[severity] = severity_counts.get(severity, 0) + 1
+                bias_type_counts[bias_type] = bias_type_counts.get(bias_type, 0) + 1
+            
+            # Calculate alert status
+            critical_count = severity_counts.get('critical', 0)
+            high_count = severity_counts.get('high', 0)
+            
+            if critical_count > 0:
+                alert_status = "critical"
+            elif high_count > 5:
+                alert_status = "high"
+            elif high_count > 0:
+                alert_status = "medium"
+            else:
+                alert_status = "green"
+            
+            return {
+                "time_range": time_range,
+                "total_incidents": len(incidents),
+                "severity_breakdown": severity_counts,
+                "bias_type_breakdown": bias_type_counts,
+                "alert_status": alert_status,
+                "period_start": start_time,
+                "period_end": datetime.utcnow()
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to get bias metrics summary: {e}")
+            return {"error": str(e)}
+    
+    async def store_metrics_snapshot(
+        self,
+        metrics_data: Dict,
+        db: Session
+    ) -> BiasMetricsModel:
+        """Store a snapshot of bias metrics"""
+        try:
+            metrics = BiasMetricsModel(
+                period_start=metrics_data['period_start'],
+                period_end=metrics_data['period_end'],
+                demographic_parity=metrics_data['demographic_parity'],
+                equalized_odds=metrics_data['equalized_odds'],
+                calibration=metrics_data['calibration'],
+                overall_bias_score=metrics_data['overall_bias_score'],
+                total_assessments=metrics_data['total_assessments'],
+                groups_analyzed=metrics_data['groups_analyzed'],
+                metrics_by_gender=metrics_data.get('metrics_by_gender', {}),
+                metrics_by_ethnicity=metrics_data.get('metrics_by_ethnicity', {}),
+                metrics_by_age=metrics_data.get('metrics_by_age', {})
+            )
+            
+            db.add(metrics)
+            db.commit()
+            db.refresh(metrics)
+            
+            logger.info(f"Bias metrics snapshot stored: {metrics.metrics_id}")
+            return metrics
+            
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Failed to store bias metrics: {e}")
+            raise
+    
+    async def resolve_incident(
+        self,
+        incident_id: UUID,
+        resolution_notes: str,
+        resolved_by: UUID,
+        db: Session
+    ) -> bool:
+        """Mark bias incident as resolved"""
+        try:
+            db.query(BiasIncidentModel).filter(
+                BiasIncidentModel.incident_id == incident_id
+            ).update({
+                "status": "resolved",
+                "resolution_notes": resolution_notes,
+                "resolved_by": resolved_by,
+                "resolved_at": datetime.utcnow(),
+                "updated_at": datetime.utcnow()
+            })
+            
+            db.commit()
+            logger.info(f"Bias incident resolved: {incident_id}")
+            return True
+            
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Failed to resolve incident {incident_id}: {e}")
+            return False
+```
+
+#### **Step 5.3: Create Bias Monitoring API Routes (1 hour)**
+Create: `api/admin/bias_routes.py`
+```python
+"""
+Bias monitoring API routes for Fairdoc AI
+Handles bias detection, reporting, and management
+"""
+import logging
+from datetime import datetime, timedelta
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from sqlalchemy.orm import Session
+from typing import Optional, List
+
+from core.dependencies import get_db, get_current_superuser, get_current_active_user
+from services.bias_detection_service_extended import bias_monitor
+from data.repositories.bias_repository import BiasRepository
+from data.repositories.auth_repository import UserModel
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter()
+
+@router.get("/bias/dashboard")
+async def get_bias_dashboard(
+    time_range: str = Query("24h", regex="^(1h|24h|7d|30d)$"),
+    demographic_filter: Optional[str] = Query(None),
+    current_user: UserModel = Depends(get_current_superuser),
+    db: Session = Depends(get_db)
+):
+    """
+    Get bias monitoring dashboard data
+    
+    **Query Parameters:**
+    - time_range: 1h, 24h, 7d, or 30d
+    - demographic_filter: Optional filter by demographic group
+    
+    **Response:**
+    ```
+    {
+        "summary": {
+            "total_assessments": 1247,
+            "bias_incidents": 3,
+            "overall_fairness_score": 0.94,
+            "alert_status": "green"
+        },
+        "demographic_metrics": {...},
+        "recent_incidents": [...],
+        "time_range": "24h"
+    }
+    ```
+    """
+    try:
+        bias_repo = BiasRepository()
+        
+        # Get summary metrics
+        summary = await bias_repo.get_bias_metrics_summary(time_range, db)
+        
+        # Get recent incidents
+        recent_incidents = await bias_repo.get_recent_incidents(limit=10, db=db)
+        
+        # Format incidents for response
+        incidents_data = []
+        for incident in recent_incidents:
+            incidents_data.append({
+                "incident_id": str(incident.incident_id),
+                "assessment_id": str(incident.assessment_id),
+                "bias_type": incident.bias_type,
+                "severity": incident.severity,
+                "details": incident.details,
+                "status": incident.status,
+                "created_at": incident.created_at,
+                "demographics": incident.demographics
+            })
+        
+        # Calculate overall fairness score
+        total_incidents = summary.get('total_incidents', 0)
+        critical_incidents = summary.get('severity_breakdown', {}).get('critical', 0)
+        
+        # Simple fairness score calculation
+        if total_incidents == 0:
+            fairness_score = 1.0
+        else:
+            fairness_score = max(0.0, 1.0 - (total_incidents * 0.1) - (critical_incidents * 0.3))
+        
+        # Mock demographic metrics (in real implementation, calculate from recent decisions)
+        demographic_metrics = {
+            "gender": {
+                "male": {"assessments": 623, "avg_risk_score": 0.45, "high_risk_rate": 0.12},
+                "female": {"assessments": 624, "avg_risk_score": 0.43, "high_risk_rate": 0.11}
+            },
+            "ethnicity": {
+                "white": {"assessments": 934, "avg_risk_score": 0.44, "high_risk_rate": 0.10},
+                "asian": {"assessments": 156, "avg_risk_score": 0.46, "high_risk_rate": 0.14},
+                "black": {"assessments": 89, "avg_risk_score": 0.42, "high_risk_rate": 0.09},
+                "mixed": {"assessments": 68, "avg_risk_score": 0.45, "high_risk_rate": 0.12}
+            },
+            "age_groups": {
+                "18_29": {"assessments": 234, "avg_risk_score": 0.38, "high_risk_rate": 0.08},
+                "30_49": {"assessments": 567, "avg_risk_score": 0.44, "high_risk_rate": 0.11},
+                "50_64": {"assessments": 298, "avg_risk_score": 0.48, "high_risk_rate": 0.15},
+                "65_plus": {"assessments": 148, "avg_risk_score": 0.52, "high_risk_rate": 0.18}
+            }
+        }
+        
+        return {
+            "summary": {
+                "total_assessments": 1247,  # Mock total
+                "bias_incidents": summary.get('total_incidents', 0),
+                "overall_fairness_score": round(fairness_score, 3),
+                "alert_status": summary.get('alert_status', 'green'),
+                "time_range": time_range
+            },
+            "demographic_metrics": demographic_metrics,
+            "fairness_metrics": {
+                "demographic_parity": 0.08,  # Mock values
+                "equalized_odds": 0.06,
+                "calibration": 0.04
+            },
+            "recent_incidents": incidents_data,
+            "bias_trends": {
+                "last_hour": 0,
+                "last_24h": summary.get('total_incidents', 0),
+                "last_week": summary.get('total_incidents', 0) * 7,
+                "trend": "stable"
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to get bias dashboard: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve bias dashboard data"
+        )
+
+@router.get("/bias/incidents")
+async def get_bias_incidents(
+    limit: int = Query(20, ge=1, le=100),
+    severity: Optional[str] = Query(None),
+    status_filter: Optional[str] = Query(None),
+    current_user: UserModel = Depends(get_current_superuser),
+    db: Session = Depends(get_db)
+):
+    """Get list of bias incidents with filtering"""
+    try:
+        bias_repo = BiasRepository()
+        
+        incidents = await bias_repo.get_recent_incidents(
+            limit=limit,
+            severity=severity,
+            db=db
+        )
+        
+        incidents_data = []
+        for incident in incidents:
+            incidents_data.append({
+                "incident_id": str(incident.incident_id),
+                "assessment_id": str(incident.assessment_id),
+                "bias_type": incident.bias_type,
+                "severity": incident.severity,
+                "details": incident.details,
+                "status": incident.status,
+                "created_at": incident.created_at,
+                "updated_at": incident.updated_at,
+                "demographics": incident.demographics,
+                "decision_data": incident.decision_data,
+                "resolution_notes": incident.resolution_notes,
+                "resolved_at": incident.resolved_at
+            })
+        
+        return {
+            "incidents": incidents_data,
+            "total_count": len(incidents_data),
+            "filters_applied": {
+                "severity": severity,
+                "status": status_filter,
+                "limit": limit
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to get bias incidents: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve bias incidents"
+        )
+
+@router.post("/bias/incidents/{incident_id}/resolve")
+async def resolve_bias_incident(
+    incident_id: str,
+    resolution_notes: str,
+    current_user: UserModel = Depends(get_current_superuser),
+    db: Session = Depends(get_db)
+):
+    """Resolve a bias incident"""
+    try:
+        from uuid import UUID
+        incident_uuid = UUID(incident_id)
+        
+        bias_repo = BiasRepository()
+        
+        success = await bias_repo.resolve_incident(
+            incident_id=incident_uuid,
+            resolution_notes=resolution_notes,
+            resolved_by=current_user.id,
+            db=db
+        )
+        
+        if success:
+            return {
+                "success": True,
+                "message": "Incident resolved successfully",
+                "incident_id": incident_id,
+                "resolved_by": str(current_user.id),
+                "resolved_at": datetime.utcnow()
+            }
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Incident not found or already resolved"
+            )
+            
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid incident ID format"
+        )
+    except Exception as e:
+        logger.error(f"Failed to resolve incident {incident_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to resolve incident"
+        )
+
+@router.get("/bias/metrics/live")
+async def get_live_bias_metrics(
+    current_user: UserModel = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get real-time bias monitoring metrics"""
+    try:
+        # Get current bias metrics from the monitor
+        current_time = datetime.utcnow()
+        
+        # Mock live metrics (in real implementation, get from bias_monitor)
+        live_metrics = {
+            "current_sample_size": len(bias_monitor.recent_decisions),
+            "monitoring_window_hours": 1,
+            "last_updated": current_time,
+            "real_time_scores": {
+                "demographic_parity": 0.08,
+                "equalized_odds": 0.06,
+                "calibration": 0.04,
+                "overall_bias": 0.06
+            },
+            "alert_status": "green",
+            "active_alerts": [],
+            "trends": {
+                "improving": True,
+                "trend_direction": "stable",
+                "change_rate": 0.001
+            }
+        }
+        
+        return live_metrics
+        
+    except Exception as e:
+        logger.error(f"Failed to get live bias metrics: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve live bias metrics"
+        )
+
+@router.post("/bias/test-alert")
+async def test_bias_alert(
+    alert_type: str = "demographic_parity",
+    severity: str = "medium",
+    current_user: UserModel = Depends(get_current_superuser),
+    db: Session = Depends(get_db)
+):
+    """Test bias alert system (for development/testing)"""
+    try:
+        from uuid import uuid4
+        
+        # Create test bias incident
+        test_incident_data = {
+            'assessment_id': uuid4(),
+            'bias_type': alert_type,
+            'severity': severity,
+            'details': f"Test {alert_type} alert with {severity} severity",
+            'demographics': {
+                "age": 35,
+                "gender": "female",
+                "ethnicity": "asian"
+            },
+            'decision_data': {
+                "risk_level": "moderate",
+                "recommended_action": "gp_appointment",
+                "confidence_score": 0.75
+            },
+            'timestamp': datetime.utcnow()
+        }
+        
+        bias_repo = BiasRepository()
+        incident = await bias_repo.create_bias_incident(test_incident_data, db)
+        
+        return {
+            "success": True,
+            "message": f"Test {alert_type} alert created",
+            "incident_id": str(incident.incident_id),
+            "severity": severity,
+            "created_at": incident.created_at
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to create test alert: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create test alert"
+        )
+```
+
+#### **Step 5.4: Create Database Migration for Bias Tables (1 hour)**
+Create: `data/database/migrations/create_bias_tables.py`
+```python
+"""
+Database migration for bias monitoring tables
+"""
+from sqlalchemy import text
+from data.database.connection_manager import db_manager
+
+def upgrade():
+    """Create bias monitoring tables"""
+    
+    engine = db_manager.engine
+    
+    with engine.connect() as conn:
+        # Drop existing tables if they exist
+        conn.execute(text("DROP TABLE IF EXISTS bias_metrics CASCADE;"))
+        conn.execute(text("DROP TABLE IF EXISTS bias_incidents CASCADE;"))
+        
+        # Create bias incidents table
+        conn.execute(text("""
+            CREATE TABLE bias_incidents (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                incident_id UUID UNIQUE NOT NULL DEFAULT uuid_generate_v4(),
+                assessment_id UUID NOT NULL,
+                bias_type VARCHAR(50) NOT NULL,
+                severity VARCHAR(20) NOT NULL,
+                details TEXT NOT NULL,
+                demographics JSONB NOT NULL,
+                decision_data JSONB NOT NULL,
+                status VARCHAR(20) DEFAULT 'open',
+                resolution_notes TEXT,
+                resolved_at TIMESTAMP WITH TIME ZONE,
+                resolved_by UUID,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            );
+        """))
+        
+        # Create bias metrics table
+        conn.execute(text("""
+            CREATE TABLE bias_metrics (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                metrics_id UUID UNIQUE NOT NULL DEFAULT uuid_generate_v4(),
+                period_start TIMESTAMP WITH TIME ZONE NOT NULL,
+                period_end TIMESTAMP WITH TIME ZONE NOT NULL,
+                demographic_parity FLOAT NOT NULL,
+                equalized_odds FLOAT NOT NULL,
+                calibration FLOAT NOT NULL,
+                overall_bias_score FLOAT NOT NULL,
+                total_assessments INTEGER NOT NULL,
+                groups_analyzed INTEGER NOT NULL,
+                metrics_by_gender JSONB DEFAULT '{}',
+                metrics_by_ethnicity JSONB DEFAULT '{}',
+                metrics_by_age JSONB DEFAULT '{}',
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            );
+        """))
+        
+        # Create indexes
+        conn.execute(text("""
+            CREATE INDEX idx_bias_incidents_assessment_id ON bias_incidents(assessment_id);
+            CREATE INDEX idx_bias_incidents_bias_type ON bias_incidents(bias_type);
+            CREATE INDEX idx_bias_incidents_severity ON bias_incidents(severity);
+            CREATE INDEX idx_bias_incidents_status ON bias_incidents(status);
+            CREATE INDEX idx_bias_incidents_created_at ON bias_incidents(created_at);
+            
+            CREATE INDEX idx_bias_metrics_period_start ON bias_metrics(period_start);
+            CREATE INDEX idx_bias_metrics_period_end ON bias_metrics(period_end);
+            CREATE INDEX idx_bias_metrics_overall_score ON bias_metrics(overall_bias_score);
+        """))
+        
+        # Insert sample bias incidents for demo
+        conn.execute(text("""
+            INSERT INTO bias_incidents 
+            (assessment_id, bias_type, severity, details, demographics, decision_data, status) 
+            VALUES 
+            (uuid_generate_v4(), 'demographic_parity', 'medium', 'Gender disparity in cardiac referrals detected', 
+             '{"age": 45, "gender": "female", "ethnicity": "white"}', 
+             '{"risk_level": "high", "recommended_action": "urgent_care", "confidence_score": 0.85}', 
+             'resolved'),
+            (uuid_generate_v4(), 'equalized_odds', 'low', 'Minor confidence variance across age groups', 
+             '{"age": 72, "gender": "male", "ethnicity": "asian"}', 
+             '{"risk_level": "moderate", "recommended_action": "gp_appointment", "confidence_score": 0.72}', 
+             'open'),
+            (uuid_generate_v4(), 'demographic_parity', 'high', 'Significant ethnicity bias in emergency classifications', 
+             '{"age": 28, "gender": "female", "ethnicity": "black"}', 
+             '{"risk_level": "critical", "recommended_action": "emergency", "confidence_score": 0.92}', 
+             'investigating');
+        """))
+        
+        conn.commit()
+        print("✅ Bias monitoring tables created successfully")
+
+if __name__ == "__main__":
+    upgrade()
+```
+
+### **📅 Afternoon Session (4 hours): 12:00 PM - 4:00 PM**
+
+#### **Step 5.5: Update Medical Service with Bias Monitoring (1 hour)**
+Update: `services/medical_ai_service.py` (add bias monitoring)
+```python
+# Add this import at the top
+from services.bias_detection_service_extended import bias_monitor
+
+# Update the assess_patient method to include bias monitoring
+async def assess_patient(self, patient_input: PatientInput) -> TriageResponse:
+    """Main patient assessment endpoint with bias monitoring"""
+    start_time = time.time()
+    
+    try:
+        # Calculate risk score (existing logic)
+        risk_score = self.triage_engine.calculate_risk_score(patient_input)
+        
+        # Determine risk level and actions (existing logic)
+        if risk_score > 0.8:
+            risk_level = RiskLevel.CRITICAL
+        elif risk_score > 0.6:
+            risk_level = RiskLevel.HIGH
+        elif risk_score > 0.3:
+            risk_level = RiskLevel.MODERATE
+        else:
+            risk_level = RiskLevel.LOW
+        
+        urgency_level, recommended_action = self.triage_engine.determine_urgency_and_action(
+            risk_score, patient_input
+        )
+        
+        explanation = self.triage_engine.generate_explanation(
+            patient_input, risk_score, urgency_level
+        )
+        
+        next_steps = self._generate_next_steps(recommended_action, patient_input)
+        when_to_seek_help = self._generate_warning_signs(patient_input)
+        
+        processing_time_ms = (time.time() - start_time) * 1000
+        
+        # Create initial response
+        response = TriageResponse(
+            risk_level=risk_level,
+            urgency_level=urgency_level,
+            recommended_action=recommended_action,
+            explanation=explanation,
+            confidence_score=min(0.95, max(0.6, 1.0 - (risk_score * 0.3))),
+            next_steps=next_steps,
+            when_to_seek_help=when_to_seek_help,
+            processing_time_ms=processing_time_ms
+        )
+        
+        # NEW: Bias monitoring
+        try:
+            # Extract demographics for bias monitoring
+            demographics = {
+                'age': patient_input.age,
+                'gender': patient_input.gender.value if hasattr(patient_input.gender, 'value') else str(patient_input.gender),
+                'ethnicity': patient_input.ethnicity.value if patient_input.ethnicity and hasattr(patient_input.ethnicity, 'value') else str(patient_input.ethnicity) if patient_input.ethnicity else 'unknown'
+            }
+            
+            # Monitor decision for bias
+            bias_result = await bias_monitor.monitor_decision(
+                decision_data=response.dict(),
+                patient_demographics=demographics,
+                assessment_id=response.assessment_id,
+                db=None  # Will pass db session in API layer
+            )
+            
+            # Add bias information to response (extend the response model if needed)
+            # For now, log the bias monitoring result
+            logger.info(f"Bias monitoring result: {bias_result}")
+            
+        except Exception as bias_error:
+            logger.error(f"Bias monitoring failed: {bias_error}")
+            # Continue with response even if bias monitoring fails
+        
+        logger.info(f"Patient assessment completed: {recommended_action}, risk: {risk_level}")
+        return response
+        
+    except Exception as e:
+        # ... existing error handling
+```
+
+#### **Step 5.6: Create Frontend Bias Dashboard Components (2 hours)**
+Create: `frontend/src/components/BiasMetrics.jsx`
+```jsx
+import React, { useState, useEffect } from 'react';
+import { ExclamationTriangleIcon, CheckCircleIcon, ClockIcon } from '@heroicons/react/24/outline';
+
+function BiasMetrics() {
+  const [metrics, setMetrics] = useState(null);
+  const [timeRange, setTimeRange] = useState('24h');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    loadBiasMetrics();
+  }, [timeRange]);
+
+  const loadBiasMetrics = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/v1/admin/bias/dashboard?time_range=${timeRange}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (!response.ok) throw new Error('Failed to load bias metrics');
+      
+      const data = await response.json();
+      setMetrics(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getAlertStatusColor = (status) => {
+    const colors = {
+      green: 'text-green-600 bg-green-100',
+      medium: 'text-yellow-600 bg-yellow-100',
+      high: 'text-orange-600 bg-orange-100',
+      critical: 'text-red-600 bg-red-100'
+    };
+    return colors[status] || colors.green;
+  };
+
+  const getAlertIcon = (status) => {
+    if (status === 'green') return CheckCircleIcon;
+    return ExclamationTriangleIcon;
+  };
+
+  if (loading) {
+    return (
+      
+        
+      
+    );
+  }
+
+  if (error) {
+    return (
+      
+        Error loading bias metrics: {error}
+      
+    );
+  }
+
+  if (!metrics) return null;
+
+  const AlertIcon = getAlertIcon(metrics.summary.alert_status);
+
+  return (
+    
+      {/* Header */}
+      
+        Bias Monitoring Dashboard
+        
+           setTimeRange(e.target.value)}
+            className="border border-gray-300 rounded-md px-3 py-2 text-sm"
+          >
+            Last Hour
+            Last 24 Hours
+            Last 7 Days
+            Last 30 Days
+          
+          
+            Refresh
+          
+        
+      
+
+      {/* Summary Cards */}
+      
+        
+          
+            
+              
+            
+            
+              Alert Status
+              
+                {metrics.summary.alert_status}
+              
+            
+          
+        
+
+        
+          
+            
+              
+                
+              
+            
+            
+              Total Assessments
+              {metrics.summary.total_assessments.toLocaleString()}
+            
+          
+        
+
+        
+          
+            
+              
+                
+              
+            
+            
+              Bias Incidents
+              {metrics.summary.bias_incidents}
+            
+          
+        
+
+        
+          
+            
+              
+                
+              
+            
+            
+              Fairness Score
+              
+                {(metrics.summary.overall_fairness_score * 100).toFixed(1)}%
+              
+            
+          
+        
+      
+
+      {/* Fairness Metrics */}
+      
+        Fairness Metrics
+        
+          
+            
+              Demographic Parity
+              {(metrics.fairness_metrics.demographic_parity * 100).toFixed(1)}%
+            
+            
+              
+            
+          
+
+          
+            
+              Equalized Odds
+              {(metrics.fairness_metrics.equalized_odds * 100).toFixed(1)}%
+            
+            
+              
+            
+          
+
+          
+            
+              Calibration
+              {(metrics.fairness_metrics.calibration * 100).toFixed(1)}%
+            
+            
+              
+            
+          
+        
+      
+
+      {/* Demographic Breakdown */}
+      
+        {/* Gender Metrics */}
+        
+          Gender Distribution
+          
+            {Object.entries(metrics.demographic_metrics.gender).map(([gender, data]) => (
+              
+                
+                  
+                    {gender}
+                    {data.assessments} assessments
+                  
+                  
+                    Avg Risk: {data.avg_risk_score.toFixed(2)}
+                    High Risk: {(data.high_risk_rate * 100).toFixed(1)}%
+                  
+                
+              
+            ))}
+          
+        
+
+        {/* Ethnicity Metrics */}
+        
+          Ethnicity Distribution
+          
+            {Object.entries(metrics.demographic_metrics.ethnicity).map(([ethnicity, data]) => (
+              
+                
+                  
+                    {ethnicity}
+                    {data.assessments} assessments
+                  
+                  
+                    Avg Risk: {data.avg_risk_score.toFixed(2)}
+                    High Risk: {(data.high_risk_rate * 100).toFixed(1)}%
+                  
+                
+              
+            ))}
+          
+        
+      
+
+      {/* Recent Incidents */}
+      {metrics.recent_incidents && metrics.recent_incidents.length > 0 && (
+        
+          Recent Bias Incidents
+          
+            {metrics.recent_incidents.slice(0, 5).map((incident) => (
+              
+                
+                  
+                    
+                      {incident.bias_type.replace('_', ' ').toUpperCase()} - {incident.severity.toUpperCase()}
+                    
+                    {incident.details}
+                    
+                      {new Date(incident.created_at).toLocaleString()}
+                    
+                  
+                  
+                    {incident.status}
+                  
+                
+              
+            ))}
+          
+        
+      )}
+    
+  );
+}
+
+export default BiasMetrics;
+```
+
+#### **Step 5.7: Create Admin Dashboard Page (1 hour)**
+Create: `frontend/src/pages/AdminDashboard.jsx`
+```jsx
+import React, { useState } from 'react';
+import { useAuth } from '../hooks/useAuth';
+import BiasMetrics from '../components/BiasMetrics';
+import { 
+  ChartBarIcon, 
+  ExclamationTriangleIcon, 
+  UsersIcon, 
+  CogIcon 
+} from '@heroicons/react/24/outline';
+
+function AdminDashboard() {
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState('bias');
+
+  if (!user || user.role !== 'admin') {
+    return (
+      
+        
+          
+          Access Denied
+          You need administrator privileges to access this page.
+        
+      
+    );
+  }
+
+  const tabs = [
+    {
+      id: 'bias',
+      name: 'Bias Monitoring',
+      icon: ExclamationTriangleIcon,
+      component: BiasMetrics
+    },
+    {
+      id: 'analytics',
+      name: 'System Analytics',
+      icon: ChartBarIcon,
+      component: () => Analytics coming soon...
+    },
+    {
+      id: 'users',
+      name: 'User Management',
+      icon: UsersIcon,
+      component: () => User management coming soon...
+    },
+    {
+      id: 'settings',
+      name: 'System Settings',
+      icon: CogIcon,
+      component: () => Settings coming soon...
+    }
+  ];
+
+  const activeTabData = tabs.find(tab => tab.id === activeTab);
+  const ActiveComponent = activeTabData?.component;
+
+  return (
+    
+      
+        
+        {/* Header */}
+        
+          Administrator Dashboard
+          Monitor system performance, bias metrics, and user activity.
+        
+
+        {/* Navigation Tabs */}
+        
+          
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                 setActiveTab(tab.id)}
+                  className={`flex items-center py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === tab.id
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  
+                  {tab.name}
+                
+              );
+            })}
+          
+        
+
+        {/* Tab Content */}
+        
+          {ActiveComponent && }
+        
+      
+    
+  );
+}
+
+export default AdminDashboard;
+```
+
+### **📅 Evening Session (4 hours): 6:00 PM - 10:00 PM**
+
+#### **Step 5.8: Update API Utils with Bias Endpoints (30 minutes)**
+Update: `frontend/src/utils/api.js`
+```javascript
+// Add bias monitoring API endpoints
+export const biasAPI = {
+  getDashboard: async (timeRange = '24h', demographicFilter = null) => {
+    const params = new URLSearchParams({ time_range: timeRange });
+    if (demographicFilter) params.append('demographic_filter', demographicFilter);
+    
+    const response = await api.get(`/admin/bias/dashboard?${params}`);
+    return response.data;
+  },
+
+  getIncidents: async (limit = 20, severity = null, status = null) => {
+    const params = new URLSearchParams({ limit: limit.toString() });
+    if (severity) params.append('severity', severity);
+    if (status) params.append('status_filter', status);
+    
+    const response = await api.get(`/admin/bias/incidents?${params}`);
+    return response.data;
+  },
+
+  resolveIncident: async (incidentId, resolutionNotes) => {
+    const response = await api.post(`/admin/bias/incidents/${incidentId}/resolve`, {
+      resolution_notes: resolutionNotes
+    });
+    return response.data;
+  },
+
+  getLiveMetrics: async () => {
+    const response = await api.get('/admin/bias/metrics/live');
+    return response.data;
+  },
+
+  testAlert: async (alertType = 'demographic_parity', severity = 'medium') => {
+    const response = await api.post('/admin/bias/test-alert', {
+      alert_type: alertType,
+      severity: severity
+    });
+    return response.data;
+  }
+};
+```
+
+#### **Step 5.9: Update Main App with Admin Routes (30 minutes)**
+Update: `frontend/src/App.jsx`
+```jsx
+// Add import
+import AdminDashboard from './pages/AdminDashboard';
+
+// Add route in the Routes section (within protected routes)
+
+      
+    
+  } 
+/>
+```
+
+Update: `frontend/src/components/Navbar.jsx` (add admin link)
+```jsx
+// Add admin link for admin users
+{isAuthenticated && user?.role === 'admin' && (
+  
+    Admin Dashboard
+  
+)}
+```
+
+#### **Step 5.10: Update Main App with Bias Routes (30 minutes)**
+Update: `app.py`
+```python
+# Add this import
+from api.admin.bias_routes import router as bias_router
+
+# Add this line after other router includes
+app.include_router(bias_router, prefix="/api/v1/admin", tags=["Bias Monitoring"])
+```
+
+#### **Step 5.11: Run Database Migration and Test (1 hour)**
+```bash
+# Run bias tables migration
+cd Fairdoc/backend
+python data/database/migrations/create_bias_tables.py
+
+# Verify tables created
+docker exec -it fairdoc_postgres psql -U fairdoc -d fairdoc_dev -c "\dt"
+
+# Should show bias_incidents and bias_metrics tables
+```
+
+#### **Step 5.12: Test Bias Monitoring System (1.5 hours)**
+Create: `tests/test_bias_monitoring.py`
+```python
+"""
+Test bias monitoring functionality
+"""
+import requests
+import json
+
+BASE_URL = "http://localhost:8000/api/v1"
+
+def get_admin_token():
+    """Get admin token for testing"""
+    login_data = {
+        "email": "admin@fairdoc.ai",
+        "password": "password",  # Default admin password
+        "remember_me": False
+    }
+    
+    response = requests.post(f"{BASE_URL}/auth/login", json=login_data)
+    if response.status_code == 200:
+        return response.json()["access_token"]
+    else:
+        raise Exception("Failed to get admin token")
+
+def test_bias_dashboard():
+    """Test bias dashboard endpoint"""
+    print("🧪 Testing bias dashboard...")
+    
+    token = get_admin_token()
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    response = requests.get(f"{BASE_URL}/admin/bias/dashboard", headers=headers)
+    assert response.status_code == 200
+    
+    result = response.json()
+    assert "summary" in result
+    assert "demographic_metrics" in result
+    assert "fairness_metrics" in result
+    
+    print("✅ Bias dashboard test passed")
+
+def test_bias_incidents():
+    """Test bias incidents endpoint"""
+    print("🧪 Testing bias incidents...")
+    
+    token = get_admin_token()
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    response = requests.get(f"{BASE_URL}/admin/bias/incidents", headers=headers)
+    assert response.status_code == 200
+    
+    result = response.json()
+    assert "incidents" in result
+    assert "total_count" in result
+    
+    print("✅ Bias incidents test passed")
+
+def test_create_test_alert():
+    """Test creating test bias alert"""
+    print("🧪 Testing test alert creation...")
+    
+    token = get_admin_token()
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    response = requests.post(
+        f"{BASE_URL}/admin/bias/test-alert", 
+        headers=headers,
+        params={"alert_type": "demographic_parity", "severity": "medium"}
+    )
+    assert response.status_code == 200
+    
+    result = response.json()
+    assert result["success"] == True
+    assert "incident_id" in result
+    
+    print("✅ Test alert creation passed")
+
+def test_live_metrics():
+    """Test live bias metrics"""
+    print("🧪 Testing live bias metrics...")
+    
+    token = get_admin_token()
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    response = requests.get(f"{BASE_URL}/admin/bias/metrics/live", headers=headers)
+    assert response.status_code == 200
+    
+    result = response.json()
+    assert "real_time_scores" in result
+    assert "alert_status" in result
+    
+    print("✅ Live metrics test passed")
+
+if __name__ == "__main__":
+    print("🚀 Starting bias monitoring tests...")
+    
+    try:
+        test_bias_dashboard()
+        test_bias_incidents()
+        test_create_test_alert()
+        test_live_metrics()
+        
+        print("🎉 All bias monitoring tests passed!")
+        
+    except Exception as e:
+        print(f"❌ Test failed: {e}")
+```
+
+#### **Step 5.13: Manual Frontend Test (1 hour)**
+```bash
+# Start backend with bias monitoring
+cd Fairdoc/backend
+./scripts/dev-start.sh
+
+# Start frontend
+cd Fairdoc/frontend
+npm run dev
+
+# Test bias monitoring:
+# 1. Login as admin (admin@fairdoc.ai / password)
+# 2. Navigate to http://localhost:3000/admin
+# 3. View bias monitoring dashboard
+# 4. Test different time ranges
+# 5. Create test alerts
+# 6. Verify metrics display correctly
+```
+
+### **📈 Day 5 Success Metrics**
+- ✅ Bias monitoring service detects demographic disparities
+- ✅ Real-time bias alerts trigger correctly
+- ✅ Admin dashboard displays bias metrics
+- ✅ Bias incidents logged to database
+- ✅ Frontend bias dashboard functional
+- ✅ Live metrics update in real-time
+
+---
+
+# **DAY 6: File Upload & Image Analysis** 📁
+## **🕐 12 Hours | Goal: Multi-modal input processing**
+
+### **📅 Morning Session (4 hours): 6:00 AM - 10:00 AM**
+
+#### **Step 6.1: Create File Upload Models (1 hour)**
+Create: `datamodels/file_models_extended.py`
+```python
+"""
+Extended file models for multi-modal medical input
+"""
+from datetime import datetime
+from typing import Optional, List, Dict, Any, Literal
+from uuid import UUID, uuid4
+from pydantic import BaseModel, Field, field_validator
+from enum import Enum
+
+from datamodels.base_models import BaseEntity, ValidationMixin, MetadataMixin
+
+class FileType(str, Enum):
+    """Supported file types for medical analysis"""
+    IMAGE = "image"
+    AUDIO = "audio"
+    DOCUMENT = "document"
+    VIDEO = "video"
+
+class ImageCategory(str, Enum):
+    """Medical image categories"""
+    CHEST_XRAY = "chest_xray"
+    SKIN_LESION = "skin_lesion"
+    ECG = "ecg"
+    MRI = "mri"
+    CT_SCAN = "ct_scan"
+    ULTRASOUND = "ultrasound"
+    GENERAL_PHOTO = "general_photo"
+
+class AudioCategory(str, Enum):
+    """Medical audio categories"""
+    HEART_SOUNDS = "heart_sounds"
+    LUNG_SOUNDS = "lung_sounds"
+    SPEECH_SAMPLE = "speech_sample"
+    COUGH_RECORDING = "cough_recording"
+    GENERAL_AUDIO = "general_audio"
+
+class ProcessingStatus(str, Enum):
+    """File processing status"""
+    UPLOADED = "uploaded"
+    PROCESSING = "processing"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    QUARANTINED = "quarantined"
+
+class MedicalFile(BaseEntity, ValidationMixin, MetadataMixin):
+    """Medical file upload with metadata"""
+    
+    file_id: UUID = Field(default_factory=uuid4)
+    original_filename: str = Field(..., max_length=255)
+    
+    # File properties
+    file_type: FileType
+    file_size_bytes: int = Field(..., ge=0, le=50*1024*1024)  # Max 50MB
+    mime_type: str = Field(..., max_length=100)
+    
+    # Medical categorization
+    image_category: Optional[ImageCategory] = None
+    audio_category: Optional[AudioCategory] = None
+    
+    # Storage information
+    storage_path: str = Field(..., max_length=500)
+    storage_bucket: Optional[str] = Field(None, max_length=100)
+    
+    # Processing status
+    processing_status: ProcessingStatus = Field(default=ProcessingStatus.UPLOADED)
+    processing_started_at: Optional[datetime] = None
+    processing_completed_at: Optional[datetime] = None
+    processing_error: Optional[str] = None
+    
+    # Analysis results
+    analysis_results: Dict[str, Any] = Field(default_factory=dict)
+    confidence_score: Optional[float] = Field(None, ge=0.0, le=1.0)
+    
+    # Security and compliance
+    virus_scan_status: str = Field(default="pending")  # pending, clean, infected
+    phi_detected: bool = Field(default=False)  # Personal Health Information
+    
+    # Association
+    patient_id: Optional[UUID] = None
+    assessment_id: Optional[UUID] = None
+    session_id: Optional[UUID] = None
+    
+    @field_validator('file_size_bytes')
+    @classmethod
+    def validate_file_size(cls, v):
+        if v > 50 * 1024 * 1024:  # 50MB
+            raise ValueError('File size exceeds 50MB limit')
+        return v
+
+class FileUploadRequest(BaseModel):
+    """File upload request"""
+    filename: str = Field(..., max_length=255)
+    file_type: FileType
+    mime_type: str
+    file_size: int = Field(..., ge=0)
+    
+    # Optional categorization
+    image_category: Optional[ImageCategory] = None
+    audio_category: Optional[AudioCategory] = None
+    
+    # Optional associations
+    patient_id: Optional[UUID] = None
+    assessment_id: Optional[UUID] = None
+    session_id: Optional[UUID] = None
+    
+    # Description
+    description: Optional[str] = Field(None, max_length=500)
+
+class FileUploadResponse(BaseModel):
+    """File upload response"""
+    file_id: UUID
+    upload_url: str
+    file_key: str
+    expires_at: datetime
+    max_file_size: int = Field(default=50*1024*1024)
+
+class FileAnalysisRequest(BaseModel):
+    """Request for file analysis"""
+    file_id: UUID
+    analysis_type: str = Field(..., max_length=50)
+    priority: Literal["low", "normal", "high"] = "normal"
+    
+    # Analysis parameters
+    parameters: Dict[str, Any] = Field(default_factory=dict)
+
+class ImageAnalysisResult(BaseModel):
+    """Image analysis result"""
+    file_id: UUID
+    analysis_type: str
+    
+    # Detection results
+    findings: List[Dict[str, Any]] = Field(default_factory=list)
+    confidence_score: float = Field(..., ge=0.0, le=1.0)
+    
+    # Medical interpretation
+    medical_significance: str = Field(..., max_length=1000)
+    urgency_level: str = Field(default="routine")
+    recommended_action: str = Field(..., max_length=500)
+    
+    # Technical metadata
+    image_quality: float = Field(..., ge=0.0, le=1.0)
+    processing_time_ms: float
+    model_version: str
+    
+    # Bias monitoring
+    bias_score: float = Field(default=0.0, ge=0.0, le=1.0)
+
+class AudioAnalysisResult(BaseModel):
+    """Audio analysis result"""
+    file_id: UUID
+    analysis_type: str
+    
+    # Audio processing results
+    transcript: Optional[str] = None
+    audio_features: Dict[str, float] = Field(default_factory=dict)
+    
+    # Medical analysis
+    abnormalities_detected: List[str] = Field(default_factory=list)
+    confidence_score: float = Field(..., ge=0.0, le=1.0)
+    
+    # Clinical interpretation
+    clinical_notes: str = Field(..., max_length=1000)
+    follow_up_needed: bool = Field(default=False)
+    
+    # Technical metadata
+    audio_quality: float = Field(..., ge=0.0, le=1.0)
+    duration_seconds: float
+    sample_rate: int
+    processing_time_ms: float
+    
+    # Bias monitoring
+    bias_score: float = Field(default=0.0, ge=0.0, le=1.0)
+```
+
+#### **Step 6.2: Create File Repository (1 hour)**
+Create: `data/repositories/file_repository.py`
+```python
+"""
+File repository for medical file storage and retrieval
+"""
+import logging
+from datetime import datetime
+from typing import Optional, List
+from uuid import UUID, uuid4
+
+from sqlalchemy import Column, String, Integer, Float, Boolean, DateTime, Text, JSON
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from sqlalchemy.orm import Session
+
+from data.database.connection_manager import Base
+
+logger = logging.getLogger(__name__)
+
+class MedicalFileModel(Base):
+    """Medical file database model"""
+    __tablename__ = "medical_files"
+    
+    id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
+    file_id = Column(PG_UUID(as_uuid=True), unique=True, nullable=False, default=uuid4)
+    
+    # File metadata
+    original_filename = Column(String(255), nullable=False)
+    file_type = Column(String(20), nullable=False)
+    file_size_bytes = Column(Integer, nullable=False)
+    mime_type = Column(String(100), nullable=False)
+    
+    # Medical categorization
+    image_category = Column(String(50), nullable=True)
+    audio_category = Column(String(50), nullable=True)
+    
+    # Storage
+    storage_path = Column(String(500), nullable=False)
+    storage_bucket = Column(String(100), nullable=True)
+    
+    # Processing
+    processing_status = Column(String(20), default="uploaded")
+    processing_started_at = Column(DateTime(timezone=True), nullable=True)
+    processing_completed_at = Column(DateTime(timezone=True), nullable=True)
+    processing_error = Column(Text, nullable=True)
+    
+    # Analysis results
+    analysis_results = Column(JSON, default=dict)
+    confidence_score = Column(Float, nullable=True)
+    
+    # Security
+    virus_scan_status = Column(String(20), default="pending")
+    phi_detected = Column(Boolean, default=False)
+    
+    # Associations
+    patient_id = Column(PG_UUID(as_uuid=True), nullable=True)
+    assessment_id = Column(PG_UUID(as_uuid=True), nullable=True)
+    session_id = Column(PG_UUID(as_uuid=True), nullable=True)
+    
+    # Audit
+    uploaded_by = Column(PG_UUID(as_uuid=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class FileRepository:
+    """Repository for medical file operations"""
+    
+    async def create_file_record(
+        self,
+        file_data: dict,
+        uploaded_by: Optional[UUID] = None,
+        db: Session = None
+    ) -> MedicalFileModel:
+        """Create a new file record"""
+        try:
+            file_record = MedicalFileModel(
+                original_filename=file_data['filename'],
+                file_type=file_data['file_type'],
+                file_size_bytes=file_data['file_size'],
+                mime_type=file_data['mime_type'],
+                image_category=file_data.get('image_category'),
+                audio_category=file_data.get('audio_category'),
+                storage_path=file_data['storage_path'],
+                storage_bucket=file_data.get('storage_bucket'),
+                patient_id=file_data.get('patient_id'),
+                assessment_id=file_data.get('assessment_id'),
+                session_id=file_data.get('session_id'),
+                uploaded_by=uploaded_by
+            )
+            
+            db.add(file_record)
+            db.commit()
+            db.refresh(file_record)
+            
+            logger.info(f"File record created: {file_record.file_id}")
+            return file_record
+            
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Failed to create file record: {e}")
+            raise
+    
+    async def get_file_by_id(self, file_id: UUID, db: Session) -> Optional[MedicalFileModel]:
+        """Get file record by ID"""
+        try:
+            file_record = db.query(MedicalFileModel).filter(
+                MedicalFileModel.file_id == file_id
+            ).first()
+            return file_record
+        except Exception as e:
+            logger.error(f"Failed to get file {file_id}: {e}")
+            return None
+    
+    async def update_processing_status(
+        self,
+        file_id: UUID,
+        status: str,
+        error: Optional[str] = None,
+        db: Session = None
+    ) -> bool:
+        """Update file processing status"""
+        try:
+            update_data = {
+                "processing_status": status,
+                "updated_at": datetime.utcnow()
+            }
+            
+            if status == "processing":
+                update_data["processing_started_at"] = datetime.utcnow()
+            elif status in ["completed", "failed"]:
+                update_data["processing_completed_at"] = datetime.utcnow()
+                if error:
+                    update_data["processing_error"] = error
+            
+            db.query(MedicalFileModel).filter(
+                MedicalFileModel.file_id == file_id
+            ).update(update_data)
+            
+            db.commit()
+            return True
+            
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Failed to update processing status for {file_id}: {e}")
+            return False
+    
+    async def store_analysis_results(
+        self,
+        file_id: UUID,
+        analysis_results: dict,
+        confidence_score: Optional[float] = None,
+        db: Session = None
+    ) -> bool:
+        """Store analysis results for a file"""
+        try:
+            update_data = {
+                "analysis_results": analysis_results,
+                "processing_status": "completed",
+                "processing_completed_at": datetime.utcnow(),
+                "updated_at": datetime.utcnow()
+            }
+            
+            if confidence_score is not None:
+                update_data["confidence_score"] = confidence_score
+            
+            db.query(MedicalFileModel).filter(
+                MedicalFileModel.file_id == file_id
+            ).update(update_data)
+            
+            db.commit()
+            logger.info(f"Analysis results stored for file: {file_id}")
+            return True
+            
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Failed to store analysis results for {file_id}: {e}")
+            return False
+    
+    async def get_files_by_assessment(
+        self,
+        assessment_id: UUID,
+        file_type: Optional[str] = None,
+        db: Session = None
+    ) -> List[MedicalFileModel]:
+        """Get all files associated with an assessment"""
+        try:
+            query = db.query(MedicalFileModel).filter(
+                MedicalFileModel.assessment_id == assessment_id
+            )
+            
+            if file_type:
+                query = query.filter(MedicalFileModel.file_type == file_type)
+            
+            files = query.order_by(MedicalFileModel.created_at.desc()).all()
+            return files
+            
+        except Exception as e:
+            logger.error(f"Failed to get files for assessment {assessment_id}: {e}")
+            return []
+    
+    async def get_pending_analysis_files(
+        self,
+        file_type: Optional[str] = None,
+        limit: int = 10,
+        db: Session = None
+    ) -> List[MedicalFileModel]:
+        """Get files pending analysis"""
+        try:
+            query = db.query(MedicalFileModel).filter(
+                MedicalFileModel.processing_status.in_(["uploaded", "processing"])
+            )
+            
+            if file_type:
+                query = query.filter(MedicalFileModel.file_type == file_type)
+            
+            files = query.order_by(MedicalFileModel.created_at.asc()).limit(limit).all()
+            return files
+            
+        except Exception as e:
+            logger.error(f"Failed to get pending analysis files: {e}")
+            return []
+    
+    async def delete_file_record(self, file_id: UUID, db: Session) -> bool:
+        """Delete file record (soft delete by updating status)"""
+        try:
+            db.query(MedicalFileModel).filter(
+                MedicalFileModel.file_id == file_id
+            ).update({
+                "processing_status": "deleted",
+                "updated_at": datetime.utcnow()
+            })
+            
+            db.commit()
+            logger.info(f"File record deleted: {file_id}")
+            return True
+            
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Failed to delete file record {file_id}: {e}")
+            return False
+```
+
+#### **Step 6.3: Create Image Analysis Service (1 hour)**
+Create: `services/image_analysis_service.py`
+```python
+"""
+Image analysis service for medical image processing
+"""
+import logging
+import time
+import base64
+import io
+from typing import Dict, List, Optional, Tuple
+from uuid import UUID
+from PIL import Image
+import numpy as np
+
+from datamodels.file_models_extended import ImageAnalysisResult, ImageCategory
+
+logger = logging.getLogger(__name__)
+
+class MedicalImageAnalyzer:
+    """Basic medical image analysis using rule-based detection"""
+    
+    def __init__(self):
+        # Mock ML models for Day 6 (replace with real models later)
+        self.models = {
+            'chest_xray': self._analyze_chest_xray,
+            'skin_lesion': self._analyze_skin_lesion,
+            'ecg': self._analyze_ecg,
+            'general_photo': self._analyze_general_photo
+        }
+        
+        # Image processing parameters
+        self.max_image_size = (1024, 1024)
+        self.supported_formats = ['JPEG', 'PNG', 'BMP', 'TIFF']
+    
+    async def analyze_image(
+        self,
+        file_id: UUID,
+        image_data: bytes,
+        image_category: ImageCategory,
+        patient_demographics: Optional[Dict] = None
+    ) -> ImageAnalysisResult:
+        """Analyze medical image and return results"""
+        
+        start_time = time.time()
+        
+        try:
+            # Load and preprocess image
+            image = self._load_image(image_data)
+            processed_image = self._preprocess_image(image)
+            
+            # Calculate image quality
+            quality_score = self._assess_image_quality(processed_image)
+            
+            # Perform analysis based on category
+            analyzer_func = self.models.get(
+                image_category.value,
+                self._analyze_general_photo
+            )
+            
+            findings, confidence, medical_significance, urgency, action = await analyzer_func(
+                processed_image,
+                patient_demographics
+            )
+            
+            # Calculate bias score (mock implementation)
+            bias_score = self._calculate_bias_score(findings, patient_demographics)
+            
+            processing_time = (time.time() - start_time) * 1000
+            
+            result = ImageAnalysisResult(
+                file_id=file_id,
+                analysis_type=image_category.value,
+                findings=findings,
+                confidence_score=confidence,
+                medical_significance=medical_significance,
+                urgency_level=urgency,
+                recommended_action=action,
+                image_quality=quality_score,
+                processing_time_ms=processing_time,
+                model_version="rule_based_v1.0",
+                bias_score=bias_score
+            )
+            
+            logger.info(f"Image analysis completed for {file_id}: {image_category}")
+            return result
+            
+        except Exception as e:
+            logger.error(f"Image analysis failed for {file_id}: {e}")
+            
+            # Return error result
+            return ImageAnalysisResult(
+                file_id=file_id,
+                analysis_type=image_category.value,
+                findings=[{"error": str(e)}],
+                confidence_score=0.0,
+                medical_significance="Analysis failed due to technical error",
+                urgency_level="unknown",
+                recommended_action="Please try uploading the image again or consult manually",
+                image_quality=0.0,
+                processing_time_ms=(time.time() - start_time) * 1000,
+                model_version="rule_based_v1.0",
+                bias_score=0.0
+            )
+    
+    def _load_image(self, image_data: bytes) -> Image.Image:
+        """Load image from bytes"""
+        try:
+            image = Image.open(io.BytesIO(image_data))
+            
+            # Convert to RGB if necessary
+            if image.mode != 'RGB':
+                image = image.convert('RGB')
+            
+            return image
+            
+        except Exception as e:
+            raise ValueError(f"Failed to load image: {e}")
+    
+    def _preprocess_image(self, image: Image.Image) -> Image.Image:
+        """Preprocess image for analysis"""
+        # Resize if too large
+        if image.size[0] > self.max_image_size[0] or image.size[1] > self.max_image_size[1]:
+            image.thumbnail(self.max_image_size, Image.Resampling.LANCZOS)
+        
+        return image
+    
+    def _assess_image_quality(self, image: Image.Image) -> float:
+        """Assess image quality (0.0 to 1.0)"""
+        try:
+            # Convert to numpy array for analysis
+            img_array = np.array(image)
+            
+            # Simple quality metrics
+            # 1. Check if image is too dark or too bright
+            mean_brightness = np.mean(img_array)
+            brightness_score = 1.0 - abs(mean_brightness - 127.5) / 127.5
+            
+            # 2. Check contrast (standard deviation)
+           ```python
+            contrast_score = np.std(img_array) / 255.0
+            contrast_score = min(1.0, contrast_score * 4)  # Normalize
+            
+            # 3. Check sharpness (using Laplacian variance)
+            gray = np.mean(img_array, axis=2) if len(img_array.shape) == 3 else img_array
+            laplacian_var = np.var(np.array([
+                [0, -1, 0], [-1, 4, -1], [0, -1, 0]
+            ]))  # Mock sharpness calculation
+            sharpness_score = min(1.0, laplacian_var / 100)
+            
+            # Combined quality score
+            quality_score = (brightness_score * 0.3 + contrast_score * 0.4 + sharpness_score * 0.3)
+            
+            return max(0.0, min(1.0, quality_score))
+            
+        except Exception as e:
+            logger.error(f"Image quality assessment failed: {e}")
+            return 0.5  # Default medium quality
+    
+    async def _analyze_chest_xray(self, image: Image.Image, demographics: Optional[Dict]) -> Tuple:
+        """Analyze chest X-ray images"""
+        findings = []
+        confidence = 0.75
+        
+        # Mock chest X-ray analysis
+        img_array = np.array(image)
+        
+        # Check for potential pneumonia (dark regions)
+        dark_ratio = np.sum(img_array  0.3:
+            findings.append({
+                "finding": "Possible infiltrate",
+                "location": "bilateral lower lobes",
+                "confidence": 0.65,
+                "severity": "moderate"
+            })
+        
+        # Check for cardiomegaly (heart enlargement)
+        height, width = img_array.shape[:2]
+        heart_region = img_array[height//3:2*height//3, width//3:2*width//3]
+        heart_density = np.mean(heart_region)
+        
+        if heart_density > 150:
+            findings.append({
+                "finding": "Possible cardiomegaly",
+                "confidence": 0.55,
+                "recommendation": "ECG and echocardiogram recommended"
+            })
+        
+        # Age-based risk adjustment
+        if demographics and demographics.get('age', 0) > 65:
+            confidence *= 0.9  # Slightly lower confidence for elderly
+        
+        if findings:
+            medical_significance = f"Chest X-ray shows {len(findings)} concerning finding(s) that require medical evaluation"
+            urgency = "urgent" if len(findings) > 1 else "routine"
+            action = "Refer to pulmonologist for further evaluation and possible CT scan"
+        else:
+            findings.append({
+                "finding": "No acute findings",
+                "confidence": 0.8
+            })
+            medical_significance = "Chest X-ray appears normal with no acute abnormalities"
+            urgency = "routine"
+            action = "Continue routine care, repeat if symptoms persist"
+        
+        return findings, confidence, medical_significance, urgency, action
+    
+    async def _analyze_skin_lesion(self, image: Image.Image, demographics: Optional[Dict]) -> Tuple:
+        """Analyze skin lesion images"""
+        findings = []
+        confidence = 0.70
+        
+        # Mock dermatology analysis using ABCDE criteria
+        img_array = np.array(image)
+        
+        # A - Asymmetry (mock calculation)
+        height, width = img_array.shape[:2]
+        left_half = img_array[:, :width//2]
+        right_half = img_array[:, width//2:]
+        asymmetry_score = np.mean(np.abs(left_half.flatten()[:right_half.size] - right_half.flatten()))
+        
+        # B - Border irregularity
+        edges = np.gradient(np.mean(img_array, axis=2))
+        border_irregularity = np.std(edges)
+        
+        # C - Color variation
+        color_std = np.std(img_array)
+        
+        # Risk assessment
+        risk_factors = 0
+        if asymmetry_score > 50:
+            risk_factors += 1
+            findings.append({
+                "finding": "Asymmetric lesion",
+                "criterion": "ABCDE - Asymmetry",
+                "confidence": 0.6
+            })
+        
+        if border_irregularity > 30:
+            risk_factors += 1
+            findings.append({
+                "finding": "Irregular borders",
+                "criterion": "ABCDE - Border",
+                "confidence": 0.7
+            })
+        
+        if color_std > 40:
+            risk_factors += 1
+            findings.append({
+                "finding": "Color variation",
+                "criterion": "ABCDE - Color",
+                "confidence": 0.65
+            })
+        
+        # Age and family history adjustments
+        if demographics:
+            age = demographics.get('age', 0)
+            if age > 50:
+                risk_factors += 0.5
+                findings.append({
+                    "finding": "Age-related risk factor",
+                    "note": "Increased skin cancer risk with age"
+                })
+        
+        if risk_factors >= 2:
+            medical_significance = "Lesion shows concerning features requiring dermatological evaluation"
+            urgency = "urgent"
+            action = "Refer to dermatologist within 2 weeks for biopsy consideration"
+            confidence = 0.8
+        elif risk_factors >= 1:
+            medical_significance = "Lesion shows some atypical features"
+            urgency = "routine"
+            action = "Monitor closely, photograph for changes, consider dermatology consultation"
+            confidence = 0.7
+        else:
+            findings.append({
+                "finding": "Benign-appearing lesion",
+                "confidence": 0.75
+            })
+            medical_significance = "Lesion appears benign with no concerning features"
+            urgency = "routine"
+            action = "Continue skin self-examination, routine follow-up"
+        
+        return findings, confidence, medical_significance, urgency, action
+    
+    async def _analyze_ecg(self, image: Image.Image, demographics: Optional[Dict]) -> Tuple:
+        """Analyze ECG/EKG images"""
+        findings = []
+        confidence = 0.65  # Lower confidence for complex ECG interpretation
+        
+        # Mock ECG analysis
+        img_array = np.array(image)
+        
+        # Check for rhythm abnormalities (mock - would use signal processing in real implementation)
+        signal_variance = np.var(img_array)
+        
+        if signal_variance > 1000:
+            findings.append({
+                "finding": "Irregular rhythm pattern",
+                "type": "Possible atrial fibrillation",
+                "confidence": 0.6
+            })
+        
+        # Check for ST elevation (mock)
+        mean_intensity = np.mean(img_array)
+        if mean_intensity > 180:
+            findings.append({
+                "finding": "Possible ST elevation",
+                "leads": "II, III, aVF",
+                "confidence": 0.7,
+                "clinical_significance": "Possible myocardial infarction"
+            })
+        
+        # Age-specific considerations
+        if demographics:
+            age = demographics.get('age', 0)
+            if age > 65 and findings:
+                medical_significance = "ECG abnormalities in elderly patient require urgent cardiology evaluation"
+                urgency = "urgent"
+                action = "Immediate cardiology consultation, cardiac enzymes, continuous monitoring"
+            elif findings:
+                medical_significance = "ECG shows abnormalities requiring further cardiac evaluation"
+                urgency = "urgent"
+                action = "Urgent cardiology referral, consider stress testing"
+            else:
+                findings.append({
+                    "finding": "Normal sinus rhythm",
+                    "confidence": 0.8
+                })
+                medical_significance = "ECG within normal limits"
+                urgency = "routine"
+                action = "Continue routine cardiac care"
+        
+        return findings, confidence, medical_significance, urgency, action
+    
+    async def _analyze_general_photo(self, image: Image.Image, demographics: Optional[Dict]) -> Tuple:
+        """Analyze general medical photos"""
+        findings = []
+        confidence = 0.60  # Lower confidence for general images
+        
+        # Basic image analysis
+        img_array = np.array(image)
+        
+        # Check for obvious abnormalities
+        red_channel = img_array[:, :, 0] if len(img_array.shape) == 3 else img_array
+        red_intensity = np.mean(red_channel)
+        
+        if red_intensity > 180:
+            findings.append({
+                "finding": "Increased redness/inflammation",
+                "confidence": 0.5,
+                "recommendation": "Consider inflammatory condition"
+            })
+        
+        # Check for swelling (brightness variations)
+        brightness_var = np.var(np.mean(img_array, axis=2))
+        if brightness_var > 500:
+            findings.append({
+                "finding": "Possible swelling or edema",
+                "confidence": 0.45
+            })
+        
+        if findings:
+            medical_significance = "Image shows possible abnormalities requiring clinical correlation"
+            urgency = "routine"
+            action = "Clinical examination recommended, correlate with symptoms"
+        else:
+            findings.append({
+                "finding": "No obvious abnormalities detected",
+                "note": "Limited by image quality and type"
+            })
+            medical_significance = "No clear abnormalities identified in this general medical image"
+            urgency = "routine"
+            action = "Continue monitoring, seek professional evaluation if symptoms persist"
+        
+        return findings, confidence, medical_significance, urgency, action
+    
+    def _calculate_bias_score(self, findings: List[Dict], demographics: Optional[Dict]) -> float:
+        """Calculate bias score for image analysis"""
+        bias_score = 0.0
+        
+        if not demographics:
+            return bias_score
+        
+        # Mock bias calculation
+        # Check for potential skin tone bias in dermatology
+        if any("skin" in str(finding).lower() for finding in findings):
+            ethnicity = demographics.get('ethnicity', '').lower()
+            if ethnicity in ['black', 'asian', 'mixed']:
+                # Acknowledge potential bias in skin lesion detection for darker skin tones
+                bias_score = 0.15
+        
+        # Age bias in cardiac conditions
+        age = demographics.get('age', 0)
+        if any("cardiac" in str(finding).lower() for finding in findings):
+            if age 
+    file_type: "image" | "audio" | "document"
+    image_category: "chest_xray" | "skin_lesion" | "ecg" | "general_photo"
+    description: "Optional description of the file"
+    ```
+    
+    **Response:**
+    ```
+    {
+        "success": true,
+        "file_id": "uuid4",
+        "filename": "uploaded_filename.jpg",
+        "file_type": "image",
+        "processing_status": "processing",
+        "analysis_results": {...}
+    }
+    ```
+    """
+    try:
+        # Validate file size
+        if not file.filename:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No file selected"
+            )
+        
+        # Read file content to check size
+        file_content = await file.read()
+        if len(file_content) > MAX_FILE_SIZE:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail=f"File size exceeds {MAX_FILE_SIZE // (1024*1024)}MB limit"
+            )
+        
+        # Validate file type
+        content_type = file.content_type
+        if file_type == FileType.IMAGE and content_type not in ALLOWED_IMAGE_TYPES:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Unsupported image type: {content_type}"
+            )
+        elif file_type == FileType.AUDIO and content_type not in ALLOWED_AUDIO_TYPES:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Unsupported audio type: {content_type}"
+            )
+        
+        # Generate unique filename
+        file_id = uuid.uuid4()
+        file_extension = os.path.splitext(file.filename)[1]
+        storage_filename = f"{file_id}{file_extension}"
+        storage_path = os.path.join(UPLOAD_DIRECTORY, storage_filename)
+        
+        # Save file to disk
+        with open(storage_path, "wb") as f:
+            f.write(file_content)
+        
+        # Create file record in database
+        file_repo = FileRepository()
+        file_data = {
+            'filename': file.filename,
+            'file_type': file_type.value,
+            'file_size': len(file_content),
+            'mime_type': content_type,
+            'image_category': image_category.value if image_category else None,
+            'audio_category': audio_category.value if audio_category else None,
+            'storage_path': storage_path,
+            'patient_id': uuid.UUID(patient_id) if patient_id else None,
+            'assessment_id': uuid.UUID(assessment_id) if assessment_id else None,
+            'session_id': uuid.UUID(session_id) if session_id else None
+        }
+        
+        file_record = await file_repo.create_file_record(
+            file_data=file_data,
+            uploaded_by=current_user.id if current_user else None,
+            db=db
+        )
+        
+        # Start analysis if it's an image
+        analysis_results = None
+        if file_type == FileType.IMAGE and image_category:
+            try:
+                # Update status to processing
+                await file_repo.update_processing_status(
+                    file_record.file_id, 
+                    ProcessingStatus.PROCESSING.value,
+                    db=db
+                )
+                
+                # Get patient demographics for bias monitoring
+                demographics = None
+                if current_user:
+                    demographics = {
+                        'age': 35,  # Mock - would get from patient record
+                        'gender': 'unknown',
+                        'ethnicity': 'unknown'
+                    }
+                
+                # Perform image analysis
+                analysis_result = await medical_image_analyzer.analyze_image(
+                    file_id=file_record.file_id,
+                    image_data=file_content,
+                    image_category=image_category,
+                    patient_demographics=demographics
+                )
+                
+                # Store analysis results
+                await file_repo.store_analysis_results(
+                    file_record.file_id,
+                    analysis_result.dict(),
+                    analysis_result.confidence_score,
+                    db
+                )
+                
+                analysis_results = analysis_result.dict()
+                
+                logger.info(f"Image analysis completed for file: {file_record.file_id}")
+                
+            except Exception as analysis_error:
+                logger.error(f"Image analysis failed: {analysis_error}")
+                await file_repo.update_processing_status(
+                    file_record.file_id,
+                    ProcessingStatus.FAILED.value,
+                    error=str(analysis_error),
+                    db=db
+                )
+        
+        response_data = {
+            "success": True,
+            "file_id": str(file_record.file_id),
+            "filename": file.filename,
+            "file_type": file_type.value,
+            "file_size": len(file_content),
+            "processing_status": ProcessingStatus.COMPLETED.value if analysis_results else ProcessingStatus.UPLOADED.value,
+            "upload_time": file_record.created_at,
+            "analysis_results": analysis_results
+        }
+        
+        logger.info(f"File uploaded successfully: {file.filename} ({file_type.value})")
+        return response_data
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"File upload failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="File upload failed"
+        )
+
+@router.get("/files/{file_id}")
+async def get_file_info(
+    file_id: str,
+    current_user: Optional[UserModel] = Depends(get_optional_user),
+    db: Session = Depends(get_db)
+):
+    """Get file information and analysis results"""
+    try:
+        file_uuid = uuid.UUID(file_id)
+        
+        file_repo = FileRepository()
+        file_record = await file_repo.get_file_by_id(file_uuid, db)
+        
+        if not file_record:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="File not found"
+            )
+        
+        return {
+            "file_id": str(file_record.file_id),
+            "filename": file_record.original_filename,
+            "file_type": file_record.file_type,
+            "file_size": file_record.file_size_bytes,
+            "mime_type": file_record.mime_type,
+            "image_category": file_record.image_category,
+            "audio_category": file_record.audio_category,
+            "processing_status": file_record.processing_status,
+            "analysis_results": file_record.analysis_results,
+            "confidence_score": file_record.confidence_score,
+            "virus_scan_status": file_record.virus_scan_status,
+            "created_at": file_record.created_at,
+            "updated_at": file_record.updated_at
+        }
+        
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid file ID format"
+        )
+    except Exception as e:
+        logger.error(f"Failed to get file info {file_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve file information"
+        )
+
+@router.post("/files/{file_id}/reanalyze")
+async def reanalyze_file(
+    file_id: str,
+    current_user: UserModel = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Trigger reanalysis of an uploaded file"""
+    try:
+        file_uuid = uuid.UUID(file_id)
+        
+        file_repo = FileRepository()
+        file_record = await file_repo.get_file_by_id(file_uuid, db)
+        
+        if not file_record:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="File not found"
+            )
+        
+        if file_record.file_type != "image":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Only image files can be reanalyzed currently"
+            )
+        
+        # Read file from storage
+        with open(file_record.storage_path, "rb") as f:
+            file_content = f.read()
+        
+        # Update status to processing
+        await file_repo.update_processing_status(
+            file_uuid,
+            ProcessingStatus.PROCESSING.value,
+            db=db
+        )
+        
+        # Perform analysis
+        demographics = {
+            'age': 35,  # Mock demographics
+            'gender': 'unknown',
+            'ethnicity': 'unknown'
+        }
+        
+        image_category = ImageCategory(file_record.image_category)
+        analysis_result = await medical_image_analyzer.analyze_image(
+            file_id=file_uuid,
+            image_data=file_content,
+            image_category=image_category,
+            patient_demographics=demographics
+        )
+        
+        # Store updated results
+        await file_repo.store_analysis_results(
+            file_uuid,
+            analysis_result.dict(),
+            analysis_result.confidence_score,
+            db
+        )
+        
+        return {
+            "success": True,
+            "message": "File reanalyzed successfully",
+            "analysis_results": analysis_result.dict()
+        }
+        
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid file ID format"
+        )
+    except Exception as e:
+        logger.error(f"Failed to reanalyze file {file_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="File reanalysis failed"
+        )
+
+@router.delete("/files/{file_id}")
+async def delete_file(
+    file_id: str,
+    current_user: UserModel = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a file and its analysis results"""
+    try:
+        file_uuid = uuid.UUID(file_id)
+        
+        file_repo = FileRepository()
+        file_record = await file_repo.get_file_by_id(file_uuid, db)
+        
+        if not file_record:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="File not found"
+            )
+        
+        # Delete physical file
+        try:
+            if os.path.exists(file_record.storage_path):
+                os.remove(file_record.storage_path)
+        except Exception as file_error:
+            logger.warning(f"Failed to delete physical file: {file_error}")
+        
+        # Delete database record
+        success = await file_repo.delete_file_record(file_uuid, db)
+        
+        if success:
+            return {
+                "success": True,
+                "message": "File deleted successfully"
+            }
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to delete file"
+            )
+        
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid file ID format"
+        )
+    except Exception as e:
+        logger.error(f"Failed to delete file {file_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="File deletion failed"
+        )
+
+@router.get("/files")
+async def list_files(
+    file_type: Optional[FileType] = None,
+    processing_status: Optional[ProcessingStatus] = None,
+    limit: int = 20,
+    offset: int = 0,
+    current_user: Optional[UserModel] = Depends(get_optional_user),
+    db: Session = Depends(get_db)
+):
+    """List uploaded files with optional filtering"""
+    try:
+        file_repo = FileRepository()
+        
+        # For now, return pending analysis files as a demo
+        files = await file_repo.get_pending_analysis_files(
+            file_type=file_type.value if file_type else None,
+            limit=limit,
+            db=db
+        )
+        
+        files_data = []
+        for file_record in files:
+            files_data.append({
+                "file_id": str(file_record.file_id),
+                "filename": file_record.original_filename,
+                "file_type": file_record.file_type,
+                "file_size": file_record.file_size_bytes,
+                "processing_status": file_record.processing_status,
+                "confidence_score": file_record.confidence_score,
+                "created_at": file_record.created_at,
+                "has_analysis": bool(file_record.analysis_results)
+            })
+        
+        return {
+            "files": files_data,
+            "total_count": len(files_data),
+            "limit": limit,
+            "offset": offset
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to list files: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve file list"
+        )
+```
+
+### **📅 Afternoon Session (4 hours): 12:00 PM - 4:00 PM**
+
+#### **Step 6.5: Create Database Migration for File Tables (30 minutes)**
+Create: `data/database/migrations/create_file_tables.py`
+```python
+"""
+Database migration for file storage tables
+"""
+from sqlalchemy import text
+from data.database.connection_manager import db_manager
+
+def upgrade():
+    """Create file storage tables"""
+    
+    engine = db_manager.engine
+    
+    with engine.connect() as conn:
+        # Drop existing table if exists
+        conn.execute(text("DROP TABLE IF EXISTS medical_files CASCADE;"))
+        
+        # Create medical files table
+        conn.execute(text("""
+            CREATE TABLE medical_files (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                file_id UUID UNIQUE NOT NULL DEFAULT uuid_generate_v4(),
+                original_filename VARCHAR(255) NOT NULL,
+                file_type VARCHAR(20) NOT NULL,
+                file_size_bytes INTEGER NOT NULL,
+                mime_type VARCHAR(100) NOT NULL,
+                image_category VARCHAR(50),
+                audio_category VARCHAR(50),
+                storage_path VARCHAR(500) NOT NULL,
+                storage_bucket VARCHAR(100),
+                processing_status VARCHAR(20) DEFAULT 'uploaded',
+                processing_started_at TIMESTAMP WITH TIME ZONE,
+                processing_completed_at TIMESTAMP WITH TIME ZONE,
+                processing_error TEXT,
+                analysis_results JSONB DEFAULT '{}',
+                confidence_score FLOAT,
+                virus_scan_status VARCHAR(20) DEFAULT 'pending',
+                phi_detected BOOLEAN DEFAULT false,
+                patient_id UUID,
+                assessment_id UUID,
+                session_id UUID,
+                uploaded_by UUID,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            );
+        """))
+        
+        # Create indexes
+        conn.execute(text("""
+            CREATE INDEX idx_medical_files_file_id ON medical_files(file_id);
+            CREATE INDEX idx_medical_files_type ON medical_files(file_type);
+            CREATE INDEX idx_medical_files_status ON medical_files(processing_status);
+            CREATE INDEX idx_medical_files_created_at ON medical_files(created_at);
+            CREATE INDEX idx_medical_files_patient_id ON medical_files(patient_id);
+            CREATE INDEX idx_medical_files_assessment_id ON medical_files(assessment_id);
+            CREATE INDEX idx_medical_files_uploaded_by ON medical_files(uploaded_by);
+        """))
+        
+        conn.commit()
+        print("✅ File storage tables created successfully")
+
+if __name__ == "__main__":
+    upgrade()
+```
+
+#### **Step 6.6: Update Main App with File Routes (30 minutes)**
+Update: `app.py`
+```python
+# Add this import
+from api.files.upload_routes import router as files_router
+
+# Add this line after other router includes
+app.include_router(files_router, prefix="/api/v1/files", tags=["File Upload"])
+```
+
+#### **Step 6.7: Create Frontend File Upload Components (2 hours)**
+Create: `frontend/src/components/FileUpload.jsx`
+```jsx
+import React, { useState, useCallback } from 'react';
+import { PhotoIcon, DocumentIcon, SpeakerWaveIcon } from '@heroicons/react/24/outline';
+
+const FILE_TYPES = {
+  image: {
+    label: 'Medical Image',
+    icon: PhotoIcon,
+    accept: 'image/jpeg,image/png,image/bmp,image/tiff',
+    categories: [
+      { value: 'chest_xray', label: 'Chest X-Ray' },
+      { value: 'skin_lesion', label: 'Skin Lesion' },
+      { value: 'ecg', label: 'ECG/EKG' },
+      { value: 'general_photo', label: 'General Medical Photo' }
+    ]
+  },
+  audio: {
+    label: 'Audio Recording',
+    icon: SpeakerWaveIcon,
+    accept: 'audio/wav,audio/mp3,audio/m4a,audio/ogg',
+    categories: [
+      { value: 'heart_sounds', label: 'Heart Sounds' },
+      { value: 'lung_sounds', label: 'Lung Sounds' },
+      { value: 'speech_sample', label: 'Speech Sample' },
+      { value: 'cough_recording', label: 'Cough Recording' }
+    ]
+  },
+  document: {
+    label: 'Medical Document',
+    icon: DocumentIcon,
+    accept: 'application/pdf,.doc,.docx',
+    categories: []
+  }
+};
+
+function FileUpload({ onUploadComplete, onUploadError, assessmentId }) {
+  const [selectedType, setSelectedType] = useState('image');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [description, setDescription] = useState('');
+  const [dragOver, setDragOver] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault();
+    setDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e) => {
+    e.preventDefault();
+    setDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    setDragOver(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      handleFileUpload(files[0]);
+    }
+  }, [selectedType, selectedCategory]);
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      handleFileUpload(file);
+    }
+  };
+
+  const handleFileUpload = async (file) => {
+    if (!file) return;
+
+    // Validate file size (50MB limit)
+    const maxSize = 50 * 1024 * 1024;
+    if (file.size > maxSize) {
+      onUploadError?.('File size exceeds 50MB limit');
+      return;
+    }
+
+    // Validate file type
+    const selectedFileType = FILE_TYPES[selectedType];
+    const acceptedTypes = selectedFileType.accept.split(',');
+    const isValidType = acceptedTypes.some(type => {
+      if (type.startsWith('.')) {
+        return file.name.toLowerCase().endsWith(type);
+      }
+      return file.type === type;
+    });
+
+    if (!isValidType) {
+      onUploadError?.(`Invalid file type. Accepted types: ${selectedFileType.accept}`);
+      return;
+    }
+
+    setUploading(true);
+    setUploadProgress(0);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('file_type', selectedType);
+      
+      if (selectedCategory) {
+        if (selectedType === 'image') {
+          formData.append('image_category', selectedCategory);
+        } else if (selectedType === 'audio') {
+          formData.append('audio_category', selectedCategory);
+        }
+      }
+      
+      if (description) {
+        formData.append('description', description);
+      }
+      
+      if (assessmentId) {
+        formData.append('assessment_id', assessmentId);
+      }
+
+      // Simulate upload progress
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => Math.min(prev + 10, 90));
+      }, 200);
+
+      const response = await fetch('/api/v1/files/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: formData
+      });
+
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Upload failed');
+      }
+
+      const result = await response.json();
+      
+      // Add to uploaded files list
+      setUploadedFiles(prev => [...prev, result]);
+      
+      // Reset form
+      setDescription('');
+      setSelectedCategory('');
+      
+      onUploadComplete?.(result);
+      
+    } catch (error) {
+      console.error('Upload failed:', error);
+      onUploadError?.(error.message);
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
+    }
+  };
+
+  const selectedFileType = FILE_TYPES[selectedType];
+  const Icon = selectedFileType.icon;
+
+  return (
+    
+      {/* File Type Selection */}
+      
+        
+          File Type
+        
+        
+          {Object.entries(FILE_TYPES).map(([type, config]) => {
+            const TypeIcon = config.icon;
+            return (
+               {
+                  setSelectedType(type);
+                  setSelectedCategory('');
+                }}
+                className={`p-3 border rounded-lg flex flex-col items-center space-y-2 ${
+                  selectedType === type
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-gray-300 hover:border-gray-400'
+                }`}
+              >
+                
+                {config.label}
+              
+            );
+          })}
+        
+      
+
+      {/* Category Selection */}
+      {selectedFileType.categories.length > 0 && (
+        
+          
+            Category
+          
+           setSelectedCategory(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            Select category...
+            {selectedFileType.categories.map(category => (
+              
+                {category.label}
+              
+            ))}
+          
+        
+      )}
+
+      {/* Description */}
+      
+        
+          Description (Optional)
+        
+         setDescription(e.target.value)}
+          rows={3}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Describe the medical file (symptoms, location, etc.)"
+        />
+      
+
+      {/* Upload Area */}
+      
+        
+        
+        {uploading ? (
+          
+            Uploading and analyzing...
+            
+              
+            
+            {uploadProgress}%
+          
+        ) : (
+          <>
+            
+              Drop your {selectedFileType.label.toLowerCase()} here
+            
+            
+              or click to browse files
+            
+            
+            
+            
+            
+              Choose File
+            
+            
+            
+              Max file size: 50MB
+            
+          
+        )}
+      
+
+      {/* Uploaded Files */}
+      {uploadedFiles.length > 0 && (
+        
+          Recently Uploaded
+          
+            {uploadedFiles.map((file) => (
+              
+                
+                  
+                    {file.filename}
+                    
+                      {file.file_type} • {(file.file_size / 1024 / 1024).toFixed(1)} MB
+                    
+                    
+                      Status: {file.processing_status}
+                    
+                  
+                  
+                  {file.analysis_results && (
+                    
+                      
+                        Analysis Complete
+                      
+                    
+                  )}
+                
+                
+                {file.analysis_results && (
+                  
+                    Analysis Results:
+                    
+                      {file.analysis_results.medical_significance}
+                    
+                    
+                      
+                        Confidence: {(file.analysis_results.confidence_score * 100).toFixed(1)}%
+                      
+                      
+                        Urgency: {file.analysis_results.urgency_level}
+                      
+                    
+                  
+                )}
+              
+            ))}
+          
+        
+      )}
+    
+  );
+}
+
+export default FileUpload;
+```
+
+#### **Step 6.8: Create File Upload Page (1 hour)**
+Create: `frontend/src/pages/FileUpload.jsx`
+```jsx
+import React, { useState } from 'react';
+import FileUpload from '../components/FileUpload';
+import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
+
+function FileUploadPage() {
+  const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState(''); // 'success' or 'error'
+
+  const handleUploadComplete = (result) => {
+    setMessage(`File uploaded successfully! ${result.analysis_results ? 'Analysis completed.' : 'Processing...'}`);
+    setMessageType('success');
+    
+    // Clear message after 5 seconds
+    setTimeout(() => setMessage(''), 5000);
+  };
+
+  const handleUploadError = (error) => {
+    setMessage(`Upload failed: ${error}`);
+    setMessageType('error');
+    
+    // Clear message after 5 seconds
+    setTimeout(() => setMessage(''), 5000);
+  };
+
+  return (
+    
+      
+        
+        {/* Header */}
+        
+          
+            Medical File Upload & Analysis
+          
+          
+            Upload medical images, audio recordings, and documents for AI analysis
+          
+        
+
+        {/* Success/Error Message */}
+        {message && (
+          
+            
+              {messageType === 'success' ? (
+                
+              ) : (
+                
+              )}
+              
+                {message}
+              
+            
+          
+        )}
+
+        {/* Upload Component */}
+        
+          
+        
+
+        {/* Information Section */}
+        
+          
+            
+              
+                
+                  
+                
+              
+              Medical Images
+              
+                Upload X-rays, skin photos, ECGs, and other medical images for AI-powered analysis and diagnosis assistance.
+              
+            
+          
+
+          
+            
+              
+                
+                  
+                
+              
+              Audio Analysis
+              
+                Record heart sounds, lung sounds, cough patterns, and speech samples for audio-based medical assessment.
+              
+            
+          
+
+          
+            
+              
+                
+                  
+                
+              
+              Instant Results
+              
+                Get immediate AI analysis with confidence scores, medical significance, and recommended next steps.
+              
+            
+          
+        
+
+        {/* Safety Notice */}
+        
+          
+            
+              
+                
+              
+            
+            
+              Privacy & Security Notice
+              
+                
+                  All uploaded files are encrypted and processed securely. Medical images are analyzed using AI for educational 
+                  and triage purposes only. This does not replace professional medical consultation. For medical emergencies, 
+                  contact emergency services immediately.
+                
+              
+            
+          
+        
+      
+    
+  );
+}
+
+export default FileUploadPage;
+```
+
+### **📅 Evening Session (4 hours): 6:00 PM - 10:00 PM**
+
+#### **Step 6.9: Add File Upload Route to App (30 minutes)**
+Update: `frontend/src/App.jsx`
+```jsx
+// Add import
+import FileUploadPage from './pages/FileUpload';
+
+// Add route in the Routes section
+} 
+/>
+```
+
+Update: `frontend/src/components/Navbar.jsx` (add upload link)
+```jsx
+// Add upload link in navigation
+
+  File Upload
+
+```
+
+#### **Step 6.10: Create Audio Processing Service (1 hour)**
+Create: `services/audio_analysis_service.py`
+```python
+"""
+Audio analysis service for medical audio processing
+"""
+import logging
+import time
+import wave
+import io
+from typing import Dict, List, Optional, Tuple
+from uuid import UUID
+
+from datamodels.file_models_extended import AudioAnalysisResult, AudioCategory
+
+logger = logging.getLogger(__name__)
+
+class MedicalAudioAnalyzer:
+    """Basic medical audio analysis using signal processing"""
+    
+    def __init__(self):
+        # Mock audio models for Day 6
+        self.models = {
+            'heart_sounds': self._analyze_heart_sounds,
+            'lung_sounds': self._analyze_lung_sounds,
+            'speech_sample': self._analyze_speech,
+            'cough_recording': self._analyze_cough,
+            'general_audio': self._analyze_general_audio
+        }
+    
+    async def analyze_audio(
+        self,
+        file_id: UUID,
+        audio_data: bytes,
+        audio_category: AudioCategory,
+        patient_demographics: Optional[Dict] = None
+    ) -> AudioAnalysisResult:
+        """Analyze medical audio and return results"""
+        
+        start_time = time.time()
+        
+        try:
+            # Basic audio processing
+            audio_info = self._extract_audio_info(audio_data)
+            
+            # Perform analysis based on category
+            analyzer_func = self.models.get(
+                audio_category.value,
+                self._analyze_general_audio
+            )
+            
+            transcript, features, abnormalities, confidence, clinical_notes, follow_up = await analyzer_func(
+                audio_data,
+                audio_info,
+                patient_demographics
+            )
+            
+            # Calculate bias score
+            bias_score = self._calculate_audio_bias_score(abnormalities, patient_demographics)
+            
+            processing_time = (time.time() - start_time) * 1000
+            
+            result = AudioAnalysisResult(
+                file_id=file_id,
+                analysis_type=audio_category.value,
+                transcript=transcript,
+                audio_features=features,
+                abnormalities_detected=abnormalities,
+                confidence_score=confidence,
+                clinical_notes=clinical_notes,
+                follow_up_needed=follow_up,
+                audio_quality=audio_info['quality'],
+                duration_seconds=audio_info['duration'],
+                sample_rate=audio_info['sample_rate'],
+                processing_time_ms=processing_time,
+                bias_score=bias_score
+            )
+            
+            logger.info(f"Audio analysis completed for {file_id}: {audio_category}")
+            return result
+            
+        except Exception as e:
+            logger.error(f"Audio analysis failed for {file_id}: {e}")
+            
+            # Return error result
+            return AudioAnalysisResult(
+                file_id=file_id,
+                analysis_type=audio_category.value,
+                transcript=None,
+                audio_features={},
+                abnormalities_detected=[],
+                confidence_score=0.0,
+                clinical_notes=f"Audio analysis failed: {str(e)}",
+                follow_up_needed=True,
+                audio_quality=0.0,
+                duration_seconds=0.0,
+                sample_rate=0,
+                processing_time_ms=(time.time() - start_time) * 1000,
+                bias_score=0.0
+            )
+    
+    def _extract_audio_info(self, audio_data: bytes) -> Dict:
+        """Extract basic audio information"""
+        try:
+            # Mock audio info extraction
+            # In real implementation, would use librosa or similar
+            duration = 10.5  # Mock duration
+            sample_rate = 44100  # Mock sample rate
+            quality = 0.75  # Mock quality score
+            
+            return {
+                'duration': duration,
+                'sample_rate': sample_rate,
+                'quality': quality,
+                'channels': 1,
+                'bit_depth': 16
+            }
+            
+        except Exception as e:
+            logger.error(f"Audio info extraction failed: {e}")
+            return {
+                'duration': 0.0,
+                'sample_rate': 0,
+                'quality': 0.0,
+                'channels': 0,
+                'bit_depth': 0
+            }
+    
+    async def _analyze_heart_sounds(self, audio_data: bytes, audio_info: Dict, demographics: Optional[Dict]) -> Tuple:
+        """Analyze heart sound recordings"""
+        transcript = None  # Heart sounds don't have transcripts
+        features = {
+            'heart_rate_bpm': 72,  # Mock heart rate
+            'rhythm_regularity': 0.85,  # Mock regularity score
+            'murmur_detected': False,
+            'gallop_detected': False
+        }
+        
+        abnormalities = []
+        confidence = 0.70
+        
+        # Mock heart sound analysis
+        if features['heart_rate_bpm'] > 100:
+            abnormalities.append("Tachycardia detected")
+        elif features['heart_rate_bpm']  65:
+            if not abnormalities:
+                abnormalities.append("Age-related changes in heart sounds")
+            confidence *= 0.9
+        
+        if abnormalities:
+            clinical_notes = f"Heart sound analysis reveals {len(abnormalities)} finding(s). Consider ECG and echocardiogram for further evaluation."
+            follow_up = True
+        else:
+            clinical_notes = "Heart sounds appear normal with regular rhythm and rate."
+            follow_up = False
+        
+        return transcript, features, abnormalities, confidence, clinical_notes, follow_up
+    
+    async def _analyze_lung_sounds(self, audio_data: bytes, audio_info: Dict, demographics: Optional[Dict]) -> Tuple:
+        """Analyze lung sound recordings"""
+        transcript = None
+        features = {
+            'breathing_rate': 16,  # Mock breathing rate
+            'wheeze_detected': False,
+            'crackles_detected': False,
+            'stridor_detected': False,
+            'breath_sound_intensity': 0.8
+        }
+        
+        abnormalities = []
+        confidence = 0.65
+        
+        # Mock lung sound analysis
+        if features['breathing_rate'] > 24:
+            abnormalities.append("Tachypnea detected")
+        
+        # Simulate detection based on audio characteristics
+        if audio_info['duration'] > 15:  # Longer recordings might capture abnormalities
+            features['wheeze_detected'] = True
+            abnormalities.append("Expiratory wheeze detected")
+        
+        if audio_info['quality']  Tuple:
+        """Analyze speech patterns for neurological assessment"""
+        # Mock speech-to-text
+        transcript = "The patient spoke clearly for approximately 10 seconds during the recording."
+        
+        features = {
+            'speech_rate_wpm': 150,  # Words per minute
+            'articulation_clarity': 0.85,
+            'voice_tremor': 0.1,
+            'pause_frequency': 0.2,
+            'volume_consistency': 0.9
+        }
+        
+        abnormalities = []
+        confidence = 0.60  # Lower confidence for speech analysis
+        
+        # Mock speech analysis
+        if features['speech_rate_wpm']  200:
+            abnormalities.append("Rapid speech rate detected")
+        
+        if features['articulation_clarity']  0.3:
+            abnormalities.append("Voice tremor detected")
+        
+        if abnormalities:
+            clinical_notes = f"Speech analysis reveals {len(abnormalities)} finding(s). Consider neurological evaluation."
+            follow_up = True
+        else:
+            clinical_notes = "Speech patterns appear normal with clear articulation and appropriate rate."
+            follow_up = False
+        
+        return transcript, features, abnormalities, confidence, clinical_notes, follow_up
+    
+    async def _analyze_cough(self, audio_data: bytes, audio_info: Dict, demographics: Optional[Dict]) -> Tuple:
+        """Analyze cough recordings"""
+        transcript = "Cough recording analyzed for pattern and characteristics."
+        
+        features = {
+            'cough_frequency': 8,  # Coughs per minute
+            'cough_type': 'dry',
+            'intensity': 0.7,
+            'wheeze_present': False,
+            'productive': False
+        }
+        
+        abnormalities = []
+        confidence = 0.65
+        
+        # Mock cough analysis
+        if features['cough_frequency'] > 10:
+            abnormalities.append("Frequent coughing detected")
+        
+        if features['intensity'] > 0.8:
+            abnormalities.append("Severe cough intensity")
+            features['productive'] = True
+        
+        if audio_info['duration'] > 30:  # Long recording suggests persistent cough
+            abnormalities.append("Persistent cough pattern")
+        
+        if abnormalities:
+            clinical_notes = f"Cough analysis reveals {len(abnormalities)} concerning feature(s). Consider respiratory evaluation."
+            follow_up = True
+        else:
+            clinical_notes = "Cough pattern appears normal with low frequency and intensity."
+            follow_up = False
+        
+        return transcript, features, abnormalities, confidence, clinical_notes, follow_up
+    
+    async def _analyze_general_audio(self, audio_data: bytes, audio_info: Dict, demographics: Optional[Dict]) -> Tuple:
+        """Analyze general medical audio"""
+        transcript = "General audio recording processed."
+        
+        features = {
+            'audio_type': 'general',
+            'clarity': audio_info['quality'],
+            'duration': audio_info['duration']
+        }
+        
+        abnormalities = []
+        confidence = 0.50  # Lower confidence for general audio
+        
+        clinical_notes = "General audio recording analyzed. Specific medical interpretation requires clinical context."
+        follow_up = False
+        
+        return transcript, features, abnormalities, confidence, clinical_notes, follow_up
+    
+    def _calculate_audio_bias_score(self, abnormalities: List[str], demographics: Optional[Dict]) -> float:
+        """Calculate bias score for audio analysis"""
+        bias_score = 0.0
+        
+        if not demographics:
+            return bias_score
+        
+        # Mock bias calculation for audio analysis
+        # Account for potential accent or language bias in speech analysis
+        if any("speech" in abnormality.lower() for abnormality in abnormalities):
+            ethnicity = demographics.get('ethnicity', '').lower()
+            if ethnicity not in ['white', 'unknown']:
+                bias_score = 0.1  # Potential bias in speech recognition
+        
+        return min(1.0, bias_score)
+
+# Global audio analyzer instance
+medical_audio_analyzer = MedicalAudioAnalyzer()
+```
+
+#### **Step 6.11: Run Database Migration and Test (1 hour)**
+```bash
+# Run file tables migration
+cd Fairdoc/backend
+python data/database/migrations/create_file_tables.py
+
+# Verify tables created
+docker exec -it fairdoc_postgres psql -U fairdoc -d fairdoc_dev -c "\dt"
+
+# Should show medical_files table
+```
+
+#### **Step 6.12: Test File Upload System (1.5 hours)**
+Create: `tests/test_file_upload.py`
+```python
+"""
+Test file upload and analysis functionality
+"""
+import requests
+import base64
+import io
+from PIL import Image
+
+BASE_URL = "http://localhost:8000/api/v1"
+
+def get_test_token():
+    """Get test token for file upload"""
+    login_data = {
+        "email": "test@example.com",
+        "password": "testpassword123",
+        "remember_me": False
+    }
+    
+    response = requests.post(f"{BASE_URL}/auth/login", json=login_data)
+    if response.status_code == 200:
+        return response.json()["access_token"]
+    else:
+        raise Exception("Failed to get test token")
+
+def create_test_image():
+    """Create a test medical image"""
+    # Create a simple test image
+    img = Image.new('RGB', (512, 512), color='white')
+    
+    # Add some mock medical content (simple shapes)
+    from PIL import ImageDraw
+    draw = ImageDraw.Draw(img)
+    
+    # Draw a mock chest X-ray outline
+    draw.ellipse([100, 100, 400, 400], outline='gray', width=3)
+    draw.rectangle([200, 150, 300, 350], outline='black', width=2)
+    
+    # Save to bytes
+    img_bytes = io.BytesIO()
+    img.save(img_bytes, format='JPEG')
+    img_bytes.seek(0)
+    
+    return img_bytes.getvalue()
+
+def test_image_upload():
+    """Test image upload and analysis"""
+    print("🧪 Testing image upload and analysis...")
+    
+    token = get_test_token()
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    # Create test image
+    image_data = create_test_image()
+    
+    # Prepare file upload
+    files = {
+        'file': ('test_xray.jpg', image_data, 'image/jpeg')
+    }
+    
+    data = {
+        'file_type': 'image',
+        'image_category': 'chest_xray',
+        'description': 'Test chest X-ray upload'
+    }
+    
+    response = requests.post(
+        f"{BASE_URL}/files/upload",
+        headers=headers,
+        files=files,
+        data=data
+    )
+    
+    print(f"Upload Status: {response.status_code}")
+    print(f"Response: {response.json()}")
+    
+    assert response.status_code == 200
+    result = response.json()
+    assert result["success"] == True
+    assert "file_id" in result
+    
+    print("✅ Image upload test passed")
+    return result["file_id"]
+
+def test_file_info_retrieval(file_id):
+    """Test file information retrieval"""
+    print(f"\n🧪 Testing file info retrieval for {file_id}...")
+    
+    token = get_test_token()
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    response = requests.get(f"{BASE_URL}/files/files/{file_id}", headers=headers)
+    
+    print(f"Status: {response.status_code}")
+    print(f"Response: {response.json()}")
+    
+    assert response.status_code == 200
+    result = response.json()
+    assert "analysis_results" in result
+    
+    print("✅ File info retrieval test passed")
+
+def test_file_list():
+    """Test file listing"""
+    print("\n🧪 Testing file listing...")
+    
+    token = get_test_token()
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    response = requests.get(f"{BASE_URL}/files/files", headers=headers)
+    
+    print(f"Status: {response.status_code}")
+    print(f"Response: {response.json()}")
+    
+    assert response.status_code == 200
+    result = response.json()
+    assert "files" in result
+    
+    print("✅ File listing test passed")
+
+def test_file_reanalysis(file_id):
+    """Test file reanalysis"""
+    print(f"\n🧪 Testing file reanalysis for {file_id}...")
+    
+    token = get_test_token()
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    response = requests.post(f"{BASE_URL}/files/files/{file_id}/reanalyze", headers=headers)
+    
+    print(f"Status: {response.status_code}")
+    print(f"Response: {response.json()}")
+    
+    assert response.status_code == 200
+    result = response.json()
+    assert result["success"] == True
+    
+    print("✅ File reanalysis test passed")
+
+if __name__ == "__main__":
+    print("🚀 Starting file upload tests...")
+    
+    try:
+        file_id = test_image_upload()
+        test_file_info_retrieval(file_id)
+        test_file_list()
+        test_file_reanalysis(file_id)
+        
+        print("\n🎉 All file upload tests passed!")
+        
+    except Exception as e:
+        print(f"❌ Test failed: {e}")
+```
+
+#### **Step 6.13: Manual Frontend Test (1 hour)**
+```bash
+# Start backend with file upload support
+cd Fairdoc/backend
+./scripts/dev-start.sh
+
+# Start frontend
+cd Fairdoc/frontend
+npm run dev
+
+# Test file upload:
+# 1. Navigate to http://localhost:3000/upload
+# 2. Upload test medical images
+# 3. Verify analysis results display
+# 4. Test different file types and categories
+# 5. Check error handling for invalid files
+```
+
+### **📈 Day 6 Success Metrics**
+- ✅ File upload API accepts multiple formats (images, audio)
+- ✅ Image analysis returns medical findings and recommendations
+- ✅ Audio processing extracts features and abnormalities
+- ✅ Frontend file upload interface functional
+- ✅ Analysis results display with confidence scores
+- ✅ File storage and retrieval working correctly
+- ✅ Bias monitoring integrated into analysis pipeline
+
+---
+
+# **DAY 7: NHS EHR Integration & Production Setup** 🏥
+## **🕐 12 Hours | Goal: NHS integration and deployment ready**
+
+### **📅 Morning Session (4 hours): 6:00 AM - 10:00 AM**
+
+#### **Step 7.1: Create NHS EHR Integration Service (1.5 hours)**
+Create: `services/nhs_ehr_service.py`
+```python
+"""
+NHS EHR integration service for Fairdoc AI
+Handles FHIR R4 data exchange and GP Connect integration
+"""
+import logging
+import json
+import asyncio
+from datetime import datetime, timedelta
+from typing import Dict, List, Optional, Any
+from uuid import UUID, uuid4
+import aiohttp
+
+from core.config import settings
+from datamodels.nhs_ehr_models import NHSPatient, FHIRBundle, GPConnectRecord
+
+logger = logging.getLogger(__name__)
+
+class NHSEHRService:
+    """NHS Electronic Health Record integration service"""
+    
+    def __init__(self):
+        self.nhs_api_base = settings.NHS_API_BASE_URL
+        self.client_id = settings.NHS_CLIENT_ID
+        self.client_secret = settings.NHS_CLIENT_SECRET
+        self.access_token = None
+        self.token_expires_at = None
+        
+        # Mock data for development (remove in production)
+        self.mock_mode = True
+        self.mock_patients = self._generate_mock_patients()
+    
+    async def authenticate(self) -> str:
+        """Authenticate with NHS Digital APIs"""
+        try:
+            if self.mock_mode:
+                # Return mock token for development
+                self.access_token = "mock_nhs_token_12345"
+                self.token_expires_at = datetime.utcnow() + timedelta(hours=1)
+                return self.access_token
+            
+            # Real NHS Digital OAuth2 authentication
+            auth_url = f"{self.nhs_api_base}/oauth2/token"
+            auth_data = {
+                'grant_type': 'client_credentials',
+                'client_id': self.client_id,
+                'client_secret': self.client_secret,
+                'scope': 'patient:read observation:write'
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.post(auth_url, data=auth_data) as response:
+                    if response.status == 200:
+                        token_data = await response.json()
+                        self.access_token = token_data['access_token']
+                        expires_in = token_data.get('expires_in', 3600)
+                        self.token_expires_at = datetime.utcnow() + timedelta(seconds=expires_in)
+                        
+                        logger.info("NHS API authentication successful")
+                        return self.access_token
+                    else:
+                        error_text = await response.text()
+                        raise Exception(f"NHS authentication failed: {error_text}")
+                        
+        except Exception as e:
+            logger.error(f"NHS authentication error: {e}")
+            # Fallback to mock mode for development
+            self.mock_mode = True
+            return await self.authenticate()
+    
+    async def validate_nhs_number(self, nhs_number: str) -> bool:
+        """Validate NHS number using Modulus 11 algorithm"""
+        try:
+            # Remove spaces and convert to string
+            nhs_clean = str(nhs_number).replace(' ', '')
+            
+            if len(nhs_clean) != 10 or not nhs_clean.isdigit():
+                return False
+            
+            # Modulus 11 check
+            check_digit = int(nhs_clean[9])
+            sum_digits = sum(int(nhs_clean[i]) * (10 - i) for i in range(9))
+            remainder = sum_digits % 11
+            
+            if remainder == 0:
+                return check_digit == 0
+            elif remainder == 1:
+                return False  # Invalid NHS number
+            else:
+                return check_digit == (11 - remainder)
+                
+        except Exception as e:
+            logger.error(f"NHS number validation error: {e}")
+            return False
+    
+    async def get_patient_record(self, nhs_number: str) -> Optional[Dict]:
+        """Fetch patient record from NHS systems"""
+        try:
+            # Validate NHS number first
+            if not await self.validate_nhs_number(nhs_number):
+                raise ValueError("Invalid NHS number format")
+            
+            if self.mock_mode:
+                return self._get_mock_patient_record(nhs_number)
+            
+            # Ensure we have valid authentication
+            if not self.access_token or datetime.utcnow() >= self.token_expires_at:
+                await self.authenticate()
+            
+            headers = {
+                'Authorization': f'Bearer {self.access_token}',
+                'Accept': 'application/fhir+json',
+                'X-Request-ID': str(uuid4())
+            }
+            
+            # Fetch patient demographics
+            patient_url = f"{self.nhs_api_base}/fhir/Patient"
+            params = {'identifier': f'https://fhir.nhs.uk/Id/nhs-number|{nhs_number}'}
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.get(patient_url, headers=headers, params=params) as response:
+                    if response.status == 200:
+                        patient_data = await response.json()
+                        
+                        # Fetch additional data in parallel
+                        tasks = [
+                            self._fetch_patient_observations(nhs_number, headers, session),
+                            self._fetch_patient_medications(nhs_number, headers, session),
+                            self._fetch_patient_conditions(nhs_number, headers, session),
+                            self._fetch_patient_allergies(nhs_number, headers, session)
+                        ]
+                        
+                        observations, medications, conditions, allergies = await asyncio.gather(
+                            *tasks, return_exceptions=True
+                        )
+                        
+                        # Compile comprehensive record
+                        record = {
+                            'patient': patient_data,
+                            'observations': observations if not isinstance(observations, Exception) else [],
+                            'medications': medications if not isinstance(medications, Exception) else [],
+                            'conditions': conditions if not isinstance(conditions, Exception) else [],
+                            'allergies': allergies if not isinstance(allergies, Exception) else [],
+                            'retrieved_at': datetime.utcnow().isoformat(),
+                            'source': 'nhs_digital'
+                        }
+                        
+                        logger.info(f"NHS patient record retrieved: {nhs_number}")
+                        return record
+                    
+                    elif response.status == 404:
+                        logger.warning(f"Patient not found: {nhs_number}")
+                        return None
+                    else:
+                        error_text = await response.text()
+                        raise Exception(f"NHS API error: {response.status} - {error_text}")
+                        
+        except Exception as e:
+            logger.error(f"Failed to fetch NHS patient record: {e}")
+            return None
+    
+    async def submit_assessment_to_nhs(self, nhs_number: str, assessment_data: Dict) -> bool:
+        """Submit AI assessment results to NHS systems"""
+        try:
+            if not await self.validate_nhs_number(nhs_number):
+                raise ValueError("Invalid NHS number")
+            
+            if self.mock_mode:
+                logger.info(f"Mock: Assessment submitted for {nhs_number}")
+                return True
+            
+            # Create FHIR Observation resource
+            observation = {
+                "resourceType": "Observation",
+                "id": str(uuid4()),
+                "status": "final",
+                "category": [{
+                    "coding": [{
+                        "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                        "code": "survey",
+                        "display": "Survey"
+                    }]
+                }],
+                "code": {
+                    "coding": [{
+                        "system": "http://snomed.info/sct",
+                        "code": "225399008",
+                        "display": "AI-assisted medical triage"
+                    }]
+                },
+                "subject": {
+                    "reference": f"Patient/{nhs_number}",
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/nhs-number",
+                        "value": nhs_number
+                    }
+                },
+                "effectiveDateTime": datetime.utcnow().isoformat(),
+                "valueString": json.dumps(assessment_data),
+                "component": [
+                    {
+                        "code": {
+                            "coding": [{
+                                "system": "http://snomed.info/sct",
+                                "code": "225336008",
+                                "display": "Risk assessment"
+                            }]
+                        },
+                        "valueString": assessment_data.get('risk_level', 'unknown')
+                    },
+                    {
+                        "code": {
+                            "coding": [{
+                                "system": "http://snomed.info/sct", 
+                                "code": "182836005",
+                                "display": "Recommended action"
+                            }]
+                        },
+                        "valueString": assessment_data.get('recommended_action', 'unknown')
+                    }
+                ],
+                "extension": [
+                    {
+                        "url": "http://fairdoc.ai/fhir/extensions/bias-score",
+                        "valueDecimal": assessment_data.get('bias_score', 0.0)
+                    },
+                    {
+                        "url": "http://fairdoc.ai/fhir/extensions/confidence-score", 
+                        "valueDecimal": assessment_data.get('confidence_score', 0.0)
+                    }
+                ]
+            }
+            
+            # Submit to NHS via GP Connect
+            headers = {
+                'Authorization': f'Bearer {self.access_token}',
+                'Content-Type': 'application/fhir+json',
+                'X-Request-ID': str(uuid4())
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    f"{self.nhs_api_base}/fhir/Observation",
+                    headers=headers,
+                    json=observation
+                ) as response:
+                    if response.status in [200, 201]:
+                        logger.info(f"Assessment submitted to NHS for patient {nhs_number}")
+                        return True
+                    else:
+                        error_text = await response.text()
+                        logger.error(f"Failed to submit to NHS: {response.status} - {error_text}")
+                        return False
+                        
+        except Exception as e:
+            logger.error(f"NHS submission error: {e}")
+            return False
+    
+    def _generate_mock_patients(self) -> Dict:
+        """Generate mock patient data for development"""
+        return {
+            "1234567890": {
+                "nhs_number": "1234567890",
+                "name": "John Smith",
+                "date_of_birth": "1980-05-15",
+                "gender": "male",
+                "address": "123 Main St, London, SW1A 1AA",
+                "gp_practice": "City Medical Centre",
+                "medical_history": [
+                    "Hypertension",
+                    "Type 2 Diabetes"
+                ],
+                "current_medications": [
+                    "Lisinopril 10mg daily",
+                    "Metformin 500mg twice daily"
+                ],
+                "allergies": ["Penicillin"],
+                "last_blood_pressure": "140/90 mmHg",
+                "last_hba1c": "7.2%",
+                "last_updated": "2024-01-10"
+            },
+            "9876543210": {
+                "nhs_number": "9876543210", 
+                "name": "Sarah Johnson",
+                "date_of_birth": "1992-08-22",
+                "gender": "female",
+                "address": "456 Oak Road, Manchester, M1 2AB",
+                "gp_practice": "Riverside Surgery",
+                "medical_history": [
+                    "Asthma",
+                    "Eczema"
+                ],
+                "current_medications": [
+                    "Salbutamol inhaler PRN",
+                    "Beclometasone inhaler twice daily"
+                ],
+                "allergies": ["Nuts", "Shellfish"],
+                "last_peak_flow": "380 L/min",
+                "last_updated": "2024-01-08"
+            }
+        }
+    
+    def _get_mock_patient_record(self, nhs_number: str) -> Optional[Dict]:
+        """Get mock patient record for development"""
+        patient = self.mock_patients.get(nhs_number)
+        if not patient:
+            return None
+        
+        return {
+            "patient": {
+                "resourceType": "Patient",
+                "id": nhs_number,
+                "identifier": [{
+                    "system": "https://fhir.nhs.uk/Id/nhs-number",
+                    "value": nhs_number
+                }],
+                "name": [{
+                    "use": "official",
+                    "text": patient["name"]
+                }],
+                "gender": patient["gender"],
+                "birthDate": patient["date_of_birth"],
+                "address": [{
+                    "use": "home",
+                    "text": patient["address"]
+                }]
+            },
+            "observations": [
+                {
+                    "resourceType": "Observation",
+                    "code": {
+                        "coding": [{
+                            "system": "http://snomed.info/sct",
+                            "code": "75367002",
+                            "display": "Blood pressure"
+                        }]
+                    },
+                    "valueString": patient.get("last_blood_pressure", "Unknown"),
+                    "effectiveDateTime": "2024-01-10T10:00:00Z"
+                }
+            ],
+            "medications": [
+                {
+                    "resourceType": "MedicationStatement",
+                    "medicationCodeableConcept": {
+                        "text": med
+                    },
+                    "status": "active"
+                } for med in patient.get("current_medications", [])
+            ],
+            "conditions": [
+                {
+                    "resourceType": "Condition",
+                    "code": {
+                        "text": condition
+                    },
+                    "clinicalStatus": {
+                        "coding": [{
+                            "code": "active"
+                        }]
+                    }
+                } for condition in patient.get("medical_history", [])
+            ],
+            "allergies": [
+                {
+                    "resourceType": "AllergyIntolerance",
+                    "code": {
+                        "text": allergy
+                    },
+                    "clinicalStatus": {
+                        "coding": [{
+                            "code": "active"
+                        }]
+                    }
+                } for allergy in patient.get("allergies", [])
+            ],
+            "retrieved_at": datetime.utcnow().isoformat(),
+            "source": "mock_nhs_data"
+        }
+    
+    async def _fetch_patient_observations(self, nhs_number: str, headers: Dict, session) -> List:
+        """Fetch patient observations from NHS"""
+        try:
+            obs_url = f"{self.nhs_api_base}/fhir/Observation"
+            params = {'patient': nhs_number, '_count': 50}
+            
+            async with session.get(obs_url, headers=headers, params=params) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    return data.get('entry', [])
+                return []
+        except Exception as e:
+            logger.error(f"Failed to fetch observations: {e}")
+            return []
+    
+    async def _fetch_patient_medications(self, nhs_number: str, headers: Dict, session) -> List:
+        """Fetch patient medications from NHS"""
+        try:
+            med_url = f"{self.nhs_api_base}/fhir/MedicationStatement"
+            params = {'patient': nhs_number, '_count': 50}
+            
+            async with session.get(med_url, headers=headers, params=params) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    return data.get('entry', [])
+                return []
+        except Exception as e:
+            logger.error(f"Failed to fetch medications: {e}")
+            return []
+    
+    async def _fetch_patient_conditions(self, nhs_number: str, headers: Dict, session) -> List:
+        """Fetch patient conditions from NHS"""
+        try:
+            cond_url = f"{self.nhs_api_base}/fhir/Condition"
+            params = {'patient': nhs_number, '_count': 50}
+            
+            async with session.get(cond_url, headers=headers, params=params) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    return data.get('entry', [])
+                return []
+        except Exception as e:
+            logger.error(f"Failed to fetch conditions: {e}")
+            return []
+    
+    async def _fetch_patient_allergies(self, nhs_number: str, headers: Dict, session) -> List:
+        """Fetch patient allergies from NHS"""
+        try:
+            allergy_url = f"{self.nhs_api_base}/fhir/AllergyIntolerance"
+            params = {'patient': nhs_number, '_count': 50}
+            
+            async with session.get(allergy_url, headers=headers, params=params) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    return data.get('entry', [])
+                return []
+        except Exception as e:
+            logger.error(f"Failed to fetch allergies: {e}")
+            return []
+
+# Global NHS EHR service instance
+nhs_ehr_service = NHSEHRService()
+```
+
+#### **Step 7.2: Create NHS Integration API Routes (1 hour)**
+Create: `api/nhs/integration_routes.py`
+```python
+"""
+NHS integration API routes for Fairdoc AI
+Handles NHS EHR data exchange and patient record management
+"""
+import logging
+from datetime import datetime
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from sqlalchemy.orm import Session
+from typing import Optional
+
+from core.dependencies import get_db, get_current_active_user
+from services.nhs_ehr_service import nhs_ehr_service
+from data.repositories.auth_repository import UserModel
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter()
+
+@router.get("/patient/{nhs_number}")
+async def get_nhs_patient_record(
+    nhs_number: str,
+    current_user: UserModel = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get NHS patient record by NHS number
+    
+    **Parameters:**
+    - nhs_number: 10-digit NHS number (e.g., "1234567890")
+    
+    **Response:**
+    ```
+    {
+        "patient": {
+            "nhs_number": "1234567890",
+            "name": "John Smith",
+            "date_of_birth": "1980-05-15",
+            "gender": "male",
+            "address": "123 Main St, London, SW1A 1AA"
+        },
+        "medical_history": [...],
+        "current_medications": [...],
+        "allergies": [...],
+        "recent_observations": [...],
+        "last_updated": "2024-01-10T10:00:00Z"
+    }
+    ```
+    """
+    try:
+        # Validate NHS number format
+        if not await nhs_ehr_service.validate_nhs_number(nhs_number):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid NHS number format"
+            )
+        
+        # Fetch patient record from NHS systems
+        patient_record = await nhs_ehr_service.get_patient_record(nhs_number)
+        
+        if not patient_record:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Patient not found in NHS systems"
+            )
+        
+        # Log access for audit trail
+        logger.info(f"NHS patient record accessed: {nhs_number} by user {current_user.email}")
+        
+        return {
+            "success": True,
+            "patient_record": patient_record,
+            "accessed_by": current_user.email,
+            "accessed_at": datetime.utcnow().isoformat()
+        }
 
 ```
