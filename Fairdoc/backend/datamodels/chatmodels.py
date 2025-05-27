@@ -536,12 +536,14 @@ class ConversationAnalytics(BaseModel):
     required_follow_up: int
     emergency_escalations: int
 
+
+
 # Default conversation flow templates
 DEFAULT_CONVERSATION_FLOWS = {
     ChatSessionType.INITIAL_TRIAGE: [
         "greeting",
         "chief_complaint",
-        "symptom_assessment", 
+        "symptom_assessment",
         "vital_signs",
         "medical_history",
         "risk_assessment",
