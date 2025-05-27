@@ -181,7 +181,7 @@ def download_nltk_data() -> bool:
     nltk_packages = [
         ("punkt", "Punkt tokenizer"),
         ("stopwords", "Stop words corpus"),
-        ("wordnet", "WordNet lexical database"), 
+        ("wordnet", "WordNet lexical database"),
         ("omw-1.4", "Open Multilingual Wordnet"),
         ("averaged_perceptron_tagger", "POS tagger"),
         ("vader_lexicon", "Sentiment analysis lexicon"),
@@ -195,7 +195,7 @@ def download_nltk_data() -> bool:
         try:
             print_debug(f"Downloading NLTK {package} ({description})...")
             cmd = [
-                sys.executable, "-c", 
+                sys.executable, "-c",
                 f"import nltk; nltk.download('{package}', quiet=True); print('Downloaded {package}')"
             ]
             returncode, stdout, stderr = run_subprocess_safe(cmd, timeout=120)
@@ -235,7 +235,7 @@ def verify_installation() -> bool:
     for package, description in verification_packages:
         try:
             cmd = [
-                sys.executable, "-c", 
+                sys.executable, "-c",
                 f"import {package}; print(f'{package}: {{getattr({package}, \"__version__\", \"unknown\")}}')"
             ]
             returncode, stdout, stderr = run_subprocess_safe(cmd, timeout=10)
