@@ -283,6 +283,7 @@ class DatabaseManager:
         if self.redis_client:
             await self.redis_client.close()
 
+
 # Load environment configuration first
 current_environment = load_environment_config()
 
