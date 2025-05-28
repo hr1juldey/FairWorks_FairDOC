@@ -41,52 +41,71 @@ A **multi-agent AI orchestration platform** that:
 ### 🗂️ System Architecture Overview
 
 ```mermaid
-graph RL
+
+graph LR
+    %% Frontend Layer
     subgraph "Frontend Layer"
-        A[NHS App Integration] --> B[Patient Interface]
-        B --> C[Doctor Dashboard]
+        A[NHS App Integration]:::frontend --> B[Patient Interface]:::frontend
+        B --> C[Doctor Dashboard]:::frontend
     end
-    
+
+    %% API Gateway
     subgraph "API Gateway"
-        D[FastAPI REST] --> E[WebSocket Manager]
-        E --> F[Authentication Layer]
+        D[FastAPI REST]:::gateway --> E[WebSocket Manager]:::gateway
+        E --> F[Authentication Layer]:::gateway
     end
-    
+
+    %% AI Orchestration
     subgraph "AI Orchestration Layer"
-        G[Router Engine] --> H[Model Selector]
-        H --> I[Bias Monitor]
-        I --> J[Context Manager]
+        G[Router Engine]:::ai --> H[Model Selector]:::ai
+        H --> I[Bias Monitor]:::ai
+        I --> J[Context Manager]:::ai
     end
-    
+
+    %% Specialized ML Services
     subgraph "Specialized ML Services"
-        K[Text NLP Service]
-        L[Image Analysis Service]
-        M[Audio Processing Service]
-        N[Time Series Service]
-        O[Risk Classifier Service]
+        K[Text NLP Service]:::ml
+        L[Image Analysis Service]:::ml
+        M[Audio Processing Service]:::ml
+        N[Time Series Service]:::ml
+        O[Risk Classifier Service]:::ml
     end
-    
+
+    %% Queue & Cache
     subgraph "Message Queue & Cache"
-        P[Celery Workers] --> Q[Redis Cache]
-        Q --> R[ChromaDB Vector Store]
+        P[Celery Workers]:::queue --> Q[Redis Cache]:::queue
+        Q --> R[ChromaDB Vector Store]:::queue
     end
-    
+
+    %% Data Layer
     subgraph "Data Layer"
-        S[NHS EHR Integration] --> T[FHIR R4 API]
-        T --> U[PostgreSQL DB]
+        S[NHS EHR Integration]:::data --> T[FHIR R4 API]:::data
+        T --> U[PostgreSQL DB]:::data
     end
-    
+
+    %% Network Layer
     subgraph "Network Layer"
-        V[Specialist Marketplace] --> W[Doctor Availability]
-        W --> X[Consultation Router]
+        V[Specialist Marketplace]:::network --> W[Doctor Availability]:::network
+        W --> X[Consultation Router]:::network
     end
-    
+
+    %% Cross-Layer Interactions
     A --> D
     D --> G
     G --> K & L & M & N & O
     K --> P
     G --> V
     P --> S
+
+%% Define custom styles
+classDef frontend fill:#e0f7fa,stroke:#00796b,stroke-width:2px,color:#004d40;
+classDef gateway fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#bf360c;
+classDef ai fill:#ede7f6,stroke:#512da8,stroke-width:2px,color:#311b92;
+classDef ml fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px,color:#4a148c;
+classDef queue fill:#f1f8e9,stroke:#689f38,stroke-width:2px,color:#33691e;
+classDef data fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#1b5e20;
+classDef network fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#0d47a1;
+
 ```
 
 
