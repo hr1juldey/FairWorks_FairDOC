@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 """
 # migrate_to_new_structure.py
-# Script to migrate current Fairdoc backend to versioned structure
-# v1/ - existing backend structure
-# v2/ - new PostgreSQL/ChromaDB separated structure
+# Script to migrate current Fairdoc backend to versioned structure with unified API access
+# v1/ - existing backend structure (independent)
+# v2/ - new PostgreSQL/ChromaDB separated structure (independent)
+# Root - unified API with shared configs
 """
 
 import os
 import glob
 import shutil
 from pathlib import Path
+from datetime import datetime
 
 def get_script_directory():
     """Get the directory where this script is located"""
@@ -149,29 +151,31 @@ def verify_backend_directory():
     print("✅ Verified: Running from correct backend directory")
     return True
 
-def create_versioned_directory_structure():
-    """Create versioned directory structure with v1 and v2"""
+def create_unified_backend_structure():
+    """Create unified backend structure with v1, v2, and root app"""
     
     current_dir = os.getcwd()
     
-    # Create main versioned backend directory
-    versioned_backend_path = os.path.join(current_dir, "fairdoc-backend-versioned")
+    # Create backup of current backend
+    backup_dir = os.path.join(current_dir, "backend-backup-original")
+    if os.path.exists(backup_dir):
+        shutil.rmtree(backup_dir)
     
-    # Remove existing directory if it exists
-    if os.path.exists(versioned_backend_path):
-        print("🗑️ Removing existing versioned directory:", versioned_backend_path)
-        shutil.rmtree(versioned_backend_path)
-    
-    os.makedirs(versioned_backend_path, exist_ok=True)
-    print("📁 Created versioned backend directory:", versioned_backend_path)
+    # Copy current backend to backup
+    shutil.copytree(current_dir, backup_dir, ignore=shutil.ignore_patterns('backend-backup-*', '__pycache__', '*.pyc'))
+    print(f"📁 Created backup at: {backup_dir}")
     
     # Create v1 directory (for existing backend)
-    v1_path = os.path.join(versioned_backend_path, "v1")
+    v1_path = os.path.join(current_dir, "v1")
+    if os.path.exists(v1_path):
+        shutil.rmtree(v1_path)
     os.makedirs(v1_path, exist_ok=True)
-    print("📁 Created v1 directory:", v1_path)
+    print(f"📁 Created v1 directory: {v1_path}")
     
     # Create v2 directory structure (new structure)
-    v2_path = os.path.join(versioned_backend_path, "v2")
+    v2_path = os.path.join(current_dir, "v2")
+    if os.path.exists(v2_path):
+        shutil.rmtree(v2_path)
     
     # Define the new v2 structure
     v2_structure = {
@@ -200,7 +204,7 @@ def create_versioned_directory_structure():
     }
     
     os.makedirs(v2_path, exist_ok=True)
-    print("📁 Created v2 directory:", v2_path)
+    print(f"📁 Created v2 directory: {v2_path}")
     
     # Create v2 directory structure
     for main_dir, subdirs in v2_structure.items():
@@ -220,16 +224,7 @@ def create_versioned_directory_structure():
             with open(sub_init_file, 'w') as f:
                 f.write(f"# {subdir} module - v2\n")
     
-    # Create shared directories at root level
-    shared_dirs = ["tests", "docs", "scripts", "docker"]
-    for shared_dir in shared_dirs:
-        shared_path = os.path.join(versioned_backend_path, shared_dir)
-        os.makedirs(shared_path, exist_ok=True)
-        init_file = os.path.join(shared_path, "__init__.py")
-        with open(init_file, 'w') as f:
-            f.write(f"# {shared_dir} - shared across versions\n")
-    
-    return Path(versioned_backend_path), Path(v1_path), Path(v2_path)
+    return Path(current_dir), Path(v1_path), Path(v2_path)
 
 def scan_existing_files_comprehensive():
     """Comprehensive file scanning using multiple methods"""
@@ -244,7 +239,7 @@ def scan_existing_files_comprehensive():
     skip_dirs = {
         '__pycache__', '.git', '.pytest_cache', '.mypy_cache',
         'node_modules', '.venv', 'venv', 'env', '.env_backup',
-        'fairdoc-backend-new', 'fairdoc-backend-versioned'  # Skip any existing output directories
+        'v1', 'v2', 'backend-backup-original'  # Skip version directories
     }
     
     # Method 1: Scan specific directories with os.walk
@@ -305,34 +300,7 @@ def scan_existing_files_comprehensive():
             existing_files[root_file] = file_path
             print(f"     📄 Found root file: {root_file}")
     
-    # Method 3: Use glob patterns for additional coverage
-    print("   📂 Using glob patterns for additional files...")
-    glob_patterns = [
-        '*.py', '*.yml', '*.yaml', '*.txt', '*.md', '*.json', '*.toml'
-    ]
-    
-    for pattern in glob_patterns:
-        for file_path in glob.glob(os.path.join(current_dir, pattern)):
-            if os.path.isfile(file_path):
-                filename = os.path.basename(file_path)
-                # Skip if already found or if it's a file we want to skip
-                if (filename not in existing_files and
-                    not filename.endswith(('.pyc', '.pyo')) and
-                    'migrate_to_new_structure.py' not in filename):
-                    existing_files[filename] = file_path
-                    print(f"     📄 Found with glob: {filename}")
-    
     print(f"✅ Total files found: {len(existing_files)}")
-    
-    # Print summary of directory structure scanned
-    unique_dirs = set()
-    for rel_path in existing_files.keys():
-        if '/' in rel_path:
-            dir_part = '/'.join(rel_path.split('/')[:-1])
-            unique_dirs.add(dir_part)
-    
-    print(f"📊 Summary: Scanned {len(unique_dirs)} directories, found {len(existing_files)} files")
-    
     return existing_files
 
 def copy_existing_files_to_v1(existing_files: dict, v1_path: Path):
@@ -348,6 +316,12 @@ def copy_existing_files_to_v1(existing_files: dict, v1_path: Path):
             # Skip the migration script itself
             if 'migrate_to_new_structure.py' in old_rel_path:
                 print(f"     ⏭️ Skipping migration script: {old_rel_path}")
+                skipped_count += 1
+                continue
+            
+            # Skip shared config files (keep in root)
+            if old_rel_path in ['.env', '.env.local', '.env.prod', '.env.testing', 'docker-compose.yml', 'requirements.txt']:
+                print(f"     ⏭️ Keeping in root: {old_rel_path}")
                 skipped_count += 1
                 continue
             
@@ -394,14 +368,6 @@ def copy_selected_files_to_v2(existing_files: dict, v2_path: Path):
     
     print("📋 Copying selected files to v2 (new structure)...")
     
-    # Files to copy to v2 (core files that should be migrated)
-    files_to_migrate_to_v2 = [
-        'app.py',
-        '.env', '.env.local', '.env.prod', '.env.testing',
-        'requirements.txt',
-        'docker-compose.yml'
-    ]
-    
     # Directories to migrate (will be restructured)
     dirs_to_migrate = ['core', 'datamodels', 'services', 'MLmodels', 'data', 'utils']
     
@@ -411,10 +377,6 @@ def copy_selected_files_to_v2(existing_files: dict, v2_path: Path):
     for old_rel_path, old_abs_path in existing_files.items():
         try:
             should_copy = False
-            
-            # Check if it's a root file we want to migrate
-            if old_rel_path in files_to_migrate_to_v2:
-                should_copy = True
             
             # Check if it's in a directory we want to migrate
             for migrate_dir in dirs_to_migrate:
@@ -448,6 +410,419 @@ def copy_selected_files_to_v2(existing_files: dict, v2_path: Path):
             skipped_count += 1
     
     print(f"✅ Copied {copied_count} files to v2, skipped {skipped_count} files")
+
+def create_unified_app_files(backend_root: Path, v1_path: Path, v2_path: Path):
+    """Create unified app files that enable both independent and mounted access"""
+    
+    print("🔧 Creating unified app structure...")
+    
+    # 1. Create main app.py (mounts both v1 and v2)
+    main_app_content = '''"""
+Main Fairdoc Backend Application
+Serves both v1 and v2 APIs with unified access
+"""
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+# Import version-specific apps
+from v1.app_v1 import app as app_v1
+from v2.app_v2 import app as app_v2
+
+# Create main application
+app = FastAPI(
+    title="Fairdoc AI - Healthcare Triage Platform",
+    description="Unified API serving both v1 (legacy) and v2 (modern) endpoints",
+    version="2.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc"
+)
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Configure appropriately for production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Mount version-specific applications
+app.mount("/api/v1", app_v1)
+app.mount("/api/v2", app_v2)
+
+# Root endpoint
+@app.get("/")
+async def root():
+    return {
+        "message": "Fairdoc AI Healthcare Triage Platform",
+        "versions": {
+            "v1": {
+                "docs": "/api/v1/docs",
+                "description": "Legacy API with original structure"
+            },
+            "v2": {
+                "docs": "/api/v2/docs",
+                "description": "Modern API with PostgreSQL/ChromaDB architecture"
+            }
+        },
+        "unified_docs": "/docs"
+    }
+
+# Health check endpoint
+@app.get("/health")
+async def health_check():
+    return {
+        "status": "healthy",
+        "versions": ["v1", "v2"],
+        "services": ["api", "database", "ai_models"]
+    }
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+'''
+    
+    # Write main app.py
+    with open(os.path.join(str(backend_root), "app.py"), 'w') as f:
+        f.write(main_app_content)
+    
+    # 2. Create v1/app_v1.py (independent v1 app)
+    v1_app_content = '''"""
+Fairdoc v1 Backend Application
+Original backend structure preserved
+Can run independently or as part of unified app
+"""
+from fastapi import FastAPI
+
+# Create v1 application
+app = FastAPI(
+    title="Fairdoc AI v1",
+    description="Legacy API with original backend structure",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc"
+)
+
+# Import v1-specific routes
+# from api.auth.routes import router as auth_router
+# from api.medical.routes import router as medical_router
+
+# Include routers
+# app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
+# app.include_router(medical_router, prefix="/medical", tags=["Medical"])
+
+@app.get("/")
+async def v1_root():
+    return {
+        "message": "Fairdoc AI v1 - Legacy API",
+        "version": "1.0.0",
+        "structure": "original",
+        "features": [
+            "Basic medical triage",
+            "PostgreSQL storage",
+            "Original data models"
+        ]
+    }
+
+@app.get("/health")
+async def v1_health():
+    return {
+        "status": "healthy",
+        "version": "v1",
+        "database": "postgresql",
+        "ai_models": "basic"
+    }
+
+# For independent development
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8001, reload=True)
+'''
+    
+    # Write v1/app_v1.py
+    with open(os.path.join(str(v1_path), "app_v1.py"), 'w') as f:
+        f.write(v1_app_content)
+    
+    # 3. Create v2/app_v2.py (independent v2 app)
+    v2_app_content = '''"""
+Fairdoc v2 Backend Application
+Modern architecture with PostgreSQL/ChromaDB separation
+Can run independently or as part of unified app
+"""
+from fastapi import FastAPI
+
+# Create v2 application
+app = FastAPI(
+    title="Fairdoc AI v2",
+    description="Modern API with PostgreSQL/ChromaDB separated architecture",
+    version="2.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc"
+)
+
+# Import v2-specific routes
+# from api.auth.routes import router as auth_router
+# from api.medical.routes import router as medical_router
+# from api.rag.routes import router as rag_router
+# from api.nhs.routes import router as nhs_router
+
+# Include routers
+# app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
+# app.include_router(medical_router, prefix="/medical", tags=["Medical"])
+# app.include_router(rag_router, prefix="/rag", tags=["RAG Search"])
+# app.include_router(nhs_router, prefix="/nhs", tags=["NHS Integration"])
+
+@app.get("/")
+async def v2_root():
+    return {
+        "message": "Fairdoc AI v2 - Modern Architecture",
+        "version": "2.0.0",
+        "structure": "postgresql_chromadb_separated",
+        "features": [
+            "Advanced AI triage",
+            "PostgreSQL + ChromaDB",
+            "RAG document processing",
+            "NHS EHR integration",
+            "Real-time bias monitoring",
+            "Doctor network services"
+        ]
+    }
+
+@app.get("/health")
+async def v2_health():
+    return {
+        "status": "healthy",
+        "version": "v2",
+        "databases": ["postgresql", "chromadb", "redis"],
+        "ai_models": ["specialized_classifiers", "ollama_llm", "rag_embeddings"],
+        "integrations": ["nhs_ehr", "doctor_network"]
+    }
+
+# For independent development
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8002, reload=True)
+'''
+    
+    # Write v2/app_v2.py
+    with open(os.path.join(str(v2_path), "app_v2.py"), 'w') as f:
+        f.write(v2_app_content)
+    
+    print("✅ Created unified app structure")
+
+def create_development_scripts(backend_root: Path):
+    """Create development scripts for easy management"""
+    
+    print("🔧 Creating development scripts...")
+    
+    # Create dev_v1.py - REMOVE EMOJIS FOR WINDOWS COMPATIBILITY
+    dev_v1_content = '''#!/usr/bin/env python3
+"""
+Development script for running v1 independently
+"""
+import os
+import sys
+import uvicorn
+
+# Add v1 to Python path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'v1'))
+
+if __name__ == "__main__":
+    print("Starting Fairdoc v1 (Independent Development)")
+    print("API Documentation: http://localhost:8001/docs")
+    uvicorn.run("v1.app_v1:app", host="0.0.0.0", port=8001, reload=True)
+'''
+    
+    # Create dev_v2.py - REMOVE EMOJIS FOR WINDOWS COMPATIBILITY
+    dev_v2_content = '''#!/usr/bin/env python3
+"""
+Development script for running v2 independently
+"""
+import os
+import sys
+import uvicorn
+
+# Add v2 to Python path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'v2'))
+
+if __name__ == "__main__":
+    print("Starting Fairdoc v2 (Independent Development)")
+    print("API Documentation: http://localhost:8002/docs")
+    uvicorn.run("v2.app_v2:app", host="0.0.0.0", port=8002, reload=True)
+'''
+    
+    # Create dev_unified.py - REMOVE EMOJIS FOR WINDOWS COMPATIBILITY
+    dev_unified_content = '''#!/usr/bin/env python3
+"""
+Development script for running unified app (v1 + v2)
+"""
+import uvicorn
+
+if __name__ == "__main__":
+    print("Starting Fairdoc Unified API (v1 + v2)")
+    print("Unified Documentation: http://localhost:8000/docs")
+    print("v1 Documentation: http://localhost:8000/api/v1/docs")
+    print("v2 Documentation: http://localhost:8000/api/v2/docs")
+    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
+'''
+    
+    # Write development scripts with explicit UTF-8 encoding
+    try:
+        with open(os.path.join(str(backend_root), "dev_v1.py"), 'w', encoding='utf-8') as f:
+            f.write(dev_v1_content)
+        
+        with open(os.path.join(str(backend_root), "dev_v2.py"), 'w', encoding='utf-8') as f:
+            f.write(dev_v2_content)
+        
+        with open(os.path.join(str(backend_root), "dev_unified.py"), 'w', encoding='utf-8') as f:
+            f.write(dev_unified_content)
+        
+        print("✅ Created development scripts")
+        
+    except UnicodeEncodeError as e:
+        print(f"⚠️ Encoding error when creating scripts: {e}")
+        print("   Creating ASCII-only versions...")
+        
+        # Fallback: Create simpler ASCII-only versions
+        simple_v1 = 'import uvicorn\nif __name__ == "__main__":\n    uvicorn.run("v1.app_v1:app", host="0.0.0.0", port=8001, reload=True)\n'
+        simple_v2 = 'import uvicorn\nif __name__ == "__main__":\n    uvicorn.run("v2.app_v2:app", host="0.0.0.0", port=8002, reload=True)\n'
+        simple_unified = 'import uvicorn\nif __name__ == "__main__":\n    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)\n'
+        
+        with open(os.path.join(str(backend_root), "dev_v1.py"), 'w', encoding='utf-8') as f:
+            f.write(simple_v1)
+        with open(os.path.join(str(backend_root), "dev_v2.py"), 'w', encoding='utf-8') as f:
+            f.write(simple_v2)
+        with open(os.path.join(str(backend_root), "dev_unified.py"), 'w', encoding='utf-8') as f:
+            f.write(simple_unified)
+        
+        print("✅ Created simplified development scripts")
+
+
+def create_enhanced_documentation(backend_root: Path):
+    """Create enhanced documentation for the unified structure"""
+    
+    print("📝 Creating enhanced documentation...")
+    
+    readme_content = f'''# Fairdoc AI Backend - Unified Architecture
+
+This backend supports both legacy (v1) and modern (v2) API versions with shared configuration.
+
+## 🏗️ Structure
+
+```
+backend/
+├── app.py                 # Main unified app (mounts v1 + v2)
+├── dev_v1.py             # Run v1 independently
+├── dev_v2.py             # Run v2 independently
+├── dev_unified.py        # Run unified app
+├── .env                  # Shared environment config
+├── docker-compose.yml    # Shared Docker services
+├── requirements.txt      # Shared dependencies
+├── v1/                   # Legacy backend structure
+│   ├── app_v1.py        # Independent v1 app
+│   ├── api/
+│   ├── core/
+│   ├── datamodels/
+│   ├── services/
+│   └── ...
+└── v2/                   # Modern backend structure
+    ├── app_v2.py        # Independent v2 app
+    ├── api/
+    ├── core/
+    ├── datamodels/
+    ├── services/
+    ├── rag/             # RAG components
+    └── ...
+```
+
+## 🚀 Development Usage
+
+### Independent Development
+
+```
+# Run v1 independently (port 8001)
+python dev_v1.py
+
+# Run v2 independently (port 8002)
+python dev_v2.py
+```
+
+### Unified API
+
+```
+# Run unified app with both versions (port 8000)
+python dev_unified.py
+# or
+python app.py
+```
+
+## 📖 API Documentation
+
+### Unified Access (Production)
+- **Main Docs**: http://localhost:8000/docs
+- **v1 API**: http://localhost:8000/api/v1/
+- **v2 API**: http://localhost:8000/api/v2/
+- **v1 Docs**: http://localhost:8000/api/v1/docs
+- **v2 Docs**: http://localhost:8000/api/v2/docs
+
+### Independent Access (Development)
+- **v1 Docs**: http://localhost:8001/docs
+- **v2 Docs**: http://localhost:8002/docs
+
+## 🐳 Docker Usage
+
+Shared Docker services (PostgreSQL, Redis, ChromaDB) are configured in the root:
+
+```
+# Start shared services
+docker-compose up -d
+
+# Services available to both v1 and v2:
+# - PostgreSQL: localhost:5432
+# - Redis: localhost:6379
+# - ChromaDB: localhost:8001
+```
+
+## 🔧 Configuration
+
+All configuration files are shared and located in the root:
+- `.env` - Environment variables
+- `.env.local` - Local development
+- `.env.prod` - Production settings
+- `docker-compose.yml` - Docker services
+
+Both v1 and v2 use the same configuration, ensuring consistency.
+
+## 📊 Version Differences
+
+### v1 (Legacy)
+- Original backend structure
+- PostgreSQL only
+- Basic ML models
+- Simple triage logic
+
+### v2 (Modern)
+- PostgreSQL + ChromaDB separation
+- RAG document processing
+- Advanced AI orchestration
+- NHS EHR integration
+- Real-time bias monitoring
+- Doctor network services
+
+## 🔄 Migration Path
+
+1. **Development**: Use independent scripts to develop each version
+2. **Testing**: Use unified app to test version compatibility
+3. **Production**: Deploy unified app with version routing
+
+**Generated on:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+'''
+    
+    # Write README.md
+    with open(os.path.join(str(backend_root), "README.md"), 'w') as f:
+        f.write(readme_content)
+    
+    print("✅ Enhanced documentation created")
 
 def generate_v2_specific_files(v2_path: Path):
     """Generate v2-specific files with new structure"""
@@ -488,61 +863,6 @@ def generate_v2_specific_files(v2_path: Path):
         "api/doctors/routes.py": "# Doctor network API endpoints",
         "api/rag/routes.py": "# RAG search and retrieval API endpoints",
         
-        # ML Models
-        "MLmodels/classifiers/triage_classifier.py": "# Primary medical triage classification model",
-        "MLmodels/classifiers/risk_classifier.py": "# Patient risk assessment classifier",
-        "MLmodels/classifiers/bias_classifier.py": "# Bias detection and classification models",
-        "MLmodels/embeddings/medical_embeddings.py": "# Medical text embedding generation",
-        "MLmodels/embeddings/embedding_generator.py": "# Vector embedding generation for RAG",
-        "MLmodels/embeddings/similarity_search.py": "# ChromaDB similarity search operations",
-        "MLmodels/ollama_models/clinical_model.py": "# Clinical reasoning LLM interface",
-        "MLmodels/ollama_models/chat_model.py": "# Conversational AI model interface",
-        "MLmodels/ollama_models/classification_model.py": "# Text classification LLM interface",
-        "MLmodels/rag/retrieval_model.py": "# Document retrieval model for RAG",
-        "MLmodels/rag/ranking_model.py": "# Result ranking and scoring model",
-        "MLmodels/rag/context_fusion.py": "# Context combination and fusion logic",
-        "MLmodels/model_manager.py": "# ML model loading, caching, and lifecycle management",
-        
-        # Database managers
-        "data/database/postgres_manager.py": "# PostgreSQL connection and session management",
-        "data/database/chromadb_manager.py": "# ChromaDB vector database operations",
-        "data/database/redis_manager.py": "# Redis cache and session management",
-        
-        # PostgreSQL repositories
-        "data/repositories/postgres/auth_repository.py": "# User authentication data access layer",
-        "data/repositories/postgres/medical_repository.py": "# Medical assessment data access layer",
-        "data/repositories/postgres/chat_repository.py": "# Chat history data access layer",
-        "data/repositories/postgres/bias_repository.py": "# Bias metrics data access layer",
-        "data/repositories/postgres/nhs_ehr_repository.py": "# NHS EHR data access layer",
-        "data/repositories/postgres/doctor_repository.py": "# Doctor records data access layer",
-        "data/repositories/postgres/nice_repository.py": "# NICE guidelines data access layer",
-        
-        # ChromaDB repositories
-        "data/repositories/chromadb/rag_repository.py": "# RAG document storage and retrieval",
-        "data/repositories/chromadb/embedding_repository.py": "# Vector embeddings management",
-        "data/repositories/chromadb/similarity_repository.py": "# Similarity search operations",
-        
-        # Database schemas
-        "data/schemas/postgres/user_schemas.py": "# PostgreSQL user table schemas",
-        "data/schemas/postgres/medical_schemas.py": "# PostgreSQL medical table schemas",
-        "data/schemas/postgres/nhs_ehr_schemas.py": "# PostgreSQL NHS EHR table schemas",
-        "data/schemas/postgres/doctor_schemas.py": "# PostgreSQL doctor table schemas",
-        "data/schemas/postgres/nice_schemas.py": "# PostgreSQL NICE data table schemas",
-        "data/schemas/chromadb/rag_collections.py": "# ChromaDB RAG document collections",
-        "data/schemas/chromadb/medical_knowledge_collections.py": "# ChromaDB medical knowledge vectors",
-        "data/schemas/chromadb/conversation_collections.py": "# ChromaDB chat context vectors",
-        "data/schemas/chromadb/similarity_collections.py": "# ChromaDB similarity search collections",
-        "data/schemas/redis/cache_schemas.py": "# Redis cache key patterns and schemas",
-        "data/schemas/redis/session_schemas.py": "# Redis session management schemas",
-        
-        # Migrations
-        "data/migrations/postgres/001_initial_tables.py": "# Initial PostgreSQL database tables creation",
-        "data/migrations/postgres/002_nhs_ehr_tables.py": "# NHS EHR integration tables",
-        "data/migrations/postgres/003_doctor_tables.py": "# Doctor network tables",
-        "data/migrations/postgres/004_nice_tables.py": "# NICE guidelines tables",
-        "data/migrations/chromadb/init_collections.py": "# Initialize ChromaDB collections for RAG",
-        "data/migrations/chromadb/setup_embeddings.py": "# Setup embedding models and indexes",
-        
         # RAG components
         "rag/indexing/document_processor.py": "# Document processing and preparation for RAG indexing",
         "rag/indexing/chunk_splitter.py": "# Text chunking strategies for optimal retrieval",
@@ -555,32 +875,13 @@ def generate_v2_specific_files(v2_path: Path):
         "rag/generation/response_synthesizer.py": "# Synthesize final responses from context and queries",
         "rag/rag_pipeline.py": "# Main RAG orchestration and pipeline management",
         
-        # Utilities
-        "utils/medical_utils.py": "# Medical data processing and validation utilities",
-        "utils/text_processing.py": "# NLP preprocessing and text analysis utilities",
-        "utils/image_processing.py": "# Medical image analysis and processing utilities",
-        "utils/validation_utils.py": "# Data validation and sanitization utilities",
-        "utils/monitoring_utils.py": "# Logging, monitoring, and metrics utilities",
-        "utils/nhs_utils.py": "# NHS data formatting and integration utilities",
-        "utils/nice_utils.py": "# NICE guidelines processing utilities",
-        "utils/rag_utils.py": "# RAG helper functions and utilities",
-        
-        # Tools and testing
-        "tools/data_generators/postgres_seed_data.py": "# Generate seed data for PostgreSQL development",
-        "tools/data_generators/chromadb_seed_data.py": "# Generate seed data for ChromaDB development",
-        "tools/testing/postgres_fixtures.py": "# PostgreSQL test fixtures and helpers",
-        "tools/testing/chromadb_fixtures.py": "# ChromaDB test fixtures and helpers",
-        "tools/testing/rag_test_utils.py": "# RAG testing utilities and helpers",
-        "tools/deployment/postgres_setup.sh": "# PostgreSQL deployment and configuration script",
-        "tools/deployment/chromadb_setup.sh": "# ChromaDB deployment and configuration script",
-        "tools/deployment/rag_index_builder.py": "# Build and maintain RAG indexes for production",
-        "tools/monitoring/postgres_monitor.py": "# PostgreSQL performance monitoring",
-        "tools/monitoring/chromadb_monitor.py": "# ChromaDB performance monitoring",
-        "tools/monitoring/rag_performance_monitor.py": "# RAG system performance monitoring",
+        # Database managers
+        "data/database/postgres_manager.py": "# PostgreSQL connection and session management",
+        "data/database/chromadb_manager.py": "# ChromaDB vector database operations",
+        "data/database/redis_manager.py": "# Redis cache and session management",
         
         # V2-specific config files
-        "requirements-rag.txt": "# RAG-specific Python dependencies for v2",
-        "docker-compose.rag.yml": "# Docker compose for RAG services (ChromaDB, embeddings)",
+        "requirements-v2.txt": "# v2-specific Python dependencies",
         "README-v2.md": "# Fairdoc v2 Backend - PostgreSQL/ChromaDB Architecture"
     }
     
@@ -602,10 +903,6 @@ def generate_v2_specific_files(v2_path: Path):
                 content = f"# {file_path}\n\n{description}\n\n## TODO\n\nImplement {filename} functionality\n"
             elif file_path.endswith('.txt'):
                 content = f"# {description}\n"
-            elif file_path.endswith('.yml'):
-                content = f"# {description}\nversion: '3.8'\n# TODO: Add service definitions\n"
-            elif file_path.endswith('.sh'):
-                content = f"#!/bin/bash\n# {file_path}\n# {description}\n\n# TODO: Implement setup script\necho 'Setup script not implemented yet'\n"
             else:
                 content = f'"""\n{file_path}\n{description}\n"""\n\n# TODO: Implement {filename} functionality\npass\n'
             
@@ -619,178 +916,10 @@ def generate_v2_specific_files(v2_path: Path):
     
     print(f"✅ Generated {generated_count} new v2 files")
 
-def create_version_documentation(versioned_backend_path: Path):
-    """Create documentation for the versioned structure"""
-    
-    print("📝 Creating version documentation...")
-    
-    # Main README
-    main_readme = os.path.join(str(versioned_backend_path), "README.md")
-    readme_content = """# Fairdoc AI Backend - Versioned Architecture
-
-This directory contains versioned backend implementations for Fairdoc AI.
-
-## Structure
-
-```
-fairdoc-backend-versioned/
-├── v1/                     # Original backend structure
-│   ├── api/
-│   ├── core/
-│   ├── datamodels/
-│   ├── services/
-│   ├── MLmodels/
-│   ├── data/
-│   ├── utils/
-│   ├── tools/
-│   └── app.py
-├── v2/                     # New PostgreSQL/ChromaDB structure
-│   ├── api/
-│   ├── core/
-│   ├── datamodels/
-│   ├── services/
-│   ├── MLmodels/
-│   ├── data/
-│   ├── rag/               # New RAG components
-│   ├── utils/
-│   ├── tools/
-│   └── app.py
-├── tests/                  # Shared tests
-├── docs/                   # Shared documentation
-├── scripts/                # Shared scripts
-└── docker/                 # Shared Docker configurations
-```
-
-## Version Differences
-
-### v1 (Original)
-- Original backend structure
-- All data in PostgreSQL
-- Basic ML models
-- Simple file structure
-
-### v2 (New Architecture)
-- Separated PostgreSQL and ChromaDB
-- RAG components for document processing
-- Enhanced AI orchestration
-- Bias monitoring system
-- NHS EHR integration
-- Doctor network services
-
-## Usage
-
-### Running v1
-```
-cd v1/
-python app.py
-```
-
-### Running v2
-```
-cd v2/
-python app.py
-```
-
-## Migration Notes
-
-This structure was generated by the migration script to preserve the original v1 backend while introducing the new v2 architecture.
-
-**Generated on:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-"""
-    
-    with open(main_readme, 'w', encoding='utf-8') as f:
-        f.write(readme_content)
-    
-    # V1 README
-    v1_readme = os.path.join(str(versioned_backend_path), "v1", "README-v1.md")
-    v1_content = """# Fairdoc AI v1 Backend
-
-This is the original backend structure preserved during migration.
-
-## Features
-- Original API structure
-- Basic medical AI
-- PostgreSQL data storage
-- Simple file upload
-- Basic authentication
-
-## Usage
-```
-python app.py
-```
-
-**Note:** This is the legacy version. New features are developed in v2.
-"""
-    
-    with open(v1_readme, 'w', encoding='utf-8') as f:
-        f.write(v1_content)
-    
-    print("✅ Version documentation created")
-
-def validate_versioned_migration(versioned_backend_path: Path, v1_path: Path, v2_path: Path, existing_files: dict):
-    """Validate the versioned migration was successful"""
-    
-    print("🔍 Validating versioned migration...")
-    
-    validation_passed = True
-    
-    # Check v1 structure
-    print("   📋 Validating v1 structure...")
-    v1_critical_files = ['app.py', 'core/config.py', 'datamodels/__init__.py']
-    
-    for critical_file in v1_critical_files:
-        v1_file_path = os.path.join(str(v1_path), critical_file)
-        if not os.path.exists(v1_file_path):
-            print(f"     ❌ v1 critical file missing: {critical_file}")
-            validation_passed = False
-        else:
-            print(f"     ✅ v1 critical file found: {critical_file}")
-    
-    # Check v2 structure
-    print("   📋 Validating v2 structure...")
-    v2_expected_dirs = ['api', 'core', 'datamodels', 'services', 'MLmodels', 'data', 'rag', 'utils', 'tools']
-    
-    for expected_dir in v2_expected_dirs:
-        v2_dir_path = os.path.join(str(v2_path), expected_dir)
-        if not os.path.exists(v2_dir_path) or not os.path.isdir(v2_dir_path):
-            print(f"     ❌ v2 expected directory missing: {expected_dir}")
-            validation_passed = False
-        else:
-            print(f"     ✅ v2 directory found: {expected_dir}")
-    
-    # Check shared directories
-    print("   📋 Validating shared structure...")
-    shared_dirs = ['tests', 'docs', 'scripts', 'docker']
-    
-    for shared_dir in shared_dirs:
-        shared_path = os.path.join(str(versioned_backend_path), shared_dir)
-        if not os.path.exists(shared_path):
-            print(f"     ❌ Shared directory missing: {shared_dir}")
-            validation_passed = False
-        else:
-            print(f"     ✅ Shared directory found: {shared_dir}")
-    
-    # Validate file counts
-    v1_files = len([f for f in existing_files.keys() if os.path.exists(os.path.join(str(v1_path), f))])
-    print(f"     📊 Files in v1: {v1_files}/{len(existing_files)}")
-    
-    # Count v2 files
-    v2_file_count = 0
-    for _root, _dirs, files in os.walk(str(v2_path)):
-        v2_file_count += len(files)
-    print(f"     📊 Files in v2: {v2_file_count}")
-    
-    if validation_passed:
-        print("🎉 Versioned migration validation passed!")
-    else:
-        print("⚠️ Versioned migration validation failed - please review")
-    
-    return validation_passed
-
 def main():
-    """Main migration function with versioned structure creation"""
-    print("🚀 Starting Fairdoc backend VERSIONED structure migration...")
-    print("🎯 Creating v1/ (existing) and v2/ (new PostgreSQL/ChromaDB structure)")
+    """Main migration function with unified structure creation"""
+    print("🚀 Starting Fairdoc backend UNIFIED structure migration...")
+    print("🎯 Creating unified backend with independent v1/v2 + shared configs")
     print("🔍 Detecting execution environment...")
     
     current_dir = os.getcwd()
@@ -831,14 +960,6 @@ def main():
     # Final verification
     if not backend_dir or not verify_backend_directory():
         print("❌ Could not locate backend directory automatically")
-        print("\n🔍 Manual path detection:")
-        print("   Current directory:", os.getcwd())
-        print("   Script directory:", script_dir)
-        print("\n💡 Possible solutions:")
-        print("   1. Copy the script to Fairdoc/backend/ directory")
-        print("   2. Navigate to backend directory before running:")
-        print("      cd FairWorks_FairDOC/Fairdoc/backend/")
-        print("      python migrate_to_new_structure.py")
         return
     
     print(f"✅ Ready to migrate from: {os.getcwd()}")
@@ -852,9 +973,9 @@ def main():
             print("❌ No files found to migrate!")
             return
         
-        # Create versioned directory structure
-        print("\n📁 Creating versioned directory structure...")
-        versioned_backend_path, v1_path, v2_path = create_versioned_directory_structure()
+        # Create unified directory structure
+        print("\n📁 Creating unified directory structure...")
+        backend_root, v1_path, v2_path = create_unified_backend_structure()
         
         # Copy existing files to v1 (preserve original structure)
         print("\n📋 Copying existing files to v1...")
@@ -868,49 +989,55 @@ def main():
         print("\n🔧 Generating v2-specific files...")
         generate_v2_specific_files(v2_path)
         
+        # Create unified app files
+        print("\n🔧 Creating unified app structure...")
+        create_unified_app_files(backend_root, v1_path, v2_path)
+        
+        # Create development scripts
+        print("\n🔧 Creating development scripts...")
+        create_development_scripts(backend_root)
+        
         # Create documentation
-        print("\n📝 Creating documentation...")
-        create_version_documentation(versioned_backend_path)
+        print("\n📝 Creating enhanced documentation...")
+        create_enhanced_documentation(backend_root)
         
-        # Validate migration
-        print("\n🔍 Validating versioned migration...")
-        validation_success = validate_versioned_migration(versioned_backend_path, v1_path, v2_path, existing_files)
-        
-        print("\n✅ VERSIONED MIGRATION COMPLETED!")
-        print("📂 Versioned backend structure created in:", str(versioned_backend_path))
+        print("\n✅ UNIFIED MIGRATION COMPLETED!")
+        print("📂 Unified backend structure created in current directory")
         print("📊 Total existing files found:", len(existing_files))
         print("📝 Structure created:")
-        print(f"   📁 v1/ - Original backend ({len([f for f in existing_files.keys()])} files)")
-        print("   📁 v2/ - New PostgreSQL/ChromaDB structure")
-        print("   📁 tests/ - Shared testing")
-        print("   📁 docs/ - Shared documentation")
-        print("   📁 scripts/ - Shared scripts")
-        print("   📁 docker/ - Shared Docker configs")
+        print("   📁 v1/ - Legacy backend (independent)")
+        print("   📁 v2/ - Modern backend (independent)")
+        print("   📄 app.py - Unified API (mounts v1 + v2)")
+        print("   📄 dev_*.py - Development scripts")
+        print("   📄 .env, docker-compose.yml - Shared configs")
         
-        print("\n🔄 Next steps:")
-        print("   1. Review the versioned structure:")
-        print(f"      cd {versioned_backend_path.name}")
-        print("   2. Test v1 backend:")
-        print("      cd v1/ && python app.py")
-        print("   3. Test v2 backend:")
-        print("      cd v2/ && python app.py")
-        print("   4. Replace original backend when ready:")
-        print("      mv backend backend-backup")
-        print(f"      mv {versioned_backend_path.name} backend")
+        print("\n🚀 Usage Instructions:")
+        print("\n**Independent Development:**")
+        print("   python dev_v1.py     # v1 only (port 8001)")
+        print("   python dev_v2.py     # v2 only (port 8002)")
         
-        if validation_success:
-            print("\n🎉 VERSIONED MIGRATION COMPLETED SUCCESSFULLY!")
-            print("\n📋 Summary:")
-            print("   ✅ v1/ contains your original backend (preserved)")
-            print("   ✅ v2/ contains new PostgreSQL/ChromaDB architecture")
-            print("   ✅ Shared directories created for tests, docs, scripts")
-            print("   ✅ Documentation generated")
-            print("   ✅ All validations passed")
-        else:
-            print("\n⚠️ Please review validation errors before proceeding")
+        print("\n**Unified API:**")
+        print("   python dev_unified.py  # Both versions (port 8000)")
+        print("   python app.py          # Same as above")
+        
+        print("\n**API Access:**")
+        print("   Unified: http://localhost:8000/docs")
+        print("   v1 API:  http://localhost:8000/api/v1/")
+        print("   v2 API:  http://localhost:8000/api/v2/")
+        print("   v1 Docs: http://localhost:8000/api/v1/docs")
+        print("   v2 Docs: http://localhost:8000/api/v2/docs")
+        
+        print("\n🎉 UNIFIED MIGRATION COMPLETED SUCCESSFULLY!")
+        print("\n📋 Summary:")
+        print("   ✅ v1/ - Legacy backend preserved and independent")
+        print("   ✅ v2/ - Modern PostgreSQL/ChromaDB architecture")
+        print("   ✅ Unified app.py - Mounts both versions")
+        print("   ✅ Independent development scripts")
+        print("   ✅ Shared configuration (.env, docker)")
+        print("   ✅ Enhanced documentation")
         
     except Exception as e:
-        print(f"\n❌ Versioned migration failed with error: {e}")
+        print(f"\n❌ Unified migration failed with error: {e}")
         import traceback
         traceback.print_exc()
 
