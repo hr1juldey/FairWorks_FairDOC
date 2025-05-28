@@ -1,9 +1,11 @@
 # 🚀 **10-Day Fairdoc AI Implementation Roadmap**
+
 ## **Solo Developer | 12 Hours/Day | 120 Total Hours | Always-Live Localhost**
 
 ---
 
 ## **📊 Current State Assessment**
+
 ```
 ✅ Project structure: Fairdoc/backend/ with datamodels
 ✅ Core datamodels: 8/9 files completed  
@@ -18,6 +20,7 @@
 ---
 
 ## **🎯 Final Goal After 10 Days**
+
 ```
 ✅ Working full-stack Fairdoc AI application on localhost
 ✅ NHS-compatible medical triage system
@@ -32,11 +35,13 @@
 ---
 
 # **DAY 1: Foundation & Live Server Setup**
+
 ## **🕐 12 Hours | Goal: Working localhost with health check**
 
 ### **📅 Morning Session (4 hours): 6:00 AM - 10:00 AM**
 
 #### **Step 1.1: Fix Existing Files (1 hour)**
+
 ```bash
 # Current working directory: Fairdoc/backend/
 
@@ -58,7 +63,9 @@ ls -la datamodels/
 ```
 
 #### **Step 1.2: Create Basic Database Connection (1 hour)**
+
 Create: `data/database/connection_manager.py`
+
 ```python
 """
 Basic database connection manager for Fairdoc AI
@@ -159,7 +166,9 @@ async def get_async_db():
 ```
 
 #### **Step 1.3: Create Core Configuration (1 hour)**
+
 Update: `core/config.py`
+
 ```python
 """
 Configuration management for Fairdoc AI
@@ -217,7 +226,9 @@ def get_settings() -> Settings:
 ```
 
 #### **Step 1.4: Create Basic Health Check API (1 hour)**
+
 Create: `api/health/routes.py`
+
 ```python
 """
 Health check endpoints for Fairdoc AI
@@ -327,7 +338,9 @@ async def ping():
 ### **📅 Afternoon Session (4 hours): 12:00 PM - 4:00 PM**
 
 #### **Step 1.5: Create Main FastAPI Application (1 hour)**
+
 Update: `app.py`
+
 ```python
 """
 Main FastAPI application for Fairdoc AI Medical Triage System
@@ -449,7 +462,9 @@ if __name__ == "__main__":
 ```
 
 #### **Step 1.6: Create Environment Configuration (1 hour)**
+
 Update: `.env`
+
 ```env
 # Fairdoc AI Configuration
 # Development Environment
@@ -485,7 +500,9 @@ NHS_CLIENT_SECRET=mock_client_secret
 ```
 
 #### **Step 1.7: Setup Docker Development Environment (1 hour)**
+
 Create: `docker-compose.dev.yml`
+
 ```yaml
 version: '3.8'
 
@@ -546,7 +563,9 @@ networks:
 ```
 
 #### **Step 1.8: Create Database Initialization Script (1 hour)**
+
 Create: `init.sql`
+
 ```sql
 -- Fairdoc AI Database Initialization
 -- Creates basic tables for Day 1 setup
@@ -617,7 +636,9 @@ INSERT INTO health_checks (status, details) VALUES (
 ### **📅 Evening Session (4 hours): 6:00 PM - 10:00 PM**
 
 #### **Step 1.9: Create Development Startup Script (30 minutes)**
+
 Create: `scripts/dev-start.sh`
+
 ```bash
 #!/bin/bash
 # Fairdoc AI Development Startup Script
@@ -689,6 +710,7 @@ trap cleanup EXIT
 ```
 
 #### **Step 1.10: Make Script Executable and Test Setup (30 minutes)**
+
 ```bash
 # Make the script executable
 chmod +x scripts/dev-start.sh
@@ -706,6 +728,7 @@ find . -name "*.py" -o -name "*.yml" -o -name "*.sql" -o -name "*.sh" | sort
 ```
 
 #### **Step 1.11: First Live Test (1 hour)**
+
 ```bash
 # Start the development environment
 ./scripts/dev-start.sh
@@ -722,7 +745,9 @@ curl http://localhost:8000/api/v1/ping
 ```
 
 #### **Step 1.12: Create Day 1 Verification Checklist (30 minutes)**
+
 Create: `verification/day1-checklist.md`
+
 ```markdown
 # Day 1 Verification Checklist
 
@@ -753,6 +778,7 @@ All checkboxes above must be ✅ before proceeding to Day 2
 ```
 
 #### **Step 1.13: End of Day 1 Testing (1.5 hours)**
+
 ```bash
 # Complete system test
 echo "Testing complete system..."
@@ -778,6 +804,7 @@ done
 ```
 
 ### **📈 Day 1 Success Metrics**
+
 - ✅ `curl http://localhost:8000/health` returns 200 status
 - ✅ Database queries execute successfully  
 - ✅ Auto-reload works when files change
@@ -787,12 +814,15 @@ done
 ---
 
 # **DAY 2: Authentication & User Management**
+
 ## **🕐 12 Hours | Goal: Complete auth system with JWT tokens**
 
 ### **📅 Morning Session (4 hours): 6:00 AM - 10:00 AM**
 
 #### **Step 2.1: Create Authentication Models (1 hour)**
+
 Create: `datamodels/auth_models_extended.py`
+
 ```python
 """
 Extended authentication models for Fairdoc AI
@@ -853,7 +883,9 @@ class UserUpdate(BaseModel):
 ```
 
 #### **Step 2.2: Create Authentication Service (1 hour)**
+
 Create: `services/auth_service.py`
+
 ```python
 """
 Authentication service for Fairdoc AI
@@ -1052,7 +1084,9 @@ auth_service = AuthService()
 ```
 
 #### **Step 2.3: Create Authentication Repository (1 hour)**
+
 Create: `data/repositories/auth_repository.py`
+
 ```python
 """
 Authentication repository for Fairdoc AI
@@ -1194,7 +1228,9 @@ class AuthRepository:
 ```
 
 #### **Step 2.4: Create Authentication Dependencies (1 hour)**
+
 Create: `core/dependencies.py`
+
 ```python
 """
 FastAPI dependencies for Fairdoc AI
@@ -1282,7 +1318,9 @@ def get_database() -> Session:
 ### **📅 Afternoon Session (4 hours): 12:00 PM - 4:00 PM**
 
 #### **Step 2.5: Create Authentication API Routes (1.5 hours)**
+
 Create: `api/auth/routes.py`
+
 ```python
 """
 Authentication API routes for Fairdoc AI
@@ -1511,7 +1549,9 @@ async def get_user_stats(
 ```
 
 #### **Step 2.6: Update Main App with Auth Routes (30 minutes)**
+
 Update: `app.py` (add auth router)
+
 ```python
 # Add this import near the top
 from api.auth.routes import router as auth_router
@@ -1521,7 +1561,9 @@ app.include_router(auth_router, prefix="/api/v1/auth", tags=["Authentication"])
 ```
 
 #### **Step 2.7: Create Database Migration for Users Table (30 minutes)**
+
 Create: `data/database/migrations/create_users_table.py`
+
 ```python
 """
 Database migration to create users table with proper indexes
@@ -1600,7 +1642,9 @@ if __name__ == "__main__":
 ```
 
 #### **Step 2.8: Test Authentication System (1.5 hours)**
+
 Create: `tests/test_auth.py`
+
 ```python
 """
 Test authentication system
@@ -1716,7 +1760,9 @@ if __name__ == "__main__":
 ### **📅 Evening Session (4 hours): 6:00 PM - 10:00 PM**
 
 #### **Step 2.9: Create Frontend Authentication Setup (2 hours)**
+
 Create: `frontend/package.json`
+
 ```json
 {
   "name": "fairdoc-frontend",
@@ -1749,6 +1795,7 @@ Create: `frontend/package.json`
 ```
 
 Create: `frontend/src/App.jsx`
+
 ```jsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
@@ -1837,7 +1884,9 @@ export default App;
 ```
 
 #### **Step 2.10: Create Auth Context and Hook (30 minutes)**
+
 Create: `frontend/src/contexts/AuthContext.jsx`
+
 ```jsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authAPI } from '../utils/api';
@@ -1946,6 +1995,7 @@ export { AuthContext };
 ```
 
 Create: `frontend/src/hooks/useAuth.js`
+
 ```javascript
 import { useContext } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
@@ -1962,7 +2012,9 @@ export function useAuth() {
 ```
 
 #### **Step 2.11: Create API Client (30 minutes)**
+
 Create: `frontend/src/utils/api.js`
+
 ```javascript
 import axios from 'axios';
 
@@ -2061,7 +2113,9 @@ export default api;
 ```
 
 #### **Step 2.12: Create Login Component (1 hour)**
+
 Create: `frontend/src/components/Login.jsx`
+
 ```jsx
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -2175,6 +2229,7 @@ export default Login;
 ```
 
 ### **📈 Day 2 Success Metrics**
+
 - ✅ User registration works via API
 - ✅ User login returns JWT token
 - ✅ Protected endpoints require valid token
@@ -2185,12 +2240,15 @@ export default Login;
 ---
 
 # **DAY 3: Basic Medical Triage System**
+
 ## **🕐 12 Hours | Goal: Simple symptom input and AI response**
 
 ### **📅 Morning Session (4 hours): 6:00 AM - 10:00 AM**
 
 #### **Step 3.1: Create Medical Data Models (1 hour)**
+
 Create: `datamodels/medical_models_extended.py`
+
 ```python
 """
 Extended medical models for basic triage functionality
@@ -2283,7 +2341,9 @@ class TriageResponse(BaseModel):
 ```
 
 #### **Step 3.2: Create Basic Medical Repository (1 hour)**
+
 Create: `data/repositories/medical_repository.py`
+
 ```python
 """
 Medical repository for Fairdoc AI
@@ -2424,7 +2484,9 @@ class MedicalRepository:
 ```
 
 #### **Step 3.3: Create Basic AI Triage Service (1 hour)**
+
 Create: `services/medical_ai_service.py`
+
 ```python
 """
 Basic medical AI service for Fairdoc AI
@@ -2677,7 +2739,9 @@ medical_ai_service = MedicalAIService()
 ```
 
 #### **Step 3.4: Create Medical API Routes (1 hour)**
+
 Create: `api/medical/routes.py`
+
 ```python
 """
 Medical API routes for Fairdoc AI
@@ -2919,7 +2983,9 @@ async def quick_symptom_check(
 ### **📅 Afternoon Session (4 hours): 12:00 PM - 4:00 PM**
 
 #### **Step 3.5: Update Main App with Medical Routes (30 minutes)**
+
 Update: `app.py`
+
 ```python
 # Add this import
 from api.medical.routes import router as medical_router
@@ -2929,7 +2995,9 @@ app.include_router(medical_router, prefix="/api/v1/medical", tags=["Medical Tria
 ```
 
 #### **Step 3.6: Create Database Migration for Medical Tables (30 minutes)**
+
 Create: `data/database/migrations/create_medical_tables.py`
+
 ```python
 """
 Database migration for medical assessment tables
@@ -2984,7 +3052,9 @@ if __name__ == "__main__":
 ```
 
 #### **Step 3.7: Create Frontend Triage Components (2 hours)**
+
 Create: `frontend/src/components/SymptomForm.jsx`
+
 ```jsx
 import React, { useState } from 'react';
 
@@ -3354,6 +3424,7 @@ export default SymptomForm;
 ```
 
 Create: `frontend/src/components/TriageResult.jsx`
+
 ```jsx
 import React from 'react';
 import { CheckCircleIcon, ExclamationTriangleIcon, XCircleIcon } from '@heroicons/react/24/outline';
@@ -3565,7 +3636,9 @@ export default TriageResult;
 ```
 
 #### **Step 3.8: Create Main Triage Page (1 hour)**
+
 Create: `frontend/src/pages/Triage.jsx`
+
 ```jsx
 import React, { useState } from 'react';
 import SymptomForm from '../components/SymptomForm';
@@ -3747,7 +3820,9 @@ export default Triage;
 ### **📅 Evening Session (4 hours): 6:00 PM - 10:00 PM**
 
 #### **Step 3.9: Add Triage Route to App (30 minutes)**
+
 Update: `frontend/src/App.jsx`
+
 ```jsx
 // Add import
 import Triage from './pages/Triage';
@@ -3758,7 +3833,9 @@ import Triage from './pages/Triage';
 ```
 
 #### **Step 3.10: Update Navigation (30 minutes)**
+
 Create: `frontend/src/components/Navbar.jsx`
+
 ```jsx
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
@@ -3834,7 +3911,9 @@ export default Navbar;
 ```
 
 #### **Step 3.11: Update API Utils (30 minutes)**
+
 Update: `frontend/src/utils/api.js`
+
 ```javascript
 // Add medical API endpoints
 export const medicalAPI = {
@@ -3870,7 +3949,9 @@ export const medicalAPI = {
 ```
 
 #### **Step 3.12: Create Simple Dashboard (1 hour)**
+
 Create: `frontend/src/components/Dashboard.jsx`
+
 ```jsx
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
@@ -4146,6 +4227,7 @@ export default Dashboard;
 ```
 
 #### **Step 3.13: Run Database Migration (30 minutes)**
+
 ```bash
 # In backend directory
 cd Fairdoc/backend
@@ -4160,6 +4242,7 @@ docker exec -it fairdoc_postgres psql -U fairdoc -d fairdoc_dev -c "\dt"
 ```
 
 #### **Step 3.14: Test Complete Triage System (1.5 hours)**
+
 ```bash
 # Start all services
 ./scripts/dev-start.sh
@@ -4298,6 +4381,7 @@ if __name__ == "__main__":
 ```
 
 ### **📈 Day 3 Success Metrics**
+
 - ✅ `POST /api/v1/medical/triage` accepts symptom data and returns assessment
 - ✅ Database stores medical assessments correctly
 - ✅ Frontend triage form submits and displays results
@@ -4307,12 +4391,15 @@ if __name__ == "__main__":
 ---
 
 # **DAY 4: Real-Time Chat Interface** 💬
+
 ## **🕐 12 Hours | Goal: WebSocket chat with context preservation**
 
 ### **📅 Morning Session (4 hours): 6:00 AM - 10:00 AM**
 
 #### **Step 4.1: Create Chat Models Extended (1 hour)**
+
 Create: `datamodels/chat_models_extended.py`
+
 ```python
 """
 Extended chat models for real-time medical conversations
@@ -4472,7 +4559,9 @@ class WebSocketMessage(BaseModel):
 ```
 
 #### **Step 4.2: Create WebSocket Manager (1 hour)**
+
 Create: `core/websocket_manager.py`
+
 ```python
 """
 WebSocket connection manager for real-time chat
@@ -4636,7 +4725,9 @@ manager = ConnectionManager()
 ```
 
 #### **Step 4.3: Create Chat Repository (1 hour)**
+
 Create: `data/repositories/chat_repository.py`
+
 ```python
 """
 Chat repository for storing conversation data
@@ -4881,7 +4972,9 @@ class ChatRepository:
 ```
 
 #### **Step 4.4: Create Chat Orchestrator Service (1 hour)**
+
 Create: `services/chat_orchestrator.py`
+
 ```python
 """
 Chat orchestrator service for managing AI conversations
@@ -5151,7 +5244,9 @@ chat_orchestrator = ChatOrchestrator()
 ### **📅 Afternoon Session (4 hours): 12:00 PM - 4:00 PM**
 
 #### **Step 4.5: Create WebSocket Chat Routes (1.5 hours)**
+
 Create: `api/chat/websocket_routes.py`
+
 ```python
 """
 WebSocket routes for real-time chat functionality
@@ -5597,7 +5692,9 @@ export default ChatWindow;
 ### **📅 Evening Session (4 hours): 6:00 PM - 10:00 PM**
 
 #### **Step 4.9: Create Chat Page (1 hour)**
+
 Create: `frontend/src/pages/Chat.jsx`
+
 ```jsx
 import React from 'react';
 import ChatWindow from '../components/ChatWindow';
@@ -5691,7 +5788,9 @@ export default Chat;
 ```
 
 #### **Step 4.10: Add Chat Route and Navigation (30 minutes)**
+
 Update: `frontend/src/App.jsx` (add chat route)
+
 ```jsx
 // Add import
 import Chat from './pages/Chat';
@@ -5702,6 +5801,7 @@ import Chat from './pages/Chat';
 ```
 
 #### **Step 4.11: Run Database Migration and Test (1 hour)**
+
 ```bash
 # Run chat tables migration
 cd Fairdoc/backend
@@ -5714,7 +5814,9 @@ docker exec -it fairdoc_postgres psql -U fairdoc -d fairdoc_dev -c "\dt"
 ```
 
 #### **Step 4.12: Test WebSocket Chat System (1.5 hours)**
+
 Create: `tests/test_chat_websocket.py`
+
 ```python
 """
 Test WebSocket chat functionality
@@ -5840,6 +5942,7 @@ if __name__ == "__main__":
 ```
 
 #### **Step 4.13: Manual Frontend Test (1 hour)**
+
 ```bash
 # Start backend
 cd Fairdoc/backend
@@ -5858,6 +5961,7 @@ npm run dev
 ```
 
 ### **📈 Day 4 Success Metrics**
+
 - ✅ WebSocket connections establish successfully
 - ✅ Real-time message exchange works
 - ✅ Chat messages stored in database
@@ -5871,12 +5975,15 @@ npm run dev
 **Continue with the same detailed format for Days 5-10...**
 
 # **DAY 5: Bias Monitoring Dashboard** ⚖️
+
 ## **🕐 12 Hours | Goal: Real-time bias detection and reporting**
 
 ### **📅 Morning Session (4 hours): 6:00 AM - 10:00 AM**
 
 #### **Step 5.1: Create Enhanced Bias Detection Service (1 hour)**
+
 Create: `services/bias_detection_service_extended.py`
+
 ```python
 """
 Enhanced bias detection service with real-time monitoring
@@ -6136,7 +6243,9 @@ bias_monitor = RealTimeBiasMonitor()
 ```
 
 #### **Step 5.2: Create Bias Repository (1 hour)**
+
 Create: `data/repositories/bias_repository.py`
+
 ```python
 """
 Bias repository for storing bias monitoring data
@@ -6388,7 +6497,9 @@ class BiasRepository:
 ```
 
 #### **Step 5.3: Create Bias Monitoring API Routes (1 hour)**
+
 Create: `api/admin/bias_routes.py`
+
 ```python
 """
 Bias monitoring API routes for Fairdoc AI
@@ -6709,7 +6820,9 @@ async def test_bias_alert(
 ```
 
 #### **Step 5.4: Create Database Migration for Bias Tables (1 hour)**
+
 Create: `data/database/migrations/create_bias_tables.py`
+
 ```python
 """
 Database migration for bias monitoring tables
@@ -6809,7 +6922,9 @@ if __name__ == "__main__":
 ### **📅 Afternoon Session (4 hours): 12:00 PM - 4:00 PM**
 
 #### **Step 5.5: Update Medical Service with Bias Monitoring (1 hour)**
+
 Update: `services/medical_ai_service.py` (add bias monitoring)
+
 ```python
 # Add this import at the top
 from services.bias_detection_service_extended import bias_monitor
@@ -6891,7 +7006,9 @@ async def assess_patient(self, patient_input: PatientInput) -> TriageResponse:
 ```
 
 #### **Step 5.6: Create Frontend Bias Dashboard Components (2 hours)**
+
 Create: `frontend/src/components/BiasMetrics.jsx`
+
 ```jsx
 import React, { useState, useEffect } from 'react';
 import { ExclamationTriangleIcon, CheckCircleIcon, ClockIcon } from '@heroicons/react/24/outline';
@@ -7157,7 +7274,9 @@ export default BiasMetrics;
 ```
 
 #### **Step 5.7: Create Admin Dashboard Page (1 hour)**
+
 Create: `frontend/src/pages/AdminDashboard.jsx`
+
 ```jsx
 import React, { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
@@ -7261,7 +7380,9 @@ export default AdminDashboard;
 ### **📅 Evening Session (4 hours): 6:00 PM - 10:00 PM**
 
 #### **Step 5.8: Update API Utils with Bias Endpoints (30 minutes)**
+
 Update: `frontend/src/utils/api.js`
+
 ```javascript
 // Add bias monitoring API endpoints
 export const biasAPI = {
@@ -7305,7 +7426,9 @@ export const biasAPI = {
 ```
 
 #### **Step 5.9: Update Main App with Admin Routes (30 minutes)**
+
 Update: `frontend/src/App.jsx`
+
 ```jsx
 // Add import
 import AdminDashboard from './pages/AdminDashboard';
@@ -7319,6 +7442,7 @@ import AdminDashboard from './pages/AdminDashboard';
 ```
 
 Update: `frontend/src/components/Navbar.jsx` (add admin link)
+
 ```jsx
 // Add admin link for admin users
 {isAuthenticated && user?.role === 'admin' && (
@@ -7329,7 +7453,9 @@ Update: `frontend/src/components/Navbar.jsx` (add admin link)
 ```
 
 #### **Step 5.10: Update Main App with Bias Routes (30 minutes)**
+
 Update: `app.py`
+
 ```python
 # Add this import
 from api.admin.bias_routes import router as bias_router
@@ -7339,6 +7465,7 @@ app.include_router(bias_router, prefix="/api/v1/admin", tags=["Bias Monitoring"]
 ```
 
 #### **Step 5.11: Run Database Migration and Test (1 hour)**
+
 ```bash
 # Run bias tables migration
 cd Fairdoc/backend
@@ -7351,7 +7478,9 @@ docker exec -it fairdoc_postgres psql -U fairdoc -d fairdoc_dev -c "\dt"
 ```
 
 #### **Step 5.12: Test Bias Monitoring System (1.5 hours)**
+
 Create: `tests/test_bias_monitoring.py`
+
 ```python
 """
 Test bias monitoring functionality
@@ -7460,6 +7589,7 @@ if __name__ == "__main__":
 ```
 
 #### **Step 5.13: Manual Frontend Test (1 hour)**
+
 ```bash
 # Start backend with bias monitoring
 cd Fairdoc/backend
@@ -7479,6 +7609,7 @@ npm run dev
 ```
 
 ### **📈 Day 5 Success Metrics**
+
 - ✅ Bias monitoring service detects demographic disparities
 - ✅ Real-time bias alerts trigger correctly
 - ✅ Admin dashboard displays bias metrics
@@ -7489,12 +7620,15 @@ npm run dev
 ---
 
 # **DAY 6: File Upload & Image Analysis** 📁
+
 ## **🕐 12 Hours | Goal: Multi-modal input processing**
 
 ### **📅 Morning Session (4 hours): 6:00 AM - 10:00 AM**
 
 #### **Step 6.1: Create File Upload Models (1 hour)**
+
 Create: `datamodels/file_models_extended.py`
+
 ```python
 """
 Extended file models for multi-modal medical input
@@ -7671,7 +7805,9 @@ class AudioAnalysisResult(BaseModel):
 ```
 
 #### **Step 6.2: Create File Repository (1 hour)**
+
 Create: `data/repositories/file_repository.py`
+
 ```python
 """
 File repository for medical file storage and retrieval
@@ -7913,7 +8049,9 @@ class FileRepository:
 ```
 
 #### **Step 6.3: Create Image Analysis Service (1 hour)**
+
 Create: `services/image_analysis_service.py`
+
 ```python
 """
 Image analysis service for medical image processing
@@ -8684,7 +8822,9 @@ async def list_files(
 ### **📅 Afternoon Session (4 hours): 12:00 PM - 4:00 PM**
 
 #### **Step 6.5: Create Database Migration for File Tables (30 minutes)**
+
 Create: `data/database/migrations/create_file_tables.py`
+
 ```python
 """
 Database migration for file storage tables
@@ -8750,7 +8890,9 @@ if __name__ == "__main__":
 ```
 
 #### **Step 6.6: Update Main App with File Routes (30 minutes)**
+
 Update: `app.py`
+
 ```python
 # Add this import
 from api.files.upload_routes import router as files_router
@@ -8760,7 +8902,9 @@ app.include_router(files_router, prefix="/api/v1/files", tags=["File Upload"])
 ```
 
 #### **Step 6.7: Create Frontend File Upload Components (2 hours)**
+
 Create: `frontend/src/components/FileUpload.jsx`
+
 ```jsx
 import React, { useState, useCallback } from 'react';
 import { PhotoIcon, DocumentIcon, SpeakerWaveIcon } from '@heroicons/react/24/outline';
@@ -9075,7 +9219,9 @@ export default FileUpload;
 ```
 
 #### **Step 6.8: Create File Upload Page (1 hour)**
+
 Create: `frontend/src/pages/FileUpload.jsx`
+
 ```jsx
 import React, { useState } from 'react';
 import FileUpload from '../components/FileUpload';
@@ -9212,7 +9358,9 @@ export default FileUploadPage;
 ### **📅 Evening Session (4 hours): 6:00 PM - 10:00 PM**
 
 #### **Step 6.9: Add File Upload Route to App (30 minutes)**
+
 Update: `frontend/src/App.jsx`
+
 ```jsx
 // Add import
 import FileUploadPage from './pages/FileUpload';
@@ -9223,6 +9371,7 @@ import FileUploadPage from './pages/FileUpload';
 ```
 
 Update: `frontend/src/components/Navbar.jsx` (add upload link)
+
 ```jsx
 // Add upload link in navigation
 
@@ -9231,7 +9380,9 @@ Update: `frontend/src/components/Navbar.jsx` (add upload link)
 ```
 
 #### **Step 6.10: Create Audio Processing Service (1 hour)**
+
 Create: `services/audio_analysis_service.py`
+
 ```python
 """
 Audio analysis service for medical audio processing
@@ -9517,6 +9668,7 @@ medical_audio_analyzer = MedicalAudioAnalyzer()
 ```
 
 #### **Step 6.11: Run Database Migration and Test (1 hour)**
+
 ```bash
 # Run file tables migration
 cd Fairdoc/backend
@@ -9529,7 +9681,9 @@ docker exec -it fairdoc_postgres psql -U fairdoc -d fairdoc_dev -c "\dt"
 ```
 
 #### **Step 6.12: Test File Upload System (1.5 hours)**
+
 Create: `tests/test_file_upload.py`
+
 ```python
 """
 Test file upload and analysis functionality
@@ -9684,6 +9838,7 @@ if __name__ == "__main__":
 ```
 
 #### **Step 6.13: Manual Frontend Test (1 hour)**
+
 ```bash
 # Start backend with file upload support
 cd Fairdoc/backend
@@ -9702,6 +9857,7 @@ npm run dev
 ```
 
 ### **📈 Day 6 Success Metrics**
+
 - ✅ File upload API accepts multiple formats (images, audio)
 - ✅ Image analysis returns medical findings and recommendations
 - ✅ Audio processing extracts features and abnormalities
@@ -9713,12 +9869,15 @@ npm run dev
 ---
 
 # **DAY 7: NHS EHR Integration & Production Setup** 🏥
+
 ## **🕐 12 Hours | Goal: NHS integration and deployment ready**
 
 ### **📅 Morning Session (4 hours): 6:00 AM - 10:00 AM**
 
 #### **Step 7.1: Create NHS EHR Integration Service (1.5 hours)**
+
 Create: `services/nhs_ehr_service.py`
+
 ```python
 """
 NHS EHR integration service for Fairdoc AI
@@ -10164,7 +10323,9 @@ nhs_ehr_service = NHSEHRService()
 ```
 
 #### **Step 7.2: Create NHS Integration API Routes (1 hour)**
+
 Create: `api/nhs/integration_routes.py`
+
 ```python
 """
 NHS integration API routes for Fairdoc AI
@@ -10240,5 +10401,2030 @@ async def get_nhs_patient_record(
             "accessed_by": current_user.email,
             "accessed_at": datetime.utcnow().isoformat()
         }
+except Exception as e:
+        logger.error(f"Failed to get NHS patient record {nhs_number}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve patient record"
+        )
+
+@router.post("/patient/{nhs_number}/submit-assessment")
+async def submit_assessment_to_nhs(
+    nhs_number: str,
+    assessment_data: dict,
+    current_user: UserModel = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Submit AI assessment results to NHS systems
+    
+    **Request Body:**
+    ```
+    {
+        "assessment_id": "uuid4",
+        "risk_level": "moderate",
+        "urgency_level": "urgent", 
+        "recommended_action": "gp_appointment",
+        "confidence_score": 0.85,
+        "explanation": "Patient symptoms suggest...",
+        "bias_score": 0.02,
+        "processing_time_ms": 1250
+    }
+    ```
+    """
+    try:
+        # Validate NHS number
+        if not await nhs_ehr_service.validate_nhs_number(nhs_number):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid NHS number format"
+            )
+        
+        # Submit assessment to NHS systems
+        success = await nhs_ehr_service.submit_assessment_to_nhs(nhs_number, assessment_data)
+        
+        if success:
+            logger.info(f"Assessment submitted to NHS for patient {nhs_number} by {current_user.email}")
+            return {
+                "success": True,
+                "message": "Assessment submitted to NHS successfully",
+                "nhs_number": nhs_number,
+                "assessment_id": assessment_data.get("assessment_id"),
+                "submitted_at": datetime.utcnow().isoformat(),
+                "submitted_by": current_user.email
+            }
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to submit assessment to NHS"
+            )
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to submit assessment to NHS: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Assessment submission failed"
+        )
+
+@router.get("/gp-practices/search")
+async def search_gp_practices(
+    postcode: Optional[str] = Query(None),
+    practice_name: Optional[str] = Query(None),
+    radius_miles: int = Query(10, ge=1, le=50),
+    current_user: UserModel = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Search for GP practices by postcode or name
+    
+    **Query Parameters:**
+    - postcode: UK postcode (e.g., "SW1A 1AA")
+    - practice_name: Practice name to search for
+    - radius_miles: Search radius in miles (1-50)
+    """
+    try:
+        if not postcode and not practice_name:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Either postcode or practice_name must be provided"
+            )
+        
+        # Mock GP practice search for development
+        mock_practices = [
+            {
+                "practice_code": "A12345",
+                "practice_name": "City Medical Centre",
+                "address": "123 High Street, London, SW1A 1AA",
+                "phone": "020 7123 4567",
+                "postcode": "SW1A 1AA",
+                "distance_miles": 0.5,
+                "accepting_patients": True,
+                "online_booking": True
+            },
+            {
+                "practice_code": "B67890", 
+                "practice_name": "Riverside Surgery",
+                "address": "456 River Road, London, SW1B 2BB",
+                "phone": "020 7234 5678",
+                "postcode": "SW1B 2BB",
+                "distance_miles": 1.2,
+                "accepting_patients": True,
+                "online_booking": False
+            },
+            {
+                "practice_code": "C13579",
+                "practice_name": "Health & Wellness Clinic",
+                "address": "789 Park Lane, London, SW1C 3CC",
+                "phone": "020 7345 6789",
+                "postcode": "SW1C 3CC",
+                "distance_miles": 2.1,
+                "accepting_patients": False,
+                "online_booking": True
+            }
+        ]
+        
+        # Filter by practice name if provided
+        if practice_name:
+            mock_practices = [
+                p for p in mock_practices 
+                if practice_name.lower() in p["practice_name"].lower()
+            ]
+        
+        # Filter by radius
+        mock_practices = [
+            p for p in mock_practices 
+            if p["distance_miles"]  100:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Maximum 100 assessments per bulk operation"
+            )
+        
+        results = []
+        successful_submissions = 0
+        failed_submissions = 0
+        
+        for i, assessment in enumerate(assessments):
+            try:
+                nhs_number = assessment.get("nhs_number")
+                assessment_data = assessment.get("assessment_data")
+                
+                if not nhs_number or not assessment_data:
+                    results.append({
+                        "index": i,
+                        "nhs_number": nhs_number,
+                        "success": False,
+                        "error": "Missing nhs_number or assessment_data"
+                    })
+                    failed_submissions += 1
+                    continue
+                
+                # Validate NHS number
+                if not await nhs_ehr_service.validate_nhs_number(nhs_number):
+                    results.append({
+                        "index": i,
+                        "nhs_number": nhs_number,
+                        "success": False,
+                        "error": "Invalid NHS number format"
+                    })
+                    failed_submissions += 1
+                    continue
+                
+                # Submit assessment
+                success = await nhs_ehr_service.submit_assessment_to_nhs(nhs_number, assessment_data)
+                
+                results.append({
+                    "index": i,
+                    "nhs_number": nhs_number,
+                    "success": success,
+                    "submitted_at": datetime.utcnow().isoformat()
+                })
+                
+                if success:
+                    successful_submissions += 1
+                else:
+                    failed_submissions += 1
+                    
+            except Exception as e:
+                results.append({
+                    "index": i,
+                    "nhs_number": assessment.get("nhs_number"),
+                    "success": False,
+                    "error": str(e)
+                })
+                failed_submissions += 1
+        
+        logger.info(f"Bulk assessment submission completed by {current_user.email}: {successful_submissions} successful, {failed_submissions} failed")
+        
+        return {
+            "total_assessments": len(assessments),
+            "successful_submissions": successful_submissions,
+            "failed_submissions": failed_submissions,
+            "results": results,
+            "submitted_by": current_user.email,
+            "completed_at": datetime.utcnow().isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Bulk assessment submission failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Bulk submission failed"
+        )
+```
+
+#### **Step 7.3: Create NHS Data Models (1 hour)**
+
+Create: `datamodels/nhs_ehr_models.py`
+
+```
+"""
+NHS EHR data models for FHIR R4 compatibility
+"""
+from datetime import datetime, date
+from typing import Optional, List, Dict, Any, Union
+from uuid import UUID, uuid4
+from pydantic import BaseModel, Field, validator
+from enum import Enum
+
+class FHIRResourceType(str, Enum):
+    """FHIR R4 resource types"""
+    PATIENT = "Patient"
+    OBSERVATION = "Observation"
+    CONDITION = "Condition"
+    MEDICATION_STATEMENT = "MedicationStatement"
+    ALLERGY_INTOLERANCE = "AllergyIntolerance"
+    APPOINTMENT = "Appointment"
+    PRACTITIONER = "Practitioner"
+    ORGANIZATION = "Organization"
+
+class NHSPatientGender(str, Enum):
+    """NHS patient gender values"""
+    MALE = "male"
+    FEMALE = "female"
+    OTHER = "other"
+    UNKNOWN = "unknown"
+
+class NHSEthnicity(str, Enum):
+    """NHS ethnicity codes (simplified)"""
+    WHITE_BRITISH = "A"
+    WHITE_IRISH = "B"
+    WHITE_OTHER = "C"
+    MIXED_WHITE_BLACK_CARIBBEAN = "D"
+    MIXED_WHITE_BLACK_AFRICAN = "E"
+    MIXED_WHITE_ASIAN = "F"
+    MIXED_OTHER = "G"
+    ASIAN_INDIAN = "H"
+    ASIAN_PAKISTANI = "J"
+    ASIAN_BANGLADESHI = "K"
+    ASIAN_OTHER = "L"
+    BLACK_CARIBBEAN = "M"
+    BLACK_AFRICAN = "N"
+    BLACK_OTHER = "P"
+    CHINESE = "R"
+    OTHER = "S"
+    NOT_STATED = "Z"
+
+class NHSIdentifier(BaseModel):
+    """NHS identifier structure"""
+    system: str = Field(..., description="Identifier system URL")
+    value: str = Field(..., description="Identifier value")
+    use: Optional[str] = Field(None, description="Identifier use")
+
+class NHSAddress(BaseModel):
+    """NHS address structure"""
+    use: Optional[str] = Field(None, description="Address use (home, work, etc.)")
+    type: Optional[str] = Field(None, description="Address type")
+    text: Optional[str] = Field(None, description="Full address as text")
+    line: Optional[List[str]] = Field(None, description="Address lines")
+    city: Optional[str] = Field(None, description="City")
+    district: Optional[str] = Field(None, description="District")
+    state: Optional[str] = Field(None, description="State")
+    postal_code: Optional[str] = Field(None, description="Postal code")
+    country: Optional[str] = Field(None, description="Country")
+
+class NHSHumanName(BaseModel):
+    """NHS human name structure"""
+    use: Optional[str] = Field(None, description="Name use (official, maiden, etc.)")
+    text: Optional[str] = Field(None, description="Full name as text")
+    family: Optional[str] = Field(None, description="Family name")
+    given: Optional[List[str]] = Field(None, description="Given names")
+    prefix: Optional[List[str]] = Field(None, description="Name prefixes")
+    suffix: Optional[List[str]] = Field(None, description="Name suffixes")
+
+class NHSPatient(BaseModel):
+    """NHS Patient resource (FHIR R4 compatible)"""
+    resource_type: str = Field(default="Patient", alias="resourceType")
+    id: Optional[str] = Field(None, description="Resource ID")
+    
+    # Identifiers
+    identifier: List[NHSIdentifier] = Field(default_factory=list)
+    
+    # Demographics
+    active: Optional[bool] = Field(None, description="Patient record is active")
+    name: Optional[List[NHSHumanName]] = Field(None, description="Patient names")
+    telecom: Optional[List[Dict]] = Field(None, description="Contact details")
+    gender: Optional[NHSPatientGender] = Field(None, description="Patient gender")
+    birth_date: Optional[date] = Field(None, alias="birthDate", description="Date of birth")
+    deceased: Optional[Union[bool, datetime]] = Field(None, description="Deceased indicator")
+    address: Optional[List[NHSAddress]] = Field(None, description="Patient addresses")
+    
+    # Extensions for NHS-specific data
+    ethnicity: Optional[NHSEthnicity] = Field(None, description="Patient ethnicity")
+    nhs_number: Optional[str] = Field(None, description="NHS number")
+    
+    class Config:
+        allow_population_by_field_name = True
+
+class NHSObservation(BaseModel):
+    """NHS Observation resource"""
+    resource_type: str = Field(default="Observation", alias="resourceType")
+    id: Optional[str] = Field(None)
+    
+    status: str = Field(..., description="Observation status")
+    category: Optional[List[Dict]] = Field(None, description="Observation category")
+    code: Dict = Field(..., description="Observation code")
+    subject: Dict = Field(..., description="Patient reference")
+    effective_date_time: Optional[datetime] = Field(None, alias="effectiveDateTime")
+    
+    # Value types
+    value_string: Optional[str] = Field(None, alias="valueString")
+    value_quantity: Optional[Dict] = Field(None, alias="valueQuantity")
+    value_boolean: Optional[bool] = Field(None, alias="valueBoolean")
+    
+    # Components for complex observations
+    component: Optional[List[Dict]] = Field(None, description="Observation components")
+    
+    class Config:
+        allow_population_by_field_name = True
+
+class NHSCondition(BaseModel):
+    """NHS Condition resource"""
+    resource_type: str = Field(default="Condition", alias="resourceType")
+    id: Optional[str] = Field(None)
+    
+    clinical_status: Dict = Field(..., alias="clinicalStatus")
+    verification_status: Optional[Dict] = Field(None, alias="verificationStatus")
+    category: Optional[List[Dict]] = Field(None)
+    severity: Optional[Dict] = Field(None)
+    code: Dict = Field(..., description="Condition code")
+    subject: Dict = Field(..., description="Patient reference")
+    onset_date_time: Optional[datetime] = Field(None, alias="onsetDateTime")
+    recorded_date: Optional[datetime] = Field(None, alias="recordedDate")
+    
+    class Config:
+        allow_population_by_field_name = True
+
+class NHSMedicationStatement(BaseModel):
+    """NHS MedicationStatement resource"""
+    resource_type: str = Field(default="MedicationStatement", alias="resourceType")
+    id: Optional[str] = Field(None)
+    
+    status: str = Field(..., description="Medication status")
+    medication_codeable_concept: Optional[Dict] = Field(None, alias="medicationCodeableConcept")
+    subject: Dict = Field(..., description="Patient reference")
+    effective_date_time: Optional[datetime] = Field(None, alias="effectiveDateTime")
+    date_asserted: Optional[datetime] = Field(None, alias="dateAsserted")
+    dosage: Optional[List[Dict]] = Field(None, description="Dosage information")
+    
+    class Config:
+        allow_population_by_field_name = True
+
+class NHSAllergyIntolerance(BaseModel):
+    """NHS AllergyIntolerance resource"""
+    resource_type: str = Field(default="AllergyIntolerance", alias="resourceType")
+    id: Optional[str] = Field(None)
+    
+    clinical_status: Optional[Dict] = Field(None, alias="clinicalStatus")
+    verification_status: Optional[Dict] = Field(None, alias="verificationStatus")
+    type: Optional[str] = Field(None, description="Allergy type")
+    category: Optional[List[str]] = Field(None, description="Allergy category")
+    criticality: Optional[str] = Field(None, description="Criticality")
+    code: Optional[Dict] = Field(None, description="Allergy code")
+    patient: Dict = Field(..., description="Patient reference")
+    onset_date_time: Optional[datetime] = Field(None, alias="onsetDateTime")
+    recorded_date: Optional[datetime] = Field(None, alias="recordedDate")
+    
+    class Config:
+        allow_population_by_field_name = True
+
+class FHIRBundle(BaseModel):
+    """FHIR Bundle resource for patient data"""
+    resource_type: str = Field(default="Bundle", alias="resourceType")
+    id: Optional[str] = Field(None)
+    type: str = Field(default="collection", description="Bundle type")
+    timestamp: Optional[datetime] = Field(None, description="Bundle timestamp")
+    total: Optional[int] = Field(None, description="Total number of resources")
+    
+    entry: List[Dict] = Field(default_factory=list, description="Bundle entries")
+    
+    class Config:
+        allow_population_by_field_name = True
+
+class GPConnectRecord(BaseModel):
+    """GP Connect structured record"""
+    patient: NHSPatient
+    conditions: List[NHSCondition] = Field(default_factory=list)
+    medications: List[NHSMedicationStatement] = Field(default_factory=list)
+    allergies: List[NHSAllergyIntolerance] = Field(default_factory=list)
+    observations: List[NHSObservation] = Field(default_factory=list)
+    
+    # Metadata
+    retrieved_at: datetime = Field(default_factory=datetime.utcnow)
+    source_system: str = Field(default="GP Connect")
+    data_quality_score: Optional[float] = Field(None, ge=0.0, le=1.0)
+
+class NHSAppointment(BaseModel):
+    """NHS Appointment resource"""
+    resource_type: str = Field(default="Appointment", alias="resourceType")
+    id: Optional[str] = Field(None)
+    
+    status: str = Field(..., description="Appointment status")
+    service_category: Optional[List[Dict]] = Field(None, alias="serviceCategory")
+    service_type: Optional[List[Dict]] = Field(None, alias="serviceType")
+    specialty: Optional[List[Dict]] = Field(None, description="Specialty")
+    appointment_type: Optional[Dict] = Field(None, alias="appointmentType")
+    reason_code: Optional[List[Dict]] = Field(None, alias="reasonCode")
+    priority: Optional[int] = Field(None, description="Priority")
+    description: Optional[str] = Field(None, description="Description")
+    start: Optional[datetime] = Field(None, description="Start time")
+    end: Optional[datetime] = Field(None, description="End time")
+    minutes_duration: Optional[int] = Field(None, alias="minutesDuration")
+    slot: Optional[List[Dict]] = Field(None, description="Appointment slots")
+    created: Optional[datetime] = Field(None, description="Creation date")
+    comment: Optional[str] = Field(None, description="Additional comments")
+    participant: List[Dict] = Field(default_factory=list, description="Participants")
+    
+    class Config:
+        allow_population_by_field_name = True
+
+class NHSAPIResponse(BaseModel):
+    """Standard NHS API response wrapper"""
+    success: bool = Field(default=True)
+    data: Optional[Dict] = Field(None)
+    errors: Optional[List[str]] = Field(None)
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    request_id: Optional[str] = Field(None)
+    
+class NHSValidationResult(BaseModel):
+    """NHS number validation result"""
+    nhs_number: str
+    valid: bool
+    format_valid: bool
+    checksum_valid: bool
+    validation_errors: List[str] = Field(default_factory=list)
+    validated_at: datetime = Field(default_factory=datetime.utcnow)
+```
+
+#### **Step 7.4: Create Production Configuration Service (1.5 hours)**
+
+Create: `services/production_config_service.py`
+
+```
+"""
+Production configuration service for Fairdoc AI
+Handles environment-specific configurations and deployment settings
+"""
+import os
+import logging
+from typing import Dict, List, Optional
+from pathlib import Path
+from pydantic import BaseModel, Field
+from enum import Enum
+
+logger = logging.getLogger(__name__)
+
+class DeploymentEnvironment(str, Enum):
+    """Deployment environment types"""
+    DEVELOPMENT = "development"
+    STAGING = "staging"
+    PRODUCTION = "production"
+    TEST = "test"
+
+class SecurityLevel(str, Enum):
+    """Security configuration levels"""
+    LOW = "low"           # Development only
+    MEDIUM = "medium"     # Staging
+    HIGH = "high"         # Production
+    MAXIMUM = "maximum"   # High-security production
+
+class ProductionConfig(BaseModel):
+    """Production configuration model"""
+    
+    # Environment
+    environment: DeploymentEnvironment = DeploymentEnvironment.DEVELOPMENT
+    debug: bool = False
+    
+    # Security
+    security_level: SecurityLevel = SecurityLevel.HIGH
+    enforce_https: bool = True
+    allowed_hosts: List[str] = Field(default_factory=list)
+    cors_origins: List[str] = Field(default_factory=list)
+    
+    # Database
+    db_pool_size: int = 20
+    db_max_overflow: int = 30
+    db_pool_timeout: int = 30
+    db_ssl_required: bool = True
+    
+    # Performance
+    max_request_size_mb: int = 50
+    rate_limit_per_minute: int = 100
+    cache_ttl_seconds: int = 300
+    
+    # Monitoring
+    enable_metrics: bool = True
+    log_level: str = "INFO"
+    sentry_dsn: Optional[str] = None
+    
+    # NHS Integration
+    nhs_api_timeout_seconds: int = 30
+    nhs_retry_attempts: int = 3
+    nhs_rate_limit_per_hour: int = 1000
+
+class ProductionConfigService:
+    """Service for managing production configurations"""
+    
+    def __init__(self):
+        self.config_cache: Optional[ProductionConfig] = None
+        self.environment = self._detect_environment()
+    
+    def _detect_environment(self) -> DeploymentEnvironment:
+        """Detect current deployment environment"""
+        env = os.getenv("ENVIRONMENT", "development").lower()
+        
+        try:
+            return DeploymentEnvironment(env)
+        except ValueError:
+            logger.warning(f"Unknown environment '{env}', defaulting to development")
+            return DeploymentEnvironment.DEVELOPMENT
+    
+    def get_config(self) -> ProductionConfig:
+        """Get production configuration"""
+        if self.config_cache is None:
+            self.config_cache = self._load_config()
+        return self.config_cache
+    
+    def _load_config(self) -> ProductionConfig:
+        """Load configuration based on environment"""
+        
+        if self.environment == DeploymentEnvironment.PRODUCTION:
+            return self._get_production_config()
+        elif self.environment == DeploymentEnvironment.STAGING:
+            return self._get_staging_config()
+        elif self.environment == DeploymentEnvironment.TEST:
+            return self._get_test_config()
+        else:
+            return self._get_development_config()
+    
+    def _get_production_config(self) -> ProductionConfig:
+        """Production environment configuration"""
+        return ProductionConfig(
+            environment=DeploymentEnvironment.PRODUCTION,
+            debug=False,
+            security_level=SecurityLevel.HIGH,
+            enforce_https=True,
+            allowed_hosts=[
+                "api.fairdoc.ai",
+                "fairdoc.ai",
+                "*.fairdoc.ai"
+            ],
+            cors_origins=[
+                "https://app.fairdoc.ai",
+                "https://admin.fairdoc.ai",
+                "https://docs.fairdoc.ai"
+            ],
+            db_pool_size=50,
+            db_max_overflow=100,
+            db_pool_timeout=60,
+            db_ssl_required=True,
+            max_request_size_mb=100,
+            rate_limit_per_minute=200,
+            cache_ttl_seconds=600,
+            enable_metrics=True,
+            log_level="WARNING",
+            sentry_dsn=os.getenv("SENTRY_DSN"),
+            nhs_api_timeout_seconds=45,
+            nhs_retry_attempts=5,
+            nhs_rate_limit_per_hour=5000
+        )
+    
+    def _get_staging_config(self) -> ProductionConfig:
+        """Staging environment configuration"""
+        return ProductionConfig(
+            environment=DeploymentEnvironment.STAGING,
+            debug=False,
+            security_level=SecurityLevel.MEDIUM,
+            enforce_https=True,
+            allowed_hosts=[
+                "staging-api.fairdoc.ai",
+                "staging.fairdoc.ai"
+            ],
+            cors_origins=[
+                "https://staging.fairdoc.ai",
+                "https://staging-admin.fairdoc.ai"
+            ],
+            db_pool_size=30,
+            db_max_overflow=50,
+            db_pool_timeout=45,
+            db_ssl_required=True,
+            max_request_size_mb=75,
+            rate_limit_per_minute=150,
+            cache_ttl_seconds=300,
+            enable_metrics=True,
+            log_level="INFO",
+            nhs_api_timeout_seconds=30,
+            nhs_retry_attempts=3,
+            nhs_rate_limit_per_hour=2000
+        )
+    
+    def _get_development_config(self) -> ProductionConfig:
+        """Development environment configuration"""
+        return ProductionConfig(
+            environment=DeploymentEnvironment.DEVELOPMENT,
+            debug=True,
+            security_level=SecurityLevel.LOW,
+            enforce_https=False,
+            allowed_hosts=["*"],  # Allow all hosts in development
+            cors_origins=[
+                "http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "http://localhost:8080"
+            ],
+            db_pool_size=10,
+            db_max_overflow=20,
+            db_pool_timeout=30,
+            db_ssl_required=False,
+            max_request_size_mb=50,
+            rate_limit_per_minute=1000,  # Higher limit for development
+            cache_ttl_seconds=60,
+            enable_metrics=True,
+            log_level="DEBUG",
+            nhs_api_timeout_seconds=30,
+            nhs_retry_attempts=3,
+            nhs_rate_limit_per_hour=1000
+        )
+    
+    def _get_test_config(self) -> ProductionConfig:
+        """Test environment configuration"""
+        return ProductionConfig(
+            environment=DeploymentEnvironment.TEST,
+            debug=True,
+            security_level=SecurityLevel.LOW,
+            enforce_https=False,
+            allowed_hosts=["testserver", "localhost"],
+            cors_origins=["*"],
+            db_pool_size=5,
+            db_max_overflow=10,
+            db_pool_timeout=15,
+            db_ssl_required=False,
+            max_request_size_mb=10,
+            rate_limit_per_minute=10000,  # Very high for tests
+            cache_ttl_seconds=1,  # Short cache for tests
+            enable_metrics=False,
+            log_level="DEBUG",
+            nhs_api_timeout_seconds=5,
+            nhs_retry_attempts=1,
+            nhs_rate_limit_per_hour=10000
+        )
+    
+    def get_database_config(self) -> Dict:
+        """Get database configuration for current environment"""
+        config = self.get_config()
+        
+        base_url = os.getenv("POSTGRES_URL", "postgresql://fairdoc:password@localhost:5432/fairdoc_dev")
+        
+        return {
+            "url": base_url,
+            "pool_size": config.db_pool_size,
+            "max_overflow": config.db_max_overflow,
+            "pool_timeout": config.db_pool_timeout,
+            "pool_pre_ping": True,
+            "pool_recycle": 3600,  # 1 hour
+            "echo": config.debug,
+            "connect_args": {
+                "sslmode": "require" if config.db_ssl_required else "prefer",
+                "application_name": f"fairdoc-{config.environment.value}"
+            }
+        }
+    
+    def get_security_config(self) -> Dict:
+        """Get security configuration for current environment"""
+        config = self.get_config()
+        
+        return {
+            "secret_key": os.getenv("SECRET_KEY", "dev-secret-key"),
+            "algorithm": "HS256",
+            "access_token_expire_minutes": 30 if config.environment == DeploymentEnvironment.PRODUCTION else 480,
+            "require_https": config.enforce_https,
+            "allowed_hosts": config.allowed_hosts,
+            "cors_origins": config.cors_origins,
+            "security_level": config.security_level.value,
+            "rate_limiting": {
+                "enabled": True,
+                "requests_per_minute": config.rate_limit_per_minute,
+                "burst_multiplier": 2
+            }
+        }
+    
+    def get_monitoring_config(self) -> Dict:
+        """Get monitoring and logging configuration"""
+        config = self.get_config()
+        
+        return {
+            "log_level": config.log_level,
+            "enable_metrics": config.enable_metrics,
+            "sentry_dsn": config.sentry_dsn,
+            "structured_logging": config.environment == DeploymentEnvironment.PRODUCTION,
+            "request_logging": True,
+            "performance_monitoring": config.enable_metrics,
+            "error_tracking": config.sentry_dsn is not None
+        }
+    
+    def get_nhs_integration_config(self) -> Dict:
+        """Get NHS integration configuration"""
+        config = self.get_config()
+        
+        return {
+            "api_base_url": os.getenv("NHS_API_BASE_URL", "https://sandbox.api.nhs.uk"),
+            "client_id": os.getenv("NHS_CLIENT_ID"),
+            "client_secret": os.getenv("NHS_CLIENT_SECRET"),
+            "timeout_seconds": config.nhs_api_timeout_seconds,
+            "retry_attempts": config.nhs_retry_attempts,
+            "rate_limit_per_hour": config.nhs_rate_limit_per_hour,
+            "mock_mode": config.environment in [DeploymentEnvironment.DEVELOPMENT, DeploymentEnvironment.TEST],
+            "enable_audit_logging": True,
+            "enable_encryption": config.security_level in [SecurityLevel.HIGH, SecurityLevel.MAXIMUM]
+        }
+    
+    def validate_production_readiness(self) -> Dict:
+        """Validate if the system is ready for production"""
+        issues = []
+        warnings = []
+        
+        config = self.get_config()
+        
+        # Critical checks
+        if not os.getenv("SECRET_KEY") or os.getenv("SECRET_KEY").startswith("dev-"):
+            issues.append("Production SECRET_KEY not set")
+        
+        if not os.getenv("POSTGRES_URL") or "localhost" in os.getenv("POSTGRES_URL", ""):
+            issues.append("Production database URL not configured")
+        
+        if config.environment == DeploymentEnvironment.PRODUCTION and config.debug:
+            issues.append("Debug mode should not be enabled in production")
+        
+        if not config.enforce_https and config.environment == DeploymentEnvironment.PRODUCTION:
+            issues.append("HTTPS should be enforced in production")
+        
+        # Warning checks
+        if not config.sentry_dsn:
+            warnings.append("Error monitoring (Sentry) not configured")
+        
+        if config.security_level != SecurityLevel.HIGH and config.environment == DeploymentEnvironment.PRODUCTION:
+            warnings.append("Security level should be HIGH for production")
+        
+        if not os.getenv("NHS_CLIENT_ID") or not os.getenv("NHS_CLIENT_SECRET"):
+            warnings.append("NHS API credentials not configured")
+        
+        is_ready = len(issues) == 0
+        
+        return {
+            "ready_for_production": is_ready,
+            "environment": config.environment.value,
+            "critical_issues": issues,
+            "warnings": warnings,
+            "checked_at": logger.info(f"Production readiness check: {'READY' if is_ready else 'NOT READY'}")
+        }
+
+# Global production config service
+production_config = ProductionConfigService()
+```
+
+### **📅 Afternoon Session (4 hours): 12:00 PM - 4:00 PM**
+
+#### **Step 7.5: Update Main App with NHS Routes (30 minutes)**
+
+Update: `app.py`
+
+```
+# Add this import
+from api.nhs.integration_routes import router as nhs_router
+
+# Add this line after other router includes
+app.include_router(nhs_router, prefix="/api/v1/nhs", tags=["NHS Integration"])
+```
+
+#### **Step 7.6: Create Deployment Scripts (1.5 hours)**
+
+Create: `deployment/docker-compose.production.yml`
+
+```
+version: '3.8'
+
+services:
+  # Fairdoc API (Production)
+  fairdoc-api:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile.production
+    environment:
+      - ENVIRONMENT=production
+      - POSTGRES_URL=${POSTGRES_URL}
+      - REDIS_URL=${REDIS_URL}
+      - SECRET_KEY=${SECRET_KEY}
+      - NHS_CLIENT_ID=${NHS_CLIENT_ID}
+      - NHS_CLIENT_SECRET=${NHS_CLIENT_SECRET}
+      - SENTRY_DSN=${SENTRY_DSN}
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ../uploads:/app/uploads
+      - ../logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # PostgreSQL (Production)
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../deployment/postgres/init-prod.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis (Production)
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Nginx (Load Balancer)
+  nginx:
+    image: nginx:alpine
+    volumes:
+      - ../deployment/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ../deployment/nginx/ssl:/etc/nginx/ssl
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - fairdoc-api
+    restart: unless-stopped
+
+  # Monitoring (Prometheus)
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ../deployment/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+
+  # Monitoring (Grafana)
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ../deployment/monitoring/grafana:/etc/grafana/provisioning
+    ports:
+      - "3001:3000"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  default:
+    name: fairdoc_production
+```
+
+Create: `deployment/Dockerfile.production`
+
+```
+# Production Dockerfile for Fairdoc AI
+FROM python:3.13-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN useradd --create-home --shell /bin/bash fairdoc
+RUN chown -R fairdoc:fairdoc /app
+
+# Copy requirements and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Create necessary directories
+RUN mkdir -p /app/uploads /app/logs
+RUN chown -R fairdoc:fairdoc /app
+
+# Switch to non-root user
+USER fairdoc
+
+# Set environment variables
+ENV ENVIRONMENT=production
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+
+# Expose port
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8000/api/v1/health || exit 1
+
+# Start application
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+```
+
+Create: `deployment/nginx/nginx.conf`
+
+```
+events {
+    worker_connections 1024;
+}
+
+http {
+    upstream fairdoc_backend {
+        server fairdoc-api:8000;
+    }
+
+    # Rate limiting
+    limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
+    limit_req_zone $binary_remote_addr zone=upload:10m rate=5r/s;
+
+    # Security headers
+    add_header X-Frame-Options DENY;
+    add_header X-Content-Type-Options nosniff;
+    add_header X-XSS-Protection "1; mode=block";
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains";
+
+    server {
+        listen 80;
+        server_name api.fairdoc.ai;
+        return 301 https://$server_name$request_uri;
+    }
+
+    server {
+        listen 443 ssl http2;
+        server_name api.fairdoc.ai;
+
+        # SSL configuration
+        ssl_certificate /etc/nginx/ssl/cert.pem;
+        ssl_certificate_key /etc/nginx/ssl/key.pem;
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384;
+        ssl_prefer_server_ciphers off;
+
+        # General settings
+        client_max_body_size 100M;
+        proxy_read_timeout 300s;
+        proxy_connect_timeout 75s;
+
+        # API endpoints
+        location /api/ {
+            limit_req zone=api burst=20 nodelay;
+            proxy_pass http://fairdoc_backend;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        # File upload endpoints
+        location /api/v1/files/ {
+            limit_req zone=upload burst=10 nodelay;
+            proxy_pass http://fairdoc_backend;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        # WebSocket endpoints
+        location /ws/ {
+            proxy_pass http://fairdoc_backend;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        # Health check
+        location /health {
+            proxy_pass http://fairdoc_backend/api/v1/health;
+            access_log off;
+        }
+
+        # Documentation
+        location /docs {
+            proxy_pass http://fairdoc_backend;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+    }
+}
+```
+
+#### **Step 7.7: Create Production Environment File (30 minutes)**
+
+Create: `deployment/.env.production`
+
+```
+# Fairdoc AI Production Configuration
+ENVIRONMENT=production
+
+# Database Configuration
+POSTGRES_URL=postgresql://fairdoc_prod:CHANGE_ME@postgres:5432/fairdoc_production
+POSTGRES_DB=fairdoc_production
+POSTGRES_USER=fairdoc_prod
+POSTGRES_PASSWORD=CHANGE_ME_SECURE_PASSWORD
+
+# Redis Configuration
+REDIS_URL=redis://:CHANGE_ME_REDIS_PASSWORD@redis:6379/0
+REDIS_PASSWORD=CHANGE_ME_REDIS_PASSWORD
+
+# Security Configuration
+SECRET_KEY=CHANGE_ME_SUPER_SECRET_KEY_FOR_PRODUCTION
+JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# NHS Integration
+NHS_API_BASE_URL=https://api.nhs.uk
+NHS_CLIENT_ID=CHANGE_ME_NHS_CLIENT_ID
+NHS_CLIENT_SECRET=CHANGE_ME_NHS_CLIENT_SECRET
+
+# Monitoring & Analytics
+SENTRY_DSN=CHANGE_ME_SENTRY_DSN
+GRAFANA_PASSWORD=CHANGE_ME_GRAFANA_PASSWORD
+
+# Application Settings
+HOST=0.0.0.0
+PORT=8000
+WORKERS=4
+DEBUG=false
+
+# CORS Settings
+ALLOWED_ORIGINS=https://app.fairdoc.ai,https://admin.fairdoc.ai
+CORS_CREDENTIALS=true
+
+# Rate Limiting
+RATE_LIMIT_PER_MINUTE=100
+RATE_LIMIT_BURST=20
+
+# File Upload
+MAX_FILE_SIZE_MB=100
+UPLOAD_PATH=/app/uploads
+
+# Logging
+LOG_LEVEL=WARNING
+ENABLE_ACCESS_LOGS=true
+LOG_FORMAT=structured
+
+# SSL/TLS
+FORCE_HTTPS=true
+SSL_REDIRECT=true
+```
+
+#### **Step 7.8: Create Deployment Scripts (1.5 hours)**
+
+Create: `deployment/deploy.sh`
+
+```
+#!/bin/bash
+# Fairdoc AI Production Deployment Script
+# Deploys the application to production environment
+
+set -e  # Exit on any error
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Configuration
+PROJECT_NAME="fairdoc-ai"
+BACKUP_DIR="/backups"
+DEPLOY_DIR="/opt/fairdoc"
+
+# Functions
+log_info() {
+    echo -e "${GREEN}[INFO]${NC} $1"
+}
+
+log_warn() {
+    echo -e "${YELLOW}[WARN]${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+check_prerequisites() {
+    log_info "Checking prerequisites..."
+    
+    # Check if running as root or with sudo
+    if [[ $EUID -eq 0 ]]; then
+        log_error "Do not run this script as root. Use a user with sudo privileges."
+        exit 1
+    fi
+    
+    # Check required commands
+    commands=("docker" "docker-compose" "git" "curl")
+    for cmd in "${commands[@]}"; do
+        if ! command -v $cmd &> /dev/null; then
+            log_error "$cmd is not installed"
+            exit 1
+        fi
+    done
+    
+    # Check Docker daemon
+    if ! docker info &> /dev/null; then
+        log_error "Docker daemon is not running"
+        exit 1
+    fi
+    
+    log_info "Prerequisites check passed"
+}
+
+backup_database() {
+    log_info "Creating database backup..."
+    
+    mkdir -p $BACKUP_DIR
+    BACKUP_FILE="$BACKUP_DIR/fairdoc_backup_$(date +%Y%m%d_%H%M%S).sql"
+    
+    if docker-compose -f deployment/docker-compose.production.yml exec -T postgres pg_dump -U $POSTGRES_USER $POSTGRES_DB > $BACKUP_FILE; then
+        log_info "Database backup created: $BACKUP_FILE"
+    else
+        log_warn "Database backup failed, continuing with deployment"
+    fi
+}
+
+pull_latest_code() {
+    log_info "Pulling latest code from repository..."
+    
+    # Stash any local changes
+    git stash push -m "Pre-deployment stash $(date)"
+    
+    # Pull latest changes
+    git pull origin main
+    
+    # Update submodules if any
+    git submodule update --init --recursive
+    
+    log_info "Code updated successfully"
+}
+
+build_images() {
+    log_info "Building Docker images..."
+    
+    # Build production image
+    docker-compose -f deployment/docker-compose.production.yml build --no-cache fairdoc-api
+    
+    log_info "Docker images built successfully"
+}
+
+run_migrations() {
+    log_info "Running database migrations..."
+    
+    # Run migrations
+    docker-compose -f deployment/docker-compose.production.yml exec fairdoc-api python -m alembic upgrade head
+    
+    log_info "Database migrations completed"
+}
+
+deploy_application() {
+    log_info "Deploying application..."
+    
+    # Deploy with zero-downtime using Docker Compose
+    docker-compose -f deployment/docker-compose.production.yml up -d --remove-orphans
+    
+    # Wait for services to be healthy
+    log_info "Waiting for services to be healthy..."
+    
+    max_attempts=30
+    attempt=0
+    
+    while [ $attempt -lt $max_attempts ]; do
+        if docker-compose -f deployment/docker-compose.production.yml exec fairdoc-api curl -f http://localhost:8000/api/v1/health &> /dev/null; then
+            log_info "Application is healthy"
+            break
+        fi
+        
+        attempt=$((attempt + 1))
+        log_info "Waiting for application to be ready... ($attempt/$max_attempts)"
+        sleep 10
+    done
+    
+    if [ $attempt -eq $max_attempts ]; then
+        log_error "Application failed to become healthy"
+        exit 1
+    fi
+}
+
+cleanup_old_images() {
+    log_info "Cleaning up old Docker images..."
+    
+    # Remove unused images
+    docker image prune -f
+    
+    # Remove old containers
+    docker container prune -f
+    
+    log_info "Cleanup completed"
+}
+
+run_health_checks() {
+    log_info "Running post-deployment health checks..."
+    
+    # Check API health
+    if curl -f http://localhost:8000/api/v1/health &> /dev/null; then
+        log_info "✓ API health check passed"
+    else
+        log_error "✗ API health check failed"
+        return 1
+    fi
+    
+    # Check database connectivity
+    if docker-compose -f deployment/docker-compose.production.yml exec -T postgres pg_isready -U $POSTGRES_USER -d $POSTGRES_DB &> /dev/null; then
+        log_info "✓ Database connectivity check passed"
+    else
+        log_error "✗ Database connectivity check failed"
+        return 1
+    fi
+    
+    # Check Redis connectivity
+    if docker-compose -f deployment/docker-compose.production.yml exec -T redis redis-cli ping &> /dev/null; then
+        log_info "✓ Redis connectivity check passed"
+    else
+        log_error "✗ Redis connectivity check failed"
+        return 1
+    fi
+    
+    log_info "All health checks passed"
+}
+
+# Main deployment flow
+main() {
+    log_info "Starting Fairdoc AI production deployment..."
+    
+    # Load environment variables
+    if [ -f deployment/.env.production ]; then
+        source deployment/.env.production
+    else
+        log_error "Production environment file not found"
+        exit 1
+    fi
+    
+    # Run deployment steps
+    check_prerequisites
+    backup_database
+    pull_latest_code
+    build_images
+    deploy_application
+    run_migrations
+    cleanup_old_images
+    run_health_checks
+    
+    log_info "🎉 Deployment completed successfully!"
+    log_info "Application is available at: https://api.fairdoc.ai"
+    log_info "Monitoring dashboard: https://api.fairdoc.ai:3001"
+}
+
+# Rollback function
+rollback() {
+    log_warn "Rolling back to previous version..."
+    
+    # Stop current containers
+    docker-compose -f deployment/docker-compose.production.yml down
+    
+    # Restore from backup (manual step)
+    log_info "Please manually restore database from backup if needed"
+    log_info "Backup directory: $BACKUP_DIR"
+    
+    # Start previous version (assumes previous image is tagged)
+    log_info "Manual rollback required - please check Docker images and restart previous version"
+}
+
+# Handle script arguments
+case "${1:-deploy}" in
+    "deploy")
+        main
+        ;;
+    "rollback")
+        rollback
+        ;;
+    "health-check")
+        run_health_checks
+        ;;
+    *)
+        echo "Usage: $0 {deploy|rollback|health-check}"
+        exit 1
+        ;;
+esac
+```
+
+#### **Step 7.9: Create Production Health Monitoring (30 minutes)**
+
+Create: `deployment/monitoring/prometheus.yml`
+
+```
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "alert_rules.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+scrape_configs:
+  # Fairdoc API metrics
+  - job_name: 'fairdoc-api'
+    static_configs:
+      - targets: ['fairdoc-api:8000']
+    metrics_path: '/api/v1/metrics'
+    scrape_interval: 30s
+
+  # System metrics
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  # Database metrics
+  - job_name: 'postgres-exporter'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+
+  # Redis metrics
+  - job_name: 'redis-exporter'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+
+  # Nginx metrics
+  - job_name: 'nginx-exporter'
+    static_configs:
+      - targets: ['nginx-exporter:9113']
+```
+
+Create: `deployment/monitoring/alert_rules.yml`
+
+```
+groups:
+  - name: fairdoc_alerts
+    rules:
+      # High error rate
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value }} errors per second"
+
+      # High response time
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High response time detected"
+          description: "95th percentile response time is {{ $value }} seconds"
+
+      # Database connection issues
+      - alert: DatabaseDown
+        expr: up{job="postgres-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database is down"
+          description: "PostgreSQL database is not responding"
+
+      # High memory usage
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value | humanizePercentage }}"
+
+      # Disk space low
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_size_bytes - node_filesystem_free_bytes) / node_filesystem_size_bytes > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Disk space low"
+          description: "Disk usage is {{ $value | humanizePercentage }} on {{ $labels.mountpoint }}"
+
+      # Bias score threshold exceeded
+      - alert: BiasThresholdExceeded
+        expr: avg_over_time(bias_score[1h]) > 0.1
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Bias threshold exceeded"
+          description: "Average bias score over 1 hour is {{ $value }}"
+```
+
+### **📅 Evening Session (4 hours): 6:00 PM - 10:00 PM**
+
+#### **Step 7.10: Test NHS Integration (1 hour)**
+
+Create: `tests/test_nhs_integration.py`
+
+```
+"""
+Test NHS integration functionality
+"""
+import requests
+import json
+
+BASE_URL = "http://localhost:8000/api/v1"
+
+def get_admin_token():
+    """Get admin token for NHS integration testing"""
+    login_data = {
+        "email": "admin@fairdoc.ai",
+        "password": "password",  # Default admin password
+        "remember_me": False
+    }
+    
+    response = requests.post(f"{BASE_URL}/auth/login", json=login_data)
+    if response.status_code == 200:
+        return response.json()["access_token"]
+    else:
+        raise Exception("Failed to get admin token")
+
+def test_nhs_number_validation():
+    """Test NHS number validation"""
+    print("🧪 Testing NHS number validation...")
+    
+    token = get_admin_token()
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    # Test valid NHS number
+    response = requests.get(f"{BASE_URL}/nhs/validate-nhs-number/1234567890", headers=headers)
+    assert response.status_code == 200
+    
+    result = response.json()
+    print(f"Validation result: {result}")
+    
+    print("✅ NHS number validation test passed")
+
+def test_patient_record_lookup():
+    """Test patient record lookup"""
+    print("🧪 Testing patient record lookup...")
+    
+    token = get_admin_token()
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    # Test with mock NHS number
+    response = requests.get(f"{BASE_URL}/nhs/patient/1234567890", headers=headers)
+    print(f"Status: {response.status_code}")
+    print(f"Response: {response.json()}")
+    
+    assert response.status_code == 200
+    result = response.json()
+    assert "patient_record" in result
+    
+    print("✅ Patient record lookup test passed")
+
+def test_gp_practice_search():
+    """Test GP practice search"""
+    print("🧪 Testing GP practice search...")
+    
+    token = get_admin_token()
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    response = requests.get(f"{BASE_URL}/nhs/gp-practices/search?postcode=SW1A1AA", headers=headers)
+    print(f"Status: {response.status_code}")
+    print(f"Response: {response.json()}")
+    
+    assert response.status_code == 200
+    result = response.json()
+    assert "practices" in result
+    
+    print("✅ GP practice search test passed")
+
+def test_assessment_submission():
+    """Test assessment submission to NHS"""
+    print("🧪 Testing assessment submission...")
+    
+    token = get_admin_token()
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    assessment_data = {
+        "assessment_id": "test-assessment-123",
+        "risk_level": "moderate",
+        "urgency_level": "urgent",
+        "recommended_action": "gp_appointment",
+        "confidence_score": 0.85,
+        "explanation": "Test assessment submission",
+        "bias_score": 0.02
+    }
+    
+    response = requests.post(
+        f"{BASE_URL}/nhs/patient/1234567890/submit-assessment",
+        headers=headers,
+        json=assessment_data
+    )
+    
+    print(f"Status: {response.status_code}")
+    print(f"Response: {response.json()}")
+    
+    assert response.status_code == 200
+    result = response.json()
+    assert result["success"] == True
+    
+    print("✅ Assessment submission test passed")
+
+def test_nhs_integration_status():
+    """Test NHS integration status"""
+    print("🧪 Testing NHS integration status...")
+    
+    token = get_admin_token()
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    response = requests.get(f"{BASE_URL}/nhs/integration/status", headers=headers)
+    print(f"Status: {response.status_code}")
+    print(f"Response: {response.json()}")
+    
+    assert response.status_code == 200
+    result = response.json()
+    assert "integration_status" in result
+    
+    print("✅ NHS integration status test passed")
+
+if __name__ == "__main__":
+    print("🚀 Starting NHS integration tests...")
+    
+    try:
+        test_nhs_number_validation()
+        test_patient_record_lookup()
+        test_gp_practice_search()
+        test_assessment_submission()
+        test_nhs_integration_status()
+        
+        print("\n🎉 All NHS integration tests passed!")
+        
+    except Exception as e:
+        print(f"❌ Test failed: {e}")
+```
+
+#### **Step 7.11: Create Production Readiness Checklist (1 hour)**
+
+Create: `deployment/production_checklist.md`
+
+```markdown
+
+# Fairdoc AI Production Readiness Checklist
+
+## 🔒 Security Configuration
+- [ ] **Secret Key**: Strong, unique SECRET_KEY set (not dev key)
+- [ ] **Database Credentials**: Secure passwords for all database users
+- [ ] **NHS API Keys**: Valid NHS Digital API credentials configured
+- [ ] **SSL/TLS**: Valid SSL certificates installed and configured
+- [ ] **HTTPS Enforcement**: All HTTP traffic redirected to HTTPS
+- [ ] **CORS Origins**: Restricted to production domains only
+- [ ] **Rate Limiting**: API rate limits configured appropriately
+- [ ] **Authentication**: JWT token expiration times set for production
+- [ ] **File Upload Security**: File type and size restrictions enabled
+- [ ] **Error Handling**: Sensitive information not exposed in error messages
+
+## 🗄️ Database Configuration
+- [ ] **Production Database**: Separate production database configured
+- [ ] **Connection Pooling**: Database connection pooling optimized
+- [ ] **SSL Connection**: Database connections use SSL/TLS
+- [ ] **Backup Strategy**: Automated backup system in place
+- [ ] **Migration Testing**: All database migrations tested
+- [ ] **Performance Indexes**: Appropriate database indexes created
+- [ ] **Data Retention**: Data retention policies defined
+- [ ] **Disaster Recovery**: Database recovery procedures documented
+
+## 🏥 NHS Integration
+- [ ] **API Credentials**: Valid NHS Digital API credentials
+- [ ] **FHIR Compliance**: FHIR R4 compatibility verified
+- [ ] **GP Connect**: GP Connect integration tested
+- [ ] **Mock Mode Disabled**: Production uses real NHS APIs
+- [ ] **Rate Limiting**: NHS API rate limits configured
+- [ ] **Error Handling**: NHS API error responses handled gracefully
+- [ ] **Audit Logging**: NHS data access properly logged
+- [ ] **Data Governance**: NHS data governance requirements met
+
+## 📊 Monitoring & Logging
+- [ ] **Application Metrics**: Prometheus metrics collection enabled
+- [ ] **Error Tracking**: Sentry or equivalent error monitoring configured
+- [ ] **Performance Monitoring**: Response time and throughput monitoring
+- [ ] **Health Checks**: Comprehensive health check endpoints
+- [ ] **Log Aggregation**: Centralized logging system configured
+- [ ] **Alert Rules**: Critical alerts configured (database down, high error rate)
+- [ ] **Dashboard**: Grafana or equivalent monitoring dashboard
+- [ ] **Bias Monitoring**: Real-time bias detection alerts enabled
+
+## 🚀 Infrastructure
+- [ ] **Load Balancer**: Nginx or equivalent load balancer configured
+- [ ] **Auto-scaling**: Container orchestration for high availability
+- [ ] **Resource Limits**: CPU and memory limits set appropriately
+- [ ] **Storage**: Persistent storage for uploads and logs
+- [ ] **Network Security**: Firewall rules and network segmentation
+- [ ] **Container Security**: Base images regularly updated
+- [ ] **Backup Storage**: Offsite backup storage configured
+- [ ] **CDN**: Content delivery network for static assets (if applicable)
+
+## 🧪 Testing & Quality Assurance
+- [ ] **Unit Tests**: All critical functionality covered by unit tests
+- [ ] **Integration Tests**: NHS integration thoroughly tested
+- [ ] **Load Testing**: System tested under expected production load
+- [ ] **Security Testing**: Vulnerability scanning completed
+- [ ] **Bias Testing**: AI bias detection and mitigation verified
+- [ ] **End-to-End Tests**: Complete user workflows tested
+- [ ] **Regression Tests**: All existing functionality still works
+- [ ] **Performance Tests**: Response times meet requirements
+
+## 📋 Compliance & Governance
+- [ ] **GDPR Compliance**: Data protection requirements met
+- [ ] **NHS Digital Standards**: Clinical safety standards (DCB0129) compliance
+- [ ] **MHRA Registration**: Medical device registration if required
+- [ ] **Data Processing Agreement**: NHS data processing agreements signed
+- [ ] **Privacy Policy**: Updated privacy policy published
+- [ ] **Terms of Service**: Production terms of service in place
+- [ ] **Cookie Policy**: Cookie usage properly disclosed
+- [ ] **Audit Trail**: Comprehensive audit logging enabled
+
+## 🔄 Deployment & Operations
+- [ ] **CI/CD Pipeline**: Automated deployment pipeline configured
+- [ ] **Blue-Green Deployment**: Zero-downtime deployment strategy
+- [ ] **Rollback Procedure**: Tested rollback procedures in place
+- [ ] **Environment Variables**: All production environment variables set
+- [ ] **Service Dependencies**: All external dependencies verified
+- [ ] **Documentation**: Operations runbooks and procedures documented
+- [ ] **Incident Response**: Incident response procedures defined
+- [ ] **On-call Rotation**: Support team and escalation procedures
+
+## 💰 Business & Legal
+- [ ] **NHS Trust Agreements**: Partnerships and contracts in place
+- [ ] **Insurance Coverage**: Professional indemnity and cyber insurance
+- [ ] **Data Processing Agreements**: Signed with all NHS partners
+- [ ] **Regulatory Approvals**: All required regulatory approvals obtained
+- [ ] **Business Continuity**: Business continuity plan documented
+- [ ] **Financial Controls**: Billing and cost monitoring in place
+- [ ] **SLA Definitions**: Service level agreements defined
+- [ ] **Support Processes**: Customer support processes established
+
+## ✅ Final Verification
+- [ ] **Production Environment Test**: Full system test in production environment
+- [ ] **Performance Verification**: System meets performance requirements
+- [ ] **Security Scan**: Final security vulnerability scan passed
+- [ ] **NHS Integration Test**: End-to-end NHS integration verified
+- [ ] **Bias Monitoring Active**: Real-time bias monitoring operational
+- [ ] **Monitoring Alerts**: All critical alerts firing correctly
+- [ ] **Backup Recovery**: Backup and recovery procedures tested
+- [ ] **Documentation Complete**: All documentation updated for production
+
+## 🚨 Go-Live Approval
+This checklist must be 100% complete before production deployment.
+
+**Approved by:**
+- [ ] Technical Lead: _________________ Date: _________
+- [ ] Security Officer: ________________ Date: _________
+- [ ] NHS Partnership Lead: ____________ Date: _________
+- [ ] Product Manager: ________________ Date: _________
+
+**Production Go-Live Date: _______________**
+
+---
+
+**Notes:**
+- Any items marked as "Not Applicable" must be documented with justification
+- Critical items (marked with 🚨) are blockers for production deployment
+- This checklist should be reviewed and updated quarterly
+```
+
+#### **Step 7.12: Create Final Production Test Script (1 hour)**
+
+Create: `tests/test_production_readiness.py`
+
+``` python
+
+"""
+Production readiness test suite
+Comprehensive tests to verify production deployment
+"""
+import requests
+import time
+import json
+import asyncio
+import aiohttp
+from datetime import datetime
+
+class ProductionTester:
+    """Production readiness test suite"""
+    
+    def __init__(self, base_url="https://api.fairdoc.ai"):
+        self.base_url = base_url
+        self.results = []
+        self.admin_token = None
+    
+    def log_test(self, test_name, passed, message="", details=None):
+        """Log test result"""
+        status = "✅ PASS" if passed else "❌ FAIL"
+        print(f"{status} {test_name}: {message}")
+        
+        self.results.append({
+            "test": test_name,
+            "passed": passed,
+            "message": message,
+            "details": details,
+            "timestamp": datetime.utcnow().isoformat()
+        })
+    
+    async def test_basic_connectivity(self):
+        """Test basic API connectivity"""
+        try:
+            response = requests.get(f"{self.base_url}/api/v1/health", timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("status") == "healthy":
+                    self.log_test("Basic Connectivity", True, "API is responding")
+                    return True
+                else:
+                    self.log_test("Basic Connectivity", False, f"API status: {data.get('status')}")
+            else:
+                self.log_test("Basic Connectivity", False, f"HTTP {response.status_code}")
+        except Exception as e:
+            self.log_test("Basic Connectivity", False, str(e))
+        
+        return False
+    
+    async def test_https_enforcement(self):
+        """Test HTTPS enforcement"""
+        try:
+            # Try HTTP, should redirect to HTTPS
+            http_url = self.base_url.replace("https://", "http://")
+            response = requests.get(f"{http_url}/api/v1/health", allow_redirects=False, timeout=5)
+            
+            if response.status_code in :
+                location = response.headers.get("Location", "")
+                if location.startswith("https://"):
+                    self.log_test("HTTPS Enforcement", True, "HTTP properly redirects to HTTPS")
+                    return True
+            
+            self.log_test("HTTPS Enforcement", False, "HTTP not redirected to HTTPS")
+        except Exception as e:
+            self.log_test("HTTPS Enforcement", False, str(e))
+        
+        return False
+    
+    async def test_authentication_flow(self):
+        """Test authentication system"""
+        try:
+            # Test login
+            login_data = {
+                "email": "admin@fairdoc.ai",
+                "password": "production_password",  # Should be changed from default
+                "remember_me": False
+            }
+            
+            response = requests.post(f"{self.base_url}/api/v1/auth/login", json=login_data)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "access_token" in data:
+                    self.admin_token = data["access_token"]
+                    self.log_test("Authentication Flow", True, "Login successful")
+                    return True
+                else:
+                    self.log_test("Authentication Flow", False, "No access token returned")
+            else:
+                self.log_test("Authentication Flow", False, f"Login failed: HTTP {response.status_code}")
+        except Exception as e:
+            self.log_test("Authentication Flow", False, str(e))
+        
+        return False
+    
+    async def test_protected_endpoints(self):
+        """Test protected endpoint access"""
+        if not self.admin_token:
+            self.log_test("Protected Endpoints", False, "No admin token available")
+            return False
+        
+        try:
+            headers = {"Authorization": f"Bearer {self.admin_token}"}
+            response = requests.get(f"{self.base_url}/api/v1/auth/profile", headers=headers)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "email" in data:
+                    self.log_test("Protected Endpoints", True, "Protected endpoint accessible")
+                    return True
+            
+            self.log_test("Protected Endpoints", False, f"HTTP {response.status_code}")
+        except Exception as e:
+            self.log_test("Protected Endpoints", False, str(e))
+        
+        return False
+    
+    async def test_nhs_integration(self):
+        """Test NHS integration functionality"""
+        if not self.admin_token:
+            self.log_test("NHS Integration", False, "No admin token available")
+            return False
+        
+        try:
+            headers = {"Authorization": f"Bearer {self.admin_token}"}
+            
+            # Test NHS integration status
+            response = requests.get(f"{self.base_url}/api/v1/nhs/integration/status", headers=headers)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("integration_status") in ["operational", "production"]:
+                    self.log_test("NHS Integration", True, f"Status: {data.get('integration_status')}")
+                    return True
+                else:
+                    self.log_test("NHS Integration", False, f"Status: {data.get('integration_status')}")
+            else:
+                self.log_test("NHS Integration", False, f"HTTP {response.status_code}")
+        except Exception as e:
+            self.log_test("NHS Integration", False, str(e))
+        
+        return False
+    
+    async def test_database_connectivity(self):
+        """Test database connectivity through API"""
+        try:
+            response = requests.get(f"{self.base_url}/api/v1/health/detailed")
+            
+            if response.status_code == 200:
+                data = response.json()
+                db_status = data.get("database", {}).get("connected")
+                
+                if db_status:
+                    self.log_test("Database Connectivity", True, "Database connected")
+                    return True
+                else:
+                    self.log_test("Database Connectivity", False, "Database not connected")
+            else:
+                self.log_test("Database Connectivity", False, f"HTTP {response.status_code}")
+        except Exception as e:
+            self.log_test("Database Connectivity", False, str(e))
+        
+        return False
+    
+    async def test_performance_benchmarks(self):
+        """Test API performance benchmarks"""
+        try:
+            # Test response times
+            response_times = []
+            
+            for i in range(5):
+                start_time = time.time()
+                response = requests.get(f"{self.base_url}/api/v1/health")
+                end_time = time.time()
+                
+                if response.status_code == 200:
+                    response_times.append(end_time - start_time)
+            
+            if response_times:
+                avg_response_time = sum(response_times) / len(response_times)
+                
+                if avg_response_time < 2.0:  # Under 2 seconds
+                    self.log_test("Performance Benchmarks", True, f"Avg response time: {avg_response_time:.3f}s")
+                    return True
+                else:
+                    self.log_test("Performance Benchmarks", False, f"Slow response time: {avg_response_time:.3f}s")
+            else:
+                self.log_test("Performance Benchmarks", False, "No successful requests")
+        except Exception as e:
+            self.log_test("Performance Benchmarks", False, str(e))
+        
+        return False
+    
+    async def test_security_headers(self):
+        """Test security headers"""
+        try:
+            response = requests.get(f"{self.base_url}/api/v1/health")
+            
+            required_headers = [
+                "x-frame-options",
+                "x-content-type-options",
+                "strict-transport-security"
+            ]
+            
+            missing_headers = []
+            for header in required_headers:
+                if header not in [h.lower() for h in response.headers.keys()]:
+                    missing_headers.append(header)
+            
+            if not missing_headers:
+                self.log_test("Security Headers", True, "All security headers present")
+                return True
+            else:
+                self.log_test("Security Headers", False, f"Missing headers: {missing_headers}")
+        except Exception as e:
+            self.log_test("Security Headers", False, str(e))
+        
+        return False
+    
+    async def test_error_handling(self):
+        """Test error handling"""
+        try:
+            # Test 404 handling
+            response = requests.get(f"{self.base_url}/api/v1/nonexistent")
+            
+            if response.status_code == 404:
+                data = response.json()
+                # Should not expose sensitive information
+                if "error" in data and "traceback" not in str(data).lower():
+                    self.log_test("Error Handling", True, "404 errors handled properly")
+                    return True
+                else:
+                    self.log_test("Error Handling", False, "Error response exposes sensitive info")
+            else:
+                self.log_test("Error Handling", False, f"Expected 404, got {response.status_code}")
+        except Exception as e:
+            self.log_test("Error Handling", False, str(e))
+        
+        return False
+    
+    async def run_all_tests(self):
+        """Run all production readiness tests"""
+        print("🚀 Starting Production Readiness Tests...")
+        print(f"Testing: {self.base_url}")
+        print("-" * 60)
+        
+        tests = [
+            self.test_basic_connectivity,
+            self.test_https_enforcement,
+            self.test_authentication_flow,
+            self.test_protected_endpoints,
+            self.test_nhs_integration,
+            self.test_database_connectivity,
+            self.test_performance_benchmarks,
+            self.test_security_headers,
+            self.test_error_handling
+        ]
+        
+        passed_tests = 0
+        total_tests = len(tests)
+        
+        for test in tests:
+            try:
+                result = await test()
+                if result:
+                    passed_tests += 1
+            except Exception as e:
+                print(f"❌ Test {test.__name__} crashed: {e}")
+        
+        print("-" * 60)
+        print(f"🏁 Tests completed: {passed_tests}/{total_tests} passed")
 
 ```
