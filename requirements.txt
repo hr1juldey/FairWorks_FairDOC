@@ -12,7 +12,10 @@ pydantic-settings
 python-multipart
 python-jose[cryptography]
 passlib[bcrypt]
-
+minio
+psycopg
+redis
+boto3
 # Machine Learning & AI - Python 3.13 Compatible
 transformers
 accelerate
