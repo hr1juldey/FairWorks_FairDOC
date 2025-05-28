@@ -188,7 +188,7 @@ class BaseMedicalEntity(BaseEntity, ValidationMixin, MetadataMixin, VersionMixin
     
     # NHS Number validation for UK patients
     nhs_number: Optional[str] = Field(
-        None, 
+        None,
         regex=r'^\d{3}\s?\d{3}\s?\d{4}$',
         description="NHS Number (10 digits)"
     )

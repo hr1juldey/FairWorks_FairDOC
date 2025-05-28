@@ -9,8 +9,8 @@ from pydantic import BaseModel, Field, EmailStr, field_validator, SecretStr
 from enum import Enum
 
 from .base_models import (
-    BaseEntity, BaseResponse, TimestampMixin, 
-    ValidationMixin, MetadataMixin, uuid4
+    BaseEntity, BaseResponse, TimestampMixin,
+    ValidationMixin, MetadataMixin
 )
 
 # ============================================================================
@@ -603,13 +603,14 @@ class UserSession(BaseEntity):
     def is_active(self) -> bool:
         """Check if session is active and not expired."""
         return (
-            self.status == SessionStatus.ACTIVE and 
+            self.status == SessionStatus.ACTIVE and
             datetime.utcnow() < self.session_expires_at
         )
 
 # ============================================================================
 # PERMISSION MAPPINGS
 # ============================================================================
+
 
 NHS_ROLE_PERMISSIONS = {
     NHSUserType.PUBLIC_PATIENT: [
