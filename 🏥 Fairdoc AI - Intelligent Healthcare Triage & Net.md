@@ -41,7 +41,7 @@ A **multi-agent AI orchestration platform** that:
 ### 🗂️ System Architecture Overview
 
 ```mermaid
-graph TB
+graph RL
     subgraph "Frontend Layer"
         A[NHS App Integration] --> B[Patient Interface]
         B --> C[Doctor Dashboard]
@@ -1585,7 +1585,7 @@ All patient data is processed in accordance with:
 
 **Built with ❤️ for healthcare equity and responsible AI**
 
-*Last updated: January 2024*
+*Last updated: June 2025*
 
 <div style="text-align: center">⁂</div>
 
