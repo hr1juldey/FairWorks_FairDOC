@@ -42,88 +42,125 @@ A **multi-agent AI orchestration platform** that:
 ### 🗂️ System Architecture Overview
 
 ```mermaid
-graph LR
-    %% Frontend Layer
-    subgraph "Frontend Layer"
-        A[NHS App Integration]:::frontend --> B[Patient Interface]:::frontend
-        B --> C[Doctor Dashboard]:::frontend
-    end
-
-    %% API Gateway
-    subgraph "Unified API Gateway"
-        D[Main FastAPI App]:::gateway --> E[WebSocket Manager]:::gateway
-        E --> F[Authentication Layer]:::gateway
-        D --> G[v1 API Mount]:::gateway
-        D --> H[v2 API Mount]:::gateway
-        G --> I[Legacy Router]:::gateway
-        H --> J[Modern Router]:::gateway
-    end
-
-    %% v1 Backend (Legacy)
-    subgraph "v1 Backend (Legacy)"
-        I --> K[Original Triage]:::gateway
-        K --> L[Basic ML Models]:::gateway
-        L --> M[PostgreSQL Only]:::gateway
-    end
-
-    %% v2 Backend (Modern)
-    subgraph "v2 Backend (Modern)"
-        J --> N[AI Orchestration Layer]:::ai
-        N --> O[Model Selector]:::ai
-        O --> P[Bias Monitor]:::ai
-        P --> Q[Context Manager]:::ai
-    end
-
-    %% Specialized ML Services (v2)
-    subgraph "Specialized ML Services (v2)"
-        R[Text NLP Service]:::ml
-        S[Image Analysis Service]:::ml
-        T[Audio Processing Service]:::ml
-        U[Time Series Service]:::ml
-        V[Risk Classifier Service]:::ml
-    end
-
-    %% Message Queue & Cache
-    subgraph "Message Queue & Cache"
-        W[Celery Workers]:::queue --> X[Redis Cache]:::queue
-        X --> Y[ChromaDB Vector Store]:::queue
-    end
-
-    %% Data Layer (Separated)
-    subgraph "Data Layer (Separated)"
-        Z[NHS EHR Integration]:::data --> AA[FHIR R4 API]:::data
-        AA --> BB[PostgreSQL DB]:::data
-        CC[RAG Documents]:::data --> Y
-    end
-
-    %% Network Layer
-    subgraph "Network Layer"
-        DD[Specialist Marketplace]:::network --> EE[Doctor Availability]:::network
-        EE --> FF[Consultation Router]:::network
-    end
-
-    %% Cross-Layer Interactions
-    A --> D
-    N --> R
-    N --> S
-    N --> T
-    N --> U
-    N --> V
+---
+config:
+  theme: neo-dark
+  look: neo
+  layout: dagre
+---
+flowchart LR
+ subgraph subGraph0["Frontend Layer"]
+        B["Patient Interface"]
+        A["NHS App Integration"]
+        C["Doctor Dashboard"]
+  end
+ subgraph subGraph1["Unified API Gateway"]
+        E["WebSocket Manager"]
+        D["Main FastAPI App"]
+        F["Authentication Layer"]
+        G["v1 API Mount"]
+        H["v2 API Mount"]
+        I["Legacy Router"]
+        J["Modern Router"]
+  end
+ subgraph subGraph2["v1 Backend (Legacy)"]
+        K["Original Triage"]
+        L["Basic ML Models"]
+        M["PostgreSQL Only"]
+  end
+ subgraph subGraph3["v2 Backend (Modern)"]
+        N["AI Orchestration Layer"]
+        O["Model Selector"]
+        P["Bias Monitor"]
+        Q["Context Manager"]
+  end
+ subgraph subGraph4["Specialized ML Services (v2)"]
+        R["Text NLP Service"]
+        S["Image Analysis Service"]
+        T["Audio Processing Service"]
+        U["Time Series Service"]
+        V["Risk Classifier Service"]
+  end
+ subgraph subGraph5["Message Queue & Cache"]
+        X["Redis Cache"]
+        W["Celery Workers"]
+        Y["ChromaDB Vector Store"]
+  end
+ subgraph subGraph6["Data Layer (Separated)"]
+        AA["FHIR R4 API"]
+        Z["NHS EHR Integration"]
+        BB["PostgreSQL DB"]
+        CC["RAG Documents"]
+  end
+ subgraph subGraph7["Network Layer"]
+        EE["Doctor Availability"]
+        DD["Specialist Marketplace"]
+        FF["Consultation Router"]
+  end
+    A --> B & D
+    B --> C
+    D --> E & G & H
+    E --> F
+    G --> I
+    H --> J
+    I --> K
+    K --> L
+    L --> M
+    J --> N
+    N --> O & R & S & T & U & V & DD
+    O --> P
+    P --> Q
+    W --> X & Z
+    X --> Y
+    Z --> AA
+    AA --> BB
+    CC --> Y
+    DD --> EE
+    EE --> FF
     R --> W
-    N --> DD
-    W --> Z
-
-    %% Define custom styles
-    classDef frontend fill:#e0f7fa,stroke:#00796b,stroke-width:2px,color:#004d40;
-    classDef gateway  fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#bf360c;
-    classDef ai       fill:#ede7f6,stroke:#512da8,stroke-width:2px,color:#311b92;
-    classDef ml       fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px,color:#4a148c;
-    classDef queue    fill:#f1f8e9,stroke:#689f38,stroke-width:2px,color:#33691e;
-    classDef data     fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#1b5e20;
-    classDef network  fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#0d47a1;
+     B:::frontend
+     A:::frontend
+     C:::frontend
+     E:::gateway
+     D:::gateway
+     F:::gateway
+     G:::gateway
+     H:::gateway
+     I:::gateway
+     J:::gateway
+     K:::gateway
+     L:::gateway
+     M:::gateway
+     N:::ai
+     O:::ai
+     P:::ai
+     Q:::ai
+     R:::ml
+     S:::ml
+     T:::ml
+     U:::ml
+     V:::ml
+     X:::queue
+     W:::queue
+     Y:::queue
+     AA:::data
+     Z:::data
+     BB:::data
+     CC:::data
+     EE:::network
+     DD:::network
+     FF:::network
+    classDef frontend fill:#e0f7fa,stroke:#00796b,stroke-width:2px,color:#004d40
+    classDef gateway  fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#bf360c
+    classDef ai       fill:#ede7f6,stroke:#512da8,stroke-width:2px,color:#311b92
+    classDef ml       fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px,color:#4a148c
+    classDef queue    fill:#f1f8e9,stroke:#689f38,stroke-width:2px,color:#33691e
+    classDef data     fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#1b5e20
+    classDef network  fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#0d47a1
 
 
 ```
+
 ---
 
 ### This colorized version uses:

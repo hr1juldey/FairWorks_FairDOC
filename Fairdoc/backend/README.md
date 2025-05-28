@@ -1,4 +1,4 @@
-# 🏥 Fairdoc AI - Intelligent Healthcare Triage & Network Platform
+# 🏥 Fairdoc AI - Intelligent Healthcare Triage \& Network Platform
 
 ## 🌟 Project Overview
 
@@ -14,6 +14,7 @@ Fairdoc AI is a revolutionary **AI-augmented medical triage network** that bridg
 - **Resource Inefficiency**: 74% physician burnout, specialists idle while others are overwhelmed
 - **Diagnostic Bias**: AI systems perpetuating historical biases in medical decision-making
 - **Economic Burden**: £131 billion annually wasted on preventable emergency visits
+
 
 ### 💡 Our Solution
 
@@ -41,66 +42,106 @@ A **multi-agent AI orchestration platform** that:
 ### 🗂️ System Architecture Overview
 
 ```mermaid
-graph RL
+graph LR
+    %% Frontend Layer
     subgraph "Frontend Layer"
-        A[NHS App Integration] --> B[Patient Interface]
-        B --> C[Doctor Dashboard]
+        A[NHS App Integration]:::frontend --> B[Patient Interface]:::frontend
+        B --> C[Doctor Dashboard]:::frontend
     end
-    
+
+    %% API Gateway
     subgraph "Unified API Gateway"
-        D[Main FastAPI App] --> E[WebSocket Manager]
-        E --> F[Authentication Layer]
-        D --> G[v1 API Mount]
-        D --> H[v2 API Mount]
-        G --> I[Legacy Router]
-        H --> J[Modern Router]
+        D[Main FastAPI App]:::gateway --> E[WebSocket Manager]:::gateway
+        E --> F[Authentication Layer]:::gateway
+        D --> G[v1 API Mount]:::gateway
+        D --> H[v2 API Mount]:::gateway
+        G --> I[Legacy Router]:::gateway
+        H --> J[Modern Router]:::gateway
     end
-    
+
+    %% v1 Backend (Legacy)
     subgraph "v1 Backend (Legacy)"
-        K[Original Triage] --> L[Basic ML Models]
-        L --> M[PostgreSQL Only]
-        I --> K
+        I --> K[Original Triage]:::gateway
+        K --> L[Basic ML Models]:::gateway
+        L --> M[PostgreSQL Only]:::gateway
     end
-    
+
+    %% v2 Backend (Modern)
     subgraph "v2 Backend (Modern)"
-        N[AI Orchestration Layer] --> O[Model Selector]
-        O --> P[Bias Monitor]
-        P --> Q[Context Manager]
-        J --> N
+        J --> N[AI Orchestration Layer]:::ai
+        N --> O[Model Selector]:::ai
+        O --> P[Bias Monitor]:::ai
+        P --> Q[Context Manager]:::ai
     end
-    
+
+    %% Specialized ML Services (v2)
     subgraph "Specialized ML Services (v2)"
-        R[Text NLP Service]
-        S[Image Analysis Service]
-        T[Audio Processing Service]
-        U[Time Series Service]
-        V[Risk Classifier Service]
+        R[Text NLP Service]:::ml
+        S[Image Analysis Service]:::ml
+        T[Audio Processing Service]:::ml
+        U[Time Series Service]:::ml
+        V[Risk Classifier Service]:::ml
     end
-    
+
+    %% Message Queue & Cache
     subgraph "Message Queue & Cache"
-        W[Celery Workers] --> X[Redis Cache]
-        X --> Y[ChromaDB Vector Store]
+        W[Celery Workers]:::queue --> X[Redis Cache]:::queue
+        X --> Y[ChromaDB Vector Store]:::queue
     end
-    
+
+    %% Data Layer (Separated)
     subgraph "Data Layer (Separated)"
-        Z[NHS EHR Integration] --> AA[FHIR R4 API]
-        AA --> BB[PostgreSQL DB]
-        CC[RAG Documents] --> Y
+        Z[NHS EHR Integration]:::data --> AA[FHIR R4 API]:::data
+        AA --> BB[PostgreSQL DB]:::data
+        CC[RAG Documents]:::data --> Y
     end
-    
+
+    %% Network Layer
     subgraph "Network Layer"
-        DD[Specialist Marketplace] --> EE[Doctor Availability]
-        EE --> FF[Consultation Router]
+        DD[Specialist Marketplace]:::network --> EE[Doctor Availability]:::network
+        EE --> FF[Consultation Router]:::network
     end
-    
+
+    %% Cross-Layer Interactions
     A --> D
-    N --> R & S & T & U & V
+    N --> R
+    N --> S
+    N --> T
+    N --> U
+    N --> V
     R --> W
     N --> DD
     W --> Z
-    Z --> BB
-    CC --> Y
+
+    %% Define custom styles
+    classDef frontend fill:#e0f7fa,stroke:#00796b,stroke-width:2px,color:#004d40;
+    classDef gateway  fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#bf360c;
+    classDef ai       fill:#ede7f6,stroke:#512da8,stroke-width:2px,color:#311b92;
+    classDef ml       fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px,color:#4a148c;
+    classDef queue    fill:#f1f8e9,stroke:#689f38,stroke-width:2px,color:#33691e;
+    classDef data     fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#1b5e20;
+    classDef network  fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#0d47a1;
+
+
 ```
+---
+
+### This colorized version uses:
+
+- **🔵 Blue tones** for Frontend Layer (NHS integration, patient/doctor interfaces)
+- **🟢 Green tones** for Unified API Gateway (FastAPI, routing, authentication)
+- **🟠 Orange tones** for v1 Backend Legacy (original triage, basic models)
+- **🟣 Purple tones** for v2 Backend Modern (AI orchestration, bias monitoring)
+- **🔴 Pink/Red tones** for Specialized ML Services (NLP, image analysis, etc.)
+- **🟡 Yellow tones** for Message Queue & Cache (Celery, Redis, ChromaDB)
+- **🟢 Teal tones** for Data Layer (NHS EHR, FHIR, PostgreSQL)
+- **🔵 Cyan tones** for Network Layer (specialist marketplace, consultations)
+
+The color scheme creates visual hierarchy and makes it easier to understand the different architectural layers and their relationships.
+
+---
+
+
 
 ### 🧠 AI Model Architecture
 
@@ -127,11 +168,524 @@ class FairdocAIOrchestrator:
         }
 ```
 
+
 #### **Specialized ML Classifier Services**
 
 | Service Type | Purpose | Model Architecture | VRAM Usage | Response Time |
 | :-- | :-- | :-- | :-- | :-- |
-| **Text NLP** | Symptom extraction, sentiment analysis | DistilBERT + Clinical BERT | ~400MB |  BIAS_THRESHOLD:
+| **Text NLP** | Symptom extraction, sentiment analysis | DistilBERT + Clinical BERT | ~400MB | <200ms |
+| **Image Analysis** | Medical image triage, skin lesion detection | EfficientNet-B3 + Custom CNN | ~600MB | <500ms |
+| **Audio Processing** | Speech-to-text, emotional analysis | Whisper-Small + Custom classifier | ~300MB | <800ms |
+| **Time Series** | Vital signs analysis, ECG interpretation | LSTM + Transformer hybrid | ~200MB | <100ms |
+| **Risk Classification** | Multi-modal risk assessment | Ensemble XGBoost + Neural Net | ~150MB | <50ms |
+
+
+---
+
+## 📁 Project Structure - Unified Backend Architecture
+
+### 🏗️ Current Unified Backend Structure
+
+```
+backend/
+├── 📄 app.py                         # Main unified app (mounts v1 + v2)
+├── 📄 dev_v1.py                      # Run v1 independently (port 8001)
+├── 📄 dev_v2.py                      # Run v2 independently (port 8002)
+├── 📄 dev_unified.py                 # Run unified app (port 8000)
+├── 📄 migrate_to_new_structure.py    # Migration script for v1→v2
+├── 📄 README.md                      # Enhanced documentation
+├── 📄 .env                           # Shared environment config
+├── 📄 .env.local                     # Local development
+├── 📄 .env.prod                      # Production settings
+├── 📄 .env.testing                   # Testing configuration
+├── 📄 __init__.py                    # Backend module initialization
+│
+├── 📁 v1/                            # Legacy backend (independent)
+│   ├── 📄 app.py                     # Original app.py (preserved)
+│   ├── 📄 app_v1.py                  # Independent v1 FastAPI app
+│   ├── 📄 __init__.py                # v1 module initialization
+│   │
+│   ├── 📁 api/                       # Original API structure
+│   │   └── 📄 __init__.py
+│   │
+│   ├── 📁 bkdocs/                    # Original documentation
+│   │   └── 📄 __init__.py
+│   │
+│   ├── 📁 core/                      # Original core infrastructure
+│   │   ├── 📄 config.py              # Original configuration
+│   │   └── 📄 __init__.py
+│   │
+│   ├── 📁 data/                      # Original data layer
+│   │   └── 📄 __init__.py
+│   │
+│   ├── 📁 datamodels/                # Original Pydantic models
+│   │   ├── 📄 auth_models.py         # User authentication models
+│   │   ├── 📄 base_models.py         # Base entities and mixins
+│   │   ├── 📄 bias_models.py         # Bias detection models
+│   │   ├── 📄 chatmodels.py          # Original chat models
+│   │   ├── 📄 file_models.py         # File upload models
+│   │   ├── 📄 medical_model.py       # Original medical models
+│   │   ├── 📄 ml_models.py           # ML prediction models
+│   │   ├── 📄 nhs_ehr_models.py      # NHS EHR models
+│   │   └── 📄 __init__.py
+│   │
+│   ├── 📁 MLmodels/                  # Original ML implementations
+│   │   └── 📄 __init__.py
+│   │
+│   ├── 📁 services/                  # Original business logic
+│   │   └── 📄 __init__.py
+│   │
+│   ├── 📁 tools/                     # Original development tools
+│   │   └── 📄 __init__.py
+│   │
+│   └── 📁 utils/                     # Original utility functions
+│       └── 📄 __init__.py
+│
+└── 📁 v2/                            # Modern backend (PostgreSQL/ChromaDB)
+    ├── 📄 app_v2.py                  # Independent v2 FastAPI app
+    ├── 📄 README-v2.md               # v2 specific documentation
+    ├── 📄 requirements-v2.txt        # v2 specific dependencies
+    │
+    ├── 📁 api/                       # Enhanced REST API endpoints
+    │   ├── 📄 __init__.py
+    │   │
+    │   ├── 📁 admin/                 # Admin & monitoring endpoints
+    │   │   ├── 📄 routes.py
+    │   │   └── 📄 __init__.py
+    │   │
+    │   ├── 📁 auth/                  # Authentication routes
+    │   │   ├── 📄 routes.py
+    │   │   └── 📄 __init__.py
+    │   │
+    │   ├── 📁 chat/                  # WebSocket chat routes
+    │   │   ├── 📄 routes.py
+    │   │   └── 📄 __init__.py
+    │   │
+    │   ├── 📁 doctors/               # Doctor network endpoints
+    │   │   ├── 📄 routes.py
+    │   │   └── 📄 __init__.py
+    │   │
+    │   ├── 📁 files/                 # File upload endpoints
+    │   │   ├── 📄 routes.py
+    │   │   └── 📄 __init__.py
+    │   │
+    │   ├── 📁 medical/               # Medical triage endpoints
+    │   │   ├── 📄 routes.py
+    │   │   └── 📄 __init__.py
+    │   │
+    │   ├── 📁 nhs/                   # NHS EHR integration endpoints
+    │   │   ├── 📄 routes.py
+    │   │   └── 📄 __init__.py
+    │   │
+    │   └── 📁 rag/                   # RAG search endpoints
+    │       ├── 📄 routes.py
+    │       └── 📄 __init__.py
+    │
+    ├── 📁 bkdocs/                    # Enhanced documentation
+    │   └── 📄 __init__.py
+    │
+    ├── 📁 core/                      # Enhanced core infrastructure
+    │   ├── 📄 config.py              # Migrated configuration
+    │   ├── 📄 dependencies.py        # FastAPI dependencies
+    │   ├── 📄 exceptions.py          # Custom exceptions
+    │   ├── 📄 security.py            # JWT, OAuth, encryption
+    │   ├── 📄 websocket_manager.py   # WebSocket connections
+    │   └── 📄 __init__.py
+    │
+    ├── 📁 data/                      # Separated data layer
+    │   ├── 📄 __init__.py
+    │   │
+    │   ├── 📁 database/              # Database managers
+    │   │   ├── 📄 chromadb_manager.py # ChromaDB operations
+    │   │   ├── 📄 postgres_manager.py # PostgreSQL operations
+    │   │   ├── 📄 redis_manager.py   # Redis cache operations
+    │   │   └── 📄 __init__.py
+    │   │
+    │   ├── 📁 migrations/            # Database migrations
+    │   │   ├── 📁 chromadb/          # ChromaDB setup scripts
+    │   │   │   └── 📄 __init__.py
+    │   │   └── 📁 postgres/          # PostgreSQL migrations
+    │   │       └── 📄 __init__.py
+    │   │
+    │   ├── 📁 repositories/          # Data access layer
+    │   │   ├── 📁 chromadb/          # ChromaDB repositories
+    │   │   │   └── 📄 __init__.py
+    │   │   └── 📁 postgres/          # PostgreSQL repositories
+    │   │       └── 📄 __init__.py
+    │   │
+    │   └── 📁 schemas/               # Database schemas
+    │       ├── 📁 chromadb/          # ChromaDB collections
+    │       │   └── 📄 __init__.py
+    │       ├── 📁 postgres/          # PostgreSQL schemas
+    │       │   └── 📄 __init__.py
+    │       └── 📁 redis/             # Redis schemas
+    │           └── 📄 __init__.py
+    │
+    ├── 📁 datamodels/                # Enhanced Pydantic models
+    │   ├── 📄 auth_models.py         # Migrated auth models
+    │   ├── 📄 base_models.py         # Migrated base models
+    │   ├── 📄 bias_models.py         # Migrated bias models
+    │   ├── 📄 chat_models.py         # Renamed from chatmodels.py
+    │   ├── 📄 doctor_models.py       # New doctor network models
+    │   ├── 📄 file_models.py         # Migrated file models
+    │   ├── 📄 medical_models.py      # Renamed from medical_model.py
+    │   ├── 📄 ml_models.py           # Migrated ML models
+    │   ├── 📄 nhs_ehr_models.py      # Migrated NHS models
+    │   ├── 📄 nice_models.py         # New NICE guidelines models
+    │   ├── 📄 rag_models.py          # New RAG search models
+    │   └── 📄 __init__.py
+    │
+    ├── 📁 MLmodels/                  # Enhanced ML implementations
+    │   ├── 📄 __init__.py
+    │   │
+    │   ├── 📁 classifiers/           # Specialized classifiers
+    │   │   └── 📄 __init__.py
+    │   │
+    │   ├── 📁 embeddings/            # Vector embeddings for RAG
+    │   │   └── 📄 __init__.py
+    │   │
+    │   ├── 📁 ollama_models/         # Local LLM services
+    │   │   └── 📄 __init__.py
+    │   │
+    │   └── 📁 rag/                   # RAG-specific models
+    │       └── 📄 __init__.py
+    │
+    ├── 📁 rag/                       # RAG-specific components
+    │   ├── 📄 rag_pipeline.py        # Main RAG orchestration
+    │   ├── 📄 __init__.py
+    │   │
+    │   ├── 📁 generation/            # Response generation
+    │   │   ├── 📄 context_formatter.py # Format retrieved context
+    │   │   ├── 📄 prompt_templates.py # RAG prompt templates
+    │   │   ├── 📄 response_synthesizer.py # Synthesize final response
+    │   │   └── 📄 __init__.py
+    │   │
+    │   ├── 📁 indexing/              # Document indexing
+    │   │   ├── 📄 chunk_splitter.py  # Text chunking strategies
+    │   │   ├── 📄 document_processor.py # Process docs for RAG
+    │   │   ├── 📄 metadata_extractor.py # Extract document metadata
+    │   │   └── 📄 __init__.py
+    │   │
+    │   └── 📁 retrieval/             # Document retrieval
+    │       ├── 📄 context_retriever.py # Context-aware retrieval
+    │       ├── 📄 hybrid_retriever.py # Hybrid search
+    │       ├── 📄 vector_retriever.py # Vector-based retrieval
+    │       └── 📄 __init__.py
+    │
+    ├── 📁 services/                  # Enhanced business logic
+    │   ├── 📄 auth_service.py        # User authentication
+    │   ├── 📄 bias_detection_service.py # Real-time bias monitoring
+    │   ├── 📄 chat_orchestrator.py   # Multi-modal chat flow
+    │   ├── 📄 doctor_network_service.py # Doctor availability & routing
+    │   ├── 📄 medical_ai_service.py  # AI orchestration
+    │   ├── 📄 nhs_ehr_service.py     # NHS EHR integration
+    │   ├── 📄 nice_service.py        # NICE guidelines integration
+    │   ├── 📄 notification_service.py # Real-time notifications
+    │   ├── 📄 ollama_service.py      # Local LLM integration
+    │   ├── 📄 rag_service.py         # RAG search & retrieval
+    │   └── 📄 __init__.py
+    │
+    ├── 📁 tools/                     # Enhanced development tools
+    │   ├── 📄 __init__.py
+    │   │
+    │   ├── 📁 data_generators/       # Synthetic data generation
+    │   │   └── 📄 __init__.py
+    │   │
+    │   ├── 📁 deployment/            # Deployment scripts
+    │   │   └── 📄 __init__.py
+    │   │
+    │   ├── 📁 monitoring/            # Monitoring tools
+    │   │   └── 📄 __init__.py
+    │   │
+    │   └── 📁 testing/               # Testing utilities
+    │       └── 📄 __init__.py
+    │
+    └── 📁 utils/                     # Enhanced utility functions
+        └── 📄 __init__.py
+```
+
+
+---
+
+## 🚀 Installation \& Setup
+
+### 📋 Prerequisites
+
+- **Hardware**: RTX 4070 12GB+ (for local AI models)
+- **Software**: Python 3.10+, Docker, Redis, PostgreSQL
+- **NHS Access**: NHS Developer Portal API keys (for production)
+
+
+### 🔧 Local Development Setup
+
+#### Step 1: Environment Setup
+
+```bash
+# Clone repository
+git clone https://github.com/fairdoc/fairdoc-backend.git
+cd fairdoc-backend
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# or
+venv\Scripts\activate     # Windows
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+
+#### Step 2: GPU Setup (RTX 4070)
+
+```bash
+# Install CUDA 12.x
+wget https://developer.download.nvidia.com/compute/cuda/12.2.0/local_installers/cuda_12.2.0_535.54.03_linux.run
+sudo sh cuda_12.2.0_535.54.03_linux.run
+
+# Install PyTorch for CUDA
+pip install torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 --index-url https://download.pytorch.org/whl/cu121
+
+# Verify GPU setup
+python -c "import torch; print(f'CUDA Available: {torch.cuda.is_available()}, GPU Count: {torch.cuda.device_count()}')"
+```
+
+
+#### Step 3: Database Setup
+
+```bash
+# Start Redis and PostgreSQL with Docker
+docker-compose up -d redis postgres chromadb
+
+# Initialize database
+python -m v2.data.migrations.postgres.init_collections
+
+# Load synthetic data for development
+python -m v2.tools.data_generators.synthetic_patients --count 1000
+```
+
+
+#### Step 4: Environment Configuration
+
+```bash
+# Copy environment template
+cp .env.example .env
+
+# Edit configuration
+nano .env
+```
+
+```env
+# .env file configuration
+# Database Configuration
+POSTGRES_URL=postgresql://fairdoc:password@localhost:5432/fairdoc_dev
+REDIS_URL=redis://localhost:6379/0
+CHROMADB_URL=http://localhost:8000
+
+# AI Model Configuration
+OLLAMA_BASE_URL=http://localhost:11434
+MODEL_CACHE_DIR=./model_cache
+ENABLE_GPU_ACCELERATION=true
+MAX_VRAM_USAGE_GB=10
+
+# NHS Integration (Development)
+NHS_API_BASE_URL=https://sandbox.api.nhs.uk
+NHS_CLIENT_ID=your_client_id
+NHS_CLIENT_SECRET=your_client_secret
+
+# Security
+SECRET_KEY=your-super-secret-key-change-in-production
+JWT_ALGORITHM=HS256
+JWT_EXPIRE_MINUTES=30
+
+# Bias Monitoring
+BIAS_ALERT_THRESHOLD=0.1
+ENABLE_REAL_TIME_MONITORING=true
+BIAS_CORRECTION_MODE=automatic
+
+# Celery Configuration
+CELERY_BROKER_URL=redis://localhost:6379/1
+CELERY_RESULT_BACKEND=redis://localhost:6379/2
+```
+
+
+#### Step 5: Start Services
+
+```bash
+# Option 1: Run unified API (recommended for production)
+python dev_unified.py
+# Serves both v1 and v2 APIs at http://localhost:8000
+
+# Option 2: Run v1 independently (for legacy development)
+python dev_v1.py
+# Serves v1 API at http://localhost:8001
+
+# Option 3: Run v2 independently (for modern development)
+python dev_v2.py
+# Serves v2 API at http://localhost:8002
+
+# Additional services (in separate terminals)
+# Terminal 2: Start Celery workers
+celery -A v2.services.celery_app worker --loglevel=info --concurrency=4
+
+# Terminal 3: Start Ollama server (local LLM)
+ollama serve
+
+# Terminal 4: Start bias monitoring dashboard
+streamlit run v2.tools.monitoring.bias_dashboard --server.port 8501
+```
+
+
+#### Step 6: Verify Installation
+
+```bash
+# Health check - Unified API
+curl http://localhost:8000/health
+
+# Health check - v1 API
+curl http://localhost:8001/health
+
+# Health check - v2 API
+curl http://localhost:8002/health
+
+# Expected unified response:
+{
+  "status": "healthy",
+  "versions": ["v1", "v2"],
+  "services": ["api", "database", "ai_models"],
+  "v1_status": "running",
+  "v2_status": "running",
+  "gpu_available": true,
+  "models_loaded": 5,
+  "gpu_memory_used": "3.2GB/12GB"
+}
+```
+
+
+---
+
+## 🔥 Key Features \& Components
+
+### 🤖 AI-Powered Triage System
+
+#### **Primary Triage Router**
+
+```python
+class PrimaryTriageRouter:
+    """Intelligent router that selects optimal AI services for patient assessment"""
+    
+    def __init__(self):
+        self.service_registry = {
+            'chest_pain': ['text_nlp', 'risk_assessment', 'image_analysis'],
+            'skin_lesion': ['image_analysis', 'text_nlp'],
+            'mental_health': ['text_nlp', 'audio_processing'],
+            'cardiac_monitoring': ['time_series', 'risk_assessment']
+        }
+    
+    async def route_patient_assessment(self, patient_data: PatientInput):
+        # Determine required services based on symptoms
+        required_services = self.determine_services(patient_data.symptoms)
+        
+        # Submit parallel Celery tasks
+        tasks = []
+        for service in required_services:
+            task = self.submit_analysis_task.delay(service, patient_data)
+            tasks.append(task)
+        
+        # Aggregate results with bias checking
+        results = await self.aggregate_results(tasks)
+        bias_score = await self.bias_monitor.check_fairness(results, patient_data.demographics)
+        
+        return TriageResponse(
+            risk_assessment=results['risk'],
+            specialist_needed=results['specialist'],
+            confidence_score=results['confidence'],
+            bias_score=bias_score,
+            processing_time=results['duration']
+        )
+```
+
+
+#### **Multi-Modal Analysis Pipeline**
+
+The system processes various data types through specialized services:
+
+**Text Analysis Service**
+
+```python
+@celery_app.task
+def analyze_patient_text(patient_complaint: str, demographics: dict):
+    """Extract symptoms, sentiment, and clinical entities from patient text"""
+    
+    # Load quantized clinical BERT model
+    model = load_clinical_bert_quantized()
+    
+    # Extract clinical entities
+    entities = model.extract_entities(patient_complaint)
+    
+    # Sentiment analysis for urgency detection
+    sentiment = model.analyze_sentiment(patient_complaint)
+    
+    # Check for bias in language processing
+    bias_score = check_linguistic_bias(entities, demographics)
+    
+    return {
+        'entities': entities,
+        'sentiment': sentiment,
+        'urgency_indicators': extract_urgency_keywords(patient_complaint),
+        'bias_score': bias_score,
+        'processing_time': time.time() - start_time
+    }
+```
+
+**Image Analysis Service**
+
+```python
+@celery_app.task
+def analyze_medical_image(image_data: bytes, image_type: str, demographics: dict):
+    """Analyze medical images for triage decisions"""
+    
+    # Load specialized model based on image type
+    if image_type == 'chest_xray':
+        model = load_chest_xray_classifier()
+    elif image_type == 'skin_lesion':
+        model = load_dermatology_classifier()
+    elif image_type == 'ecg':
+        model = load_ecg_analyzer()
+    
+    # Perform analysis
+    analysis_result = model.analyze(image_data)
+    
+    # Check for bias in image interpretation
+    bias_score = check_image_analysis_bias(analysis_result, demographics)
+    
+    return {
+        'findings': analysis_result.findings,
+        'confidence': analysis_result.confidence,
+        'recommended_action': analysis_result.action,
+        'bias_score': bias_score
+    }
+```
+
+
+### ⚖️ Real-Time Bias Monitoring
+
+#### **Intersectional Bias Detection**
+
+```python
+class IntersectionalBiasMonitor:
+    """Real-time monitoring for demographic bias in AI decisions"""
+    
+    def __init__(self):
+        self.protected_attributes = ['gender', 'ethnicity', 'age_group', 'socioeconomic_status']
+        self.fairness_metrics = ['demographic_parity', 'equalized_odds', 'calibration']
+        
+    async def monitor_decision(self, ai_decision: dict, patient_demographics: dict):
+        bias_alerts = []
+        
+        # Check demographic parity
+        parity_score = self.calculate_demographic_parity(ai_decision, patient_demographics)
+        if parity_score > BIAS_THRESHOLD:
             bias_alerts.append(f"Demographic parity violation: {parity_score:.3f}")
         
         # Check equalized odds
@@ -167,6 +721,7 @@ class FairdocAIOrchestrator:
         
         return corrected_decision
 ```
+
 
 ### 🏥 NHS EHR Integration
 
@@ -242,6 +797,7 @@ class NHSEHRIntegration:
         await self.gp_connect_client.create_observation(observation)
 ```
 
+
 ### 💬 Multi-Modal Chat System
 
 #### **Context-Aware Conversation Management**
@@ -294,6 +850,7 @@ class ContextAwareChatOrchestrator:
         return response
 ```
 
+
 ### 🔄 Intelligent Model Routing
 
 #### **Cost-Optimized LLM Selection**
@@ -339,7 +896,344 @@ class OllamaModelRouter:
             estimated_tokens = self.estimate_token_usage(context_length, model)
             total_cost = estimated_tokens * self.cost_per_token[model]
             
-            if total_cost  0.90, f"Clinical accuracy too low: {accuracy}"
+            if total_cost <= budget_constraint:
+                model_costs.append({
+                    'model': model,
+                    'cost': total_cost,
+                    'quality_score': self.get_quality_score(model, task_type)
+                })
+        
+        # Select model with best quality within budget
+        if model_costs:
+            optimal_model = max(model_costs, key=lambda x: x['quality_score'])
+            return optimal_model['model']
+        else:
+            # Fallback to cheapest model if budget is too low
+            return min(capable_models, key=lambda x: self.cost_per_token[x])
+    
+    async def generate_response(self, model: str, context: dict, message: dict):
+        """Generate response using selected Ollama model"""
+        
+        # Prepare context-aware prompt
+        prompt = self.build_clinical_prompt(context, message)
+        
+        # Load model if not already loaded
+        await self.ensure_model_loaded(model)
+        
+        # Generate response with bias monitoring
+        response = await self.ollama_client.generate(
+            model=model,
+            prompt=prompt,
+            options={
+                'temperature': 0.7,
+                'top_p': 0.9,
+                'max_tokens': 512,
+                'stop': ['Human:', 'Patient:', 'Doctor:']
+            }
+        )
+        
+        # Post-process for bias and clinical safety
+        safe_response = await self.apply_safety_filters(response, context)
+        
+        return safe_response
+```
+
+
+---
+
+## 📊 API Documentation
+
+### 🔌 Core Endpoints
+
+#### **Unified API Access**
+
+```bash
+# Main unified API (production)
+Base URL: http://localhost:8000
+
+# API versioning
+v1 API: http://localhost:8000/api/v1/
+v2 API: http://localhost:8000/api/v2/
+
+# Documentation
+Unified Docs: http://localhost:8000/docs
+v1 Docs: http://localhost:8000/api/v1/docs
+v2 Docs: http://localhost:8000/api/v2/docs
+
+# Independent development APIs
+v1 Independent: http://localhost:8001
+v2 Independent: http://localhost:8002
+```
+
+
+#### **Patient Assessment API (v2)**
+
+```python
+@app.post("/api/v2/assess", response_model=TriageResponse)
+async def assess_patient(
+    patient: PatientInput,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Comprehensive AI-powered patient assessment
+    
+    **Features:**
+    - Multi-modal input processing (text, image, audio)
+    - Real-time bias detection and correction
+    - Specialist network routing
+    - NHS EHR integration
+    - ChromaDB RAG search capabilities
+    
+    **Request Body:**
+    ```
+    {
+        "patient_id": "NHS1234567890",
+        "demographics": {
+            "age": 45,
+            "gender": "female",
+            "ethnicity": "asian"
+        },
+        "chief_complaint": "Chest pain for 2 hours",
+        "symptoms": {
+            "pain_severity": 8,
+            "radiation": true,
+            "associated_symptoms": ["nausea", "sweating"]
+        },
+        "vital_signs": {
+            "heart_rate": 95,
+            "blood_pressure": "140/90",
+            "temperature": 37.2
+        },
+        "medical_history": ["hypertension", "diabetes"],
+        "attachments": [
+            {
+                "type": "image",
+                "data": "base64_encoded_ecg_image",
+                "description": "12-lead ECG"
+            }
+        ]
+    }
+    ```
+    
+    **Response:**
+    ```
+    {
+        "assessment_id": "uuid4",
+        "risk_level": "high",
+        "confidence_score": 0.87,
+        "urgency_level": "urgent",
+        "recommended_action": "Urgent cardiology consultation within 1 hour",
+        "specialist_needed": "cardiology",
+        "estimated_wait_time": 15,
+        "bias_score": 0.05,
+        "explanation": [
+            "Age 45+ with chest pain increases cardiac risk",
+            "Pain radiation and associated symptoms concerning",
+            "ECG shows ST-elevation in leads II, III, aVF"
+        ],
+        "specialist_network": {
+            "available_specialists": 3,
+            "nearest_specialist": "Dr. Smith - 0.5 miles",
+            "appointment_slots": ["14:30", "15:00", "15:30"]
+        },
+        "processing_metrics": {
+            "total_time_ms": 847,
+            "ai_processing_time_ms": 623,
+            "bias_check_time_ms": 124,
+            "ehr_lookup_time_ms": 100,
+            "rag_search_time_ms": 50
+        }
+    }
+    ```
+    """
+```
+
+
+#### **Real-Time Chat API (v2)**
+
+```python
+@app.websocket("/ws/v2/chat/{session_id}")
+async def websocket_chat(
+    websocket: WebSocket,
+    session_id: str,
+    token: str = Query(...),
+    db: Session = Depends(get_db)
+):
+    """
+    Multi-modal chat interface with context preservation and RAG
+    
+    **Enhanced Features (v2):**
+    - Real-time conversation with AI triage agent
+    - Multi-modal input support (text, voice, images)
+    - Context-aware responses using ChromaDB
+    - Automatic NHS EHR integration
+    - Bias monitoring throughout conversation
+    - RAG-enhanced medical knowledge retrieval
+    - Specialist network integration
+    
+    **Message Format:**
+    ```
+    {
+        "type": "message",
+        "content": {
+            "text": "I have chest pain",
+            "attachments": [
+                {
+                    "type": "audio",
+                    "data": "base64_audio_data",
+                    "duration": 15.5
+                }
+            ]
+        },
+        "metadata": {
+            "timestamp": "2024-01-15T10:30:00Z",
+            "location": {"lat": 51.5074, "lng": -0.1278}
+        }
+    }
+    ```
+    
+    **Response Format:**
+    ```
+    {
+        "type": "response",
+        "content": {
+            "text": "I understand you're experiencing chest pain. On a scale of 1-10, how severe is the pain?",
+            "quick_replies": ["1-3 (Mild)", "4-6 (Moderate)", "7-8 (Severe)", "9-10 (Unbearable)"],
+            "suggested_actions": ["Call emergency services", "Book urgent appointment"],
+            "rag_sources": [
+                {
+                    "title": "Chest Pain Guidelines - NICE CG95",
+                    "relevance": 0.92,
+                    "snippet": "Chest pain assessment should include..."
+                }
+            ]
+        },
+        "ai_state": {
+            "confidence": 0.92,
+            "next_questions": ["pain_location", "duration", "triggers"],
+            "assessment_progress": 0.3
+        },
+        "bias_monitoring": {
+            "bias_score": 0.03,
+            "demographic_adjustments": "none",
+            "fairness_verified": true
+        }
+    }
+    ```
+    """
+```
+
+
+### 🔄 Version Compatibility API
+
+#### **Migration and Compatibility Endpoints**
+
+```python
+@app.get("/api/compatibility/compare", response_model=CompatibilityResponse)
+async def compare_api_versions(
+    assessment_data: PatientInput,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Compare assessment results between v1 and v2 APIs
+    
+    **Features:**
+    - Side-by-side comparison of v1 vs v2 results
+    - Migration compatibility checking
+    - Performance metrics comparison
+    - Bias score differences
+    
+    **Response:**
+    ```
+    {
+        "comparison_id": "uuid4",
+        "v1_result": {
+            "risk_level": "medium",
+            "confidence": 0.78,
+            "processing_time_ms": 1200,
+            "specialist_needed": "cardiology"
+        },
+        "v2_result": {
+            "risk_level": "high",
+            "confidence": 0.87,
+            "processing_time_ms": 847,
+            "specialist_needed": "cardiology",
+            "bias_score": 0.05,
+            "rag_enhanced": true
+        },
+        "compatibility": {
+            "core_agreement": 0.92,
+            "risk_delta": 0.1,
+            "recommendation_match": true,
+            "migration_ready": true
+        },
+        "performance_comparison": {
+            "v1_speed": "1.2s",
+            "v2_speed": "0.85s",
+            "improvement": "29% faster",
+            "v2_features": ["bias_monitoring", "rag_search", "enhanced_context"]
+        }
+    }
+    ```
+    """
+```
+
+
+---
+
+## 🧪 Testing \& Quality Assurance
+
+### 🔍 Bias Testing Framework
+
+```python
+class BiasTestSuite:
+    """Comprehensive bias testing for all AI components"""
+    
+    def test_demographic_parity(self):
+        """Test equal treatment across demographic groups"""
+        
+        test_cases = self.generate_identical_medical_cases_different_demographics()
+        results = []
+        
+        for case in test_cases:
+            prediction = self.ai_system.predict(case)
+            results.append({
+                'demographics': case['demographics'],
+                'risk_score': prediction['risk_score'],
+                'specialist_recommended': prediction['specialist']
+            })
+        
+        # Calculate parity metrics
+        parity_score = self.calculate_demographic_parity(results)
+        assert parity_score < 0.1, f"Demographic parity violation: {parity_score}"
+    
+    def test_version_compatibility(self):
+        """Test compatibility between v1 and v2 APIs"""
+        
+        # Test same input on both versions
+        test_patient = self.generate_test_patient()
+        
+        v1_response = self.call_v1_api(test_patient)
+        v2_response = self.call_v2_api(test_patient)
+        
+        # Compare core assessment results
+        assert abs(v1_response['risk_score'] - v2_response['risk_score']) < 0.2
+        assert v1_response['specialist_needed'] == v2_response['specialist_needed']
+    
+    def test_clinical_accuracy(self):
+        """Test clinical accuracy on validation dataset"""
+        
+        validation_data = self.load_validation_dataset()
+        correct_predictions = 0
+        
+        for case in validation_data:
+            prediction = self.ai_system.predict(case)
+            if prediction['outcome'] == case['actual_outcome']:
+                correct_predictions += 1
+        
+        accuracy = correct_predictions / len(validation_data)
+        assert accuracy > 0.90, f"Clinical accuracy too low: {accuracy}"
     
     def test_response_time_performance(self):
         """Test system response times under load"""
@@ -359,7 +1253,95 @@ class OllamaModelRouter:
         response_times = await asyncio.gather(*tasks)
         
         avg_response_time = sum(response_times) / len(response_times)
-        assert avg_response_time  str:
+        assert avg_response_time < 2.0, f"Average response time too slow: {avg_response_time}s"
+```
+
+
+---
+
+## 📈 Business Model \& Economics
+
+### 💰 Revenue Streams
+
+| Stream | Target Customer | Pricing Model | Annual Revenue Potential |
+| :-- | :-- | :-- | :-- |
+| **SaaS Subscriptions** | NHS Trusts, Private Clinics | £10k-£50k per organization | £50M-£200M |
+| **Per-Assessment Fees** | Healthcare Providers | £2-£10 per patient assessment | £100M-£500M |
+| **Specialist Network** | Independent Doctors | 15-25% commission on consultations | £25M-£100M |
+| **Analytics \& Insights** | Pharmaceutical Companies | £100k-£1M per data package | £10M-£50M |
+| **API Licensing** | Healthcare Software Vendors | £50k-£500k per integration | £20M-£100M |
+
+### 📊 Unit Economics (Optimized for RTX 4070)
+
+```python
+# Cost optimization calculations
+class UnitEconomics:
+    def __init__(self):
+        self.costs = {
+            'gpu_per_hour': 0.50,          # RTX 4070 electricity + amortization
+            'api_calls': 0.001,            # FastAPI hosting costs
+            'redis_cache': 0.0001,         # Redis memory costs
+            'chromadb_storage': 0.0005,    # Vector database costs
+            'nhs_api_calls': 0.10,         # NHS API access fees
+        }
+        
+        self.revenue = {
+            'per_assessment_v1': 3.00,     # Revenue per v1 assessment
+            'per_assessment_v2': 5.00,     # Revenue per v2 assessment (premium)
+            'specialist_commission': 0.15,  # 15% commission on specialist fees
+            'subscription_monthly': 2000    # Monthly SaaS subscription
+        }
+    
+    def calculate_gross_margin_per_assessment(self, version='v2'):
+        total_cost = (
+            self.costs['gpu_per_hour'] / 60 * 0.5 +  # 30 seconds GPU time
+            self.costs['api_calls'] * 3 +             # 3 API calls average
+            self.costs['redis_cache'] * 10 +          # Cache operations
+            self.costs['chromadb_storage'] * 2 +      # Vector operations (v2 only)
+            self.costs['nhs_api_calls'] * 0.1         # EHR access
+        )
+        
+        if version == 'v1':
+            total_cost -= self.costs['chromadb_storage'] * 2  # No ChromaDB in v1
+            revenue = self.revenue['per_assessment_v1']
+        else:
+            revenue = self.revenue['per_assessment_v2']
+        
+        gross_margin = revenue - total_cost
+        margin_percentage = (gross_margin / revenue) * 100
+        
+        return {
+            'version': version,
+            'cost_per_assessment': total_cost,
+            'revenue_per_assessment': revenue,
+            'gross_margin': gross_margin,
+            'margin_percentage': margin_percentage
+        }
+```
+
+**Target Metrics:**
+
+- **v1 Gross Margin**: 80%+ per assessment
+- **v2 Gross Margin**: 85%+ per assessment
+- **LTV/CAC Ratio**: 5:1 for healthcare providers
+- **Break-even**: 50,000 assessments per month
+- **Scalability**: 1M+ assessments per month on single RTX 4070
+
+---
+
+## 🔐 Security \& Compliance
+
+### 🛡️ Data Protection Framework
+
+```python
+class SecurityManager:
+    """Comprehensive security and compliance management"""
+    
+    def __init__(self):
+        self.encryption_key = self.load_encryption_key()
+        self.audit_logger = AuditLogger()
+        
+    def encrypt_patient_data(self, patient_data: dict) -> str:
         """Encrypt sensitive patient data using AES-256"""
         
         fernet = Fernet(self.encryption_key)
@@ -398,6 +1380,7 @@ class OllamaModelRouter:
         return anonymized
 ```
 
+
 ### 📋 Compliance Checklist
 
 - ✅ **GDPR Compliance**: Data minimization, consent management, right to erasure
@@ -409,7 +1392,7 @@ class OllamaModelRouter:
 
 ---
 
-## 🚀 Deployment & Scaling
+## 🚀 Deployment \& Scaling
 
 ### 🐳 Docker Configuration
 
@@ -540,6 +1523,7 @@ volumes:
   ollama_data:
 ```
 
+
 ### ⚡ Performance Optimization
 
 ```python
@@ -571,9 +1555,165 @@ class RTX4070Optimizer:
         used_vram = 0
         
         for model_name in priority_order:
-            if used_vram + models[model_name] 90% for both v1 and v2
+            if used_vram + models[model_name] <= self.available_vram_gb:
+                loaded_models[model_name] = self.load_model(model_name)
+                used_vram += models[model_name]
+                logger.info(f"Loaded {model_name}, VRAM usage: {used_vram:.1f}GB")
+        
+        return loaded_models
+    
+    def dynamic_batch_sizing(self, model_type: str, current_vram_usage: float):
+        """Adjust batch sizes based on available VRAM"""
+        
+        available_vram = self.available_vram_gb - current_vram_usage
+        
+        # Batch size calculations for different models
+        batch_sizes = {
+            'text_classification': min(32, int(available_vram * 8)),
+            'image_analysis': min(8, int(available_vram * 2)),
+            'audio_processing': min(16, int(available_vram * 4)),
+        }
+        
+        return max(1, batch_sizes.get(model_type, 1))
+```
+
+
+---
+
+## 🎯 Development Roadmap
+
+### 🏁 Hackathon Demo (3 Days)
+
+- ✅ **Unified backend with v1/v2 API versioning**
+- ✅ **Core AI triage system with bias monitoring**
+- ✅ **Multi-modal chat interface**
+- ✅ **Real-time dashboard**
+- ✅ **NHS EHR integration mock**
+- ✅ **Local RTX 4070 deployment**
+- ✅ **RAG-enhanced medical knowledge retrieval**
+
+
+### 🚀 MVP Release (3 Months)
+
+- 🔄 **Full NHS Digital compliance**
+- 🔄 **5 specialist categories integration**
+- 🔄 **Production-grade security**
+- 🔄 **Clinical validation studies**
+- 🔄 **10 NHS Trust pilot**
+- 🔄 **Advanced RAG capabilities**
+
+
+### 📈 Scale-Up (12 Months)
+
+- 📋 **National NHS rollout**
+- 📋 **International expansion (EU, US)**
+- 📋 **Advanced AI capabilities**
+- 📋 **Research partnerships**
+- 📋 **IPO preparation**
+
+---
+
+## 🤝 Contributing
+
+### 🔧 Development Workflow
+
+```bash
+# 1. Fork repository
+git clone https://github.com/your-username/fairdoc-backend.git
+
+# 2. Create feature branch
+git checkout -b feature/bias-improvement
+
+# 3. Install development dependencies
+pip install -r requirements-dev.txt
+
+# 4. Run tests on both versions
+pytest v1/tests/ --cov=v1/ --cov-report=html
+pytest v2/tests/ --cov=v2/ --cov-report=html
+
+# 5. Run bias testing
+python -m v2.tests.bias_testing --comprehensive
+
+# 6. Test unified API
+python dev_unified.py &
+pytest tests/integration/ --api-url=http://localhost:8000
+
+# 7. Pre-commit hooks
+pre-commit install
+pre-commit run --all-files
+
+# 8. Submit pull request
+git push origin feature/bias-improvement
+```
+
+
+### 📊 Quality Standards
+
+- **Code Coverage**: >90% for both v1 and v2
 - **Bias Testing**: All models must pass demographic parity tests
-- **Performance**:  **Important**: This software is for clinical decision support only and should not be used as the sole basis for medical decisions. All AI-generated recommendations must be reviewed and approved by qualified healthcare professionals. The system is designed to augment, not replace, clinical judgment.
+- **Performance**: <2s response time for 95% of requests
+- **Security**: All endpoints must pass OWASP security scan
+- **Documentation**: All public APIs must have OpenAPI documentation
+- **Version Compatibility**: Core functionality must work in both v1 and v2
+
+---
+
+## 📞 Support \& Contact
+
+### 🏥 Healthcare Integration Support
+
+- **Email**: healthcare@fairdoc.ai
+- **Phone**: +44 20 7946 0958
+- **NHS Partnership**: nhs-partnerships@fairdoc.ai
+
+
+### 💻 Technical Support
+
+- **GitHub Issues**: https://github.com/fairdoc/fairdoc-backend/issues
+- **Developer Discord**: https://discord.gg/fairdoc-dev
+- **Stack Overflow**: Tag with `fairdoc-ai`
+
+
+### 🏛️ Regulatory \& Compliance
+
+- **GDPR Officer**: gdpr@fairdoc.ai
+- **Clinical Safety**: safety@fairdoc.ai
+- **Bias Ethics Board**: ethics@fairdoc.ai
+
+---
+
+## 📄 License \& Legal
+
+### 📜 Open Source License
+
+```
+MIT License
+
+Copyright (c) 2024 Fairdoc AI Ltd
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+
+### ⚖️ Medical Disclaimer
+
+> **Important**: This software is for clinical decision support only and should not be used as the sole basis for medical decisions. All AI-generated recommendations must be reviewed and approved by qualified healthcare professionals. The system is designed to augment, not replace, clinical judgment.
 
 ### 🔒 Data Protection Notice
 
@@ -592,9 +1732,10 @@ All patient data is processed in accordance with:
 
 - **NHS Digital** for FHIR R4 guidance and API access
 - **DevPost RAI Hackathon** for promoting responsible AI in healthcare
-- **OpenAI & Anthropic** for advancing conversational AI capabilities
+- **OpenAI \& Anthropic** for advancing conversational AI capabilities
 - **Ollama Team** for enabling local LLM deployment
 - **ChromaDB** for efficient vector storage solutions
+
 
 ### 🔬 Research Partners
 
@@ -603,15 +1744,17 @@ All patient data is processed in accordance with:
 - **Cambridge University** - Healthcare AI ethics framework
 - **Alan Turing Institute** - Responsible AI development
 
+
 ### 💡 Inspiration
 
 > *"Healthcare should be a human right, not a privilege. Technology should bridge gaps, not create them. AI should amplify human compassion, not replace it."*
 
 ---
 
-**Built with ❤️ for healthcare equity and responsible AI**
+<div style="text-align: center">**Built with ❤️ for healthcare equity and responsible AI**</div>
 
-*Last updated: May 2025*
 
-⁂
+<div style="text-align: center">*Last updated: May 2025*</div>
+
+<div style="text-align: center">⁂</div>
 
