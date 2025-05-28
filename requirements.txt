@@ -36,8 +36,10 @@ opencv-python
 opencv-contrib-python
 Pillow
 imageio
-# Database with LLM compatiblity
+
+# Database with LLM compatibility
 chromadb
+
 # Medical Data Processing
 wfdb
 pydicom
@@ -71,6 +73,10 @@ sqlalchemy
 alembic
 asyncpg
 psycopg2-binary
+
+# Object Storage (MinIO S3-compatible)
+minio
+boto3
 
 # FHIR & Healthcare Standards
 fhir.resources
@@ -121,7 +127,126 @@ notebook
 psutil
 GPUtil
 
-
 # Additional Medical NLP Libraries (Python 3.13 compatible)
 nltk
 textblob
+
+# =============================================================================
+# ENHANCED EHR PROCESSING LIBRARIES - Based on Latest Research
+# =============================================================================
+
+# EHR Data Processing & Efficiency
+meds-reader                    # Fast and efficient EHR processing library
+pyhealth                      # Healthcare predictive models toolkit
+
+# Advanced Medical NLP
+stanza                        # Biomedical and clinical NLP models
+ascle                        # Medical text generation toolkit
+
+# FHIR Server Integration
+fhir-pyrate                  # Data science friendly FHIR server queries
+
+# Clinical Data Warehouse
+fiber-cohort                 # EHR retrieval from star schema warehouses
+
+# Additional Medical Data Standards
+hl7apy                       # HL7 message processing
+pyxnat                       # XNAT neuroimaging data access
+
+# Medical Knowledge Bases
+umls-python                  # UMLS medical terminology
+rxnorm-python               # RxNorm drug information
+
+# Clinical Decision Support
+cds-hooks                    # Clinical Decision Support Hooks
+
+# Healthcare Interoperability
+smart-on-fhir               # SMART on FHIR application framework
+
+# Medical Image Processing Enhancement
+cornerstone-core            # Medical image viewing
+ohif-viewer                 # OHIF medical image viewer integration
+
+# Temporal Medical Data
+pytemporal                  # Temporal pattern analysis for medical data
+chronos-forecasting         # Time series forecasting for healthcare
+
+# Medical Signal Processing
+neurokit2                   # Neurophysiological signal processing
+heartpy                     # Heart rate analysis
+biosignal                   # Biomedical signal processing
+
+# Clinical Quality Measures
+cqm-engine                  # Clinical Quality Measures
+hedis-measures              # HEDIS quality measures
+
+# Healthcare Analytics
+hcup-py                     # Healthcare Cost and Utilization Project
+medicare-utils              # Medicare data utilities
+
+# Medical Coding & Classification
+icd10-cm                    # ICD-10-CM diagnosis codes
+snomed-ct-python           # SNOMED CT terminology
+cpt-codes                   # CPT procedure codes
+
+# Clinical Trial Support
+redcap-python              # REDCap clinical trial data
+openclinica-python         # OpenClinica EDC system
+
+# Medical Document Processing
+discharge-summary-parser    # Parse discharge summaries
+clinical-note-parser       # Clinical note extraction
+radiology-report-parser    # Radiology report processing
+
+# Pharmacy & Drug Information
+drugbank-python            # DrugBank drug database
+openfda-python             # OpenFDA API client
+
+# Population Health
+census-health-data         # Population health demographics
+social-determinants        # Social determinants of health
+
+# Medical Device Integration
+dicom-web                  # DICOMweb standard implementation
+hl7-fhir-r4               # FHIR R4 implementation
+mllp-python               # MLLP (Minimal Lower Layer Protocol)
+
+# Healthcare Security & Privacy
+phi-detector               # PHI detection and anonymization
+hipaa-compliance          # HIPAA compliance utilities
+safe-harbor-deidentify    # Safe Harbor de-identification
+
+# =============================================================================
+# INFRASTRUCTURE & DEPLOYMENT
+# =============================================================================
+
+# Container & Deployment
+docker
+kubernetes
+helm
+
+# Monitoring & Observability
+prometheus-client
+grafana-api
+jaeger-client
+
+# API Gateway & Load Balancing
+nginx-python
+haproxy-stats
+
+# Message Queuing
+kafka-python
+rabbitmq-python
+
+# Configuration Management
+consul-python
+etcd3
+
+# Backup & Recovery
+pg-dump-python
+minio-backup
+
+# Health Checks
+healthcheck
+ping3
+requests-toolbelt

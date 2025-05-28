@@ -163,18 +163,96 @@ flowchart LR
 
 ---
 
-### This colorized version uses:
+### **🔵 Frontend Layer**
 
-- **🔵 Blue tones** for Frontend Layer (NHS integration, patient/doctor interfaces)
-- **🟢 Green tones** for Unified API Gateway (FastAPI, routing, authentication)
-- **🟠 Orange tones** for v1 Backend Legacy (original triage, basic models)
-- **🟣 Purple tones** for v2 Backend Modern (AI orchestration, bias monitoring)
-- **🔴 Pink/Red tones** for Specialized ML Services (NLP, image analysis, etc.)
-- **🟡 Yellow tones** for Message Queue & Cache (Celery, Redis, ChromaDB)
-- **🟢 Teal tones** for Data Layer (NHS EHR, FHIR, PostgreSQL)
-- **🔵 Cyan tones** for Network Layer (specialist marketplace, consultations)
+#### *Soft blue tones – User-facing interfaces*
 
-The color scheme creates visual hierarchy and makes it easier to understand the different architectural layers and their relationships.
+* **NHS App Integration** (`A`)
+* **Patient Interface** (`B`)
+* **Doctor Dashboard** (`C`)
+
+---
+
+### **🟢 Unified API Gateway**
+
+#### *Pale orange tones – Central API management & routing*
+
+* **Main FastAPI App** (`D`)
+* **WebSocket Manager** (`E`)
+* **Authentication Layer** (`F`)
+* **v1 API Mount** (`G`)
+* **v2 API Mount** (`H`)
+* **Legacy Router** (`I`)
+* **Modern Router** (`J`)
+
+---
+
+### **🟠 v1 Backend (Legacy)**
+
+#### *Light orange tones – Legacy business logic & storage*
+
+* **Original Triage** (`K`)
+* **Basic ML Models** (`L`)
+* **PostgreSQL Only** (`M`)
+
+---
+
+### **🟣 v2 Backend (Modern)**
+
+#### *Lavender tones – Advanced orchestration & decision logic*
+
+* **AI Orchestration Layer** (`N`)
+* **Model Selector** (`O`)
+* **Bias Monitor** (`P`)
+* **Context Manager** (`Q`)
+
+---
+
+### **🔴 Specialized ML Services (v2)**
+
+#### *Pink tones – Domain-specific machine learning tools*
+
+* **Text NLP Service** (`R`)
+* **Image Analysis Service** (`S`)
+* **Audio Processing Service** (`T`)
+* **Time Series Service** (`U`)
+* **Risk Classifier Service** (`V`)
+
+---
+
+### **🟡 Message Queue & Cache**
+
+#### *Yellow-green tones – Task queues and fast-access stores*
+
+* **Celery Workers** (`W`)
+* **Redis Cache** (`X`)
+* **ChromaDB Vector Store** (`Y`)
+
+---
+
+### **🟢 Teal Data Layer (Separated)**
+
+#### *Soft green tones – Medical and structured data services*
+
+* **NHS EHR Integration** (`Z`)
+* **FHIR R4 API** (`AA`)
+* **PostgreSQL DB** (`BB`)
+* **RAG Documents** (`CC`)
+
+---
+
+### **🔵 Cyan Network Layer**
+
+#### *Sky blue tones – Provider availability and routing*
+
+* **Specialist Marketplace** (`DD`)
+* **Doctor Availability** (`EE`)
+* **Consultation Router** (`FF`)
+
+---
+
+Let me know if you want this as a rendered HTML snippet or included in a documentation file!
+
 
 ---
 
