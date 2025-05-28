@@ -126,12 +126,11 @@ class FairdocAIOrchestrator:
 | **Time Series** | Vital signs analysis, ECG interpretation | LSTM + Transformer hybrid | ~200MB | <100ms |
 | **Risk Classification** | Multi-modal risk assessment | Ensemble XGBoost + Neural Net | ~150MB | <50ms |
 
-
 ---
 
 ## 📁 Project Structure
 
-```
+```Markdown
 fairdoc-backend/
 ├── 📁 api/                           # REST API endpoints
 │   ├── 📁 auth/                      # Authentication routes
