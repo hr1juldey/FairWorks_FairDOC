@@ -137,12 +137,16 @@ fairdoc-backend/
 │   ├── 📁 medical/                   # Medical triage endpoints
 │   ├── 📁 chat/                      # WebSocket chat routes
 │   ├── 📁 admin/                     # Admin & monitoring
-│   └── 📁 files/                     # File upload endpoints
+│   ├── 📁 files/                     # File upload endpoints
+│   ├── 📁 nhs/                       # NHS EHR integration endpoints
+│   ├── 📁 doctors/                   # Doctor network endpoints
+│   └── 📁 rag/                       # RAG search endpoints
 ├── 📁 core/                          # Core infrastructure
 │   ├── config.py                     # Environment configuration
 │   ├── websocket_manager.py          # WebSocket connections
 │   ├── security.py                   # JWT, OAuth, encryption
-│   └── exceptions.py                 # Custom exceptions
+│   ├── exceptions.py                 # Custom exceptions
+│   └── dependencies.py               # FastAPI dependencies
 ├── 📁 datamodels/                    # Pydantic data models
 │   ├── base_models.py                # Base entities, mixins
 │   ├── auth_models.py                # User, session models
@@ -151,54 +155,128 @@ fairdoc-backend/
 │   ├── bias_models.py                # Bias detection models
 │   ├── ml_models.py                  # ML prediction models
 │   ├── file_models.py                # File upload models
-│   └── nhs_ehr_models.py             # NHS-specific EHR models
+│   ├── nhs_ehr_models.py             # NHS-specific EHR models
+│   ├── doctor_models.py              # Doctor network models
+│   ├── nice_models.py                # NICE disease/diagnosis models
+│   └── rag_models.py                 # RAG search models
 ├── 📁 services/                      # Business logic layer
 │   ├── auth_service.py               # Authentication logic
 │   ├── medical_ai_service.py         # AI orchestration
 │   ├── bias_detection_service.py     # Real-time bias monitoring
 │   ├── chat_orchestrator.py          # Chat flow management
 │   ├── ollama_service.py             # Local LLM integration
-│   └── notification_service.py       # Real-time notifications
+│   ├── notification_service.py       # Real-time notifications
+│   ├── nhs_ehr_service.py            # NHS EHR integration
+│   ├── doctor_network_service.py     # Doctor availability & routing
+│   ├── nice_service.py               # NICE guidelines integration
+│   └── rag_service.py                # RAG search & retrieval
 ├── 📁 MLmodels/                      # ML model implementations
 │   ├── 📁 classifiers/               # Specialized classifiers
 │   │   ├── triage_classifier.py      # Primary triage ML
 │   │   ├── risk_classifier.py        # Risk assessment
 │   │   └── bias_classifier.py        # Bias detection models
-│   ├── 📁 embeddings/                # Vector embeddings
+│   ├── 📁 embeddings/                # Vector embeddings for RAG
 │   │   ├── medical_embeddings.py     # Medical text embeddings
-│   │   └── similarity_search.py      # ChromaDB operations
+│   │   ├── embedding_generator.py    # Generate embeddings for RAG
+│   │   └── similarity_search.py      # ChromaDB RAG operations
 │   ├── 📁 ollama_models/             # Local LLM services
 │   │   ├── clinical_model.py         # Clinical reasoning
 │   │   ├── chat_model.py             # Conversational AI
 │   │   └── classification_model.py   # Text classification
+│   ├── 📁 rag/                       # RAG-specific models
+│   │   ├── retrieval_model.py        # Document retrieval
+│   │   ├── ranking_model.py          # Result ranking
+│   │   └── context_fusion.py         # Context combination
 │   └── model_manager.py              # Model loading & caching
 ├── 📁 data/                          # Data layer
 │   ├── 📁 database/                  # Database managers
-│   │   ├── connection_manager.py     # DB connection handling
-│   │   ├── chromadb_manager.py       # Vector database ops
+│   │   ├── postgres_manager.py       # PostgreSQL connection handling
+│   │   ├── chromadb_manager.py       # ChromaDB vector operations
 │   │   └── redis_manager.py          # Cache operations
 │   ├── 📁 repositories/              # Data access layer
-│   │   ├── auth_repository.py        # User CRUD operations
-│   │   ├── medical_repository.py     # Medical data CRUD
-│   │   ├── chat_repository.py        # Chat history CRUD
-│   │   └── bias_repository.py        # Bias metrics CRUD
-│   └── 📁 schemas/                   # Database schemas
-│       ├── vector_schemas.py         # ChromaDB collections
-│       └── cache_schemas.py          # Redis key patterns
+│   │   ├── 📁 postgres/              # PostgreSQL repositories
+│   │   │   ├── auth_repository.py    # User CRUD operations
+│   │   │   ├── medical_repository.py # Medical assessments CRUD
+│   │   │   ├── chat_repository.py    # Chat history CRUD
+│   │   │   ├── bias_repository.py    # Bias metrics CRUD
+│   │   │   ├── nhs_ehr_repository.py # NHS EHR data CRUD
+│   │   │   ├── doctor_repository.py  # Doctor records CRUD
+│   │   │   └── nice_repository.py    # NICE guidelines CRUD
+│   │   └── 📁 chromadb/              # ChromaDB repositories
+│   │       ├── rag_repository.py     # RAG document storage/retrieval
+│   │       ├── embedding_repository.py # Vector embeddings CRUD
+│   │       └── similarity_repository.py # Similarity search operations
+│   ├── 📁 schemas/                   # Database schemas
+│   │   ├── 📁 postgres/              # PostgreSQL schemas
+│   │   │   ├── user_schemas.py       # User table schemas
+│   │   │   ├── medical_schemas.py    # Medical table schemas
+│   │   │   ├── nhs_ehr_schemas.py    # NHS EHR table schemas
+│   │   │   ├── doctor_schemas.py     # Doctor table schemas
+│   │   │   └── nice_schemas.py       # NICE data table schemas
+│   │   ├── 📁 chromadb/              # ChromaDB collections
+│   │   │   ├── rag_collections.py   # RAG document collections
+│   │   │   ├── medical_knowledge_collections.py # Medical knowledge vectors
+│   │   │   ├── conversation_collections.py # Chat context vectors
+│   │   │   └── similarity_collections.py # Similarity search collections
+│   │   └── 📁 redis/                 # Redis schemas
+│   │       ├── cache_schemas.py      # Cache key patterns
+│   │       └── session_schemas.py    # Session management
+│   └── 📁 migrations/                # Database migrations
+│       ├── 📁 postgres/              # PostgreSQL migrations
+│       │   ├── 001_initial_tables.py
+│       │   ├── 002_nhs_ehr_tables.py
+│       │   ├── 003_doctor_tables.py
+│       │   └── 004_nice_tables.py
+│       └── 📁 chromadb/              # ChromaDB setup scripts
+│           ├── init_collections.py
+│           └── setup_embeddings.py
+├── 📁 rag/                           # RAG-specific components
+│   ├── 📁 indexing/                  # Document indexing
+│   │   ├── document_processor.py     # Process docs for RAG
+│   │   ├── chunk_splitter.py         # Text chunking strategies
+│   │   └── metadata_extractor.py     # Extract document metadata
+│   ├── 📁 retrieval/                 # Document retrieval
+│   │   ├── vector_retriever.py       # Vector-based retrieval
+│   │   ├── hybrid_retriever.py       # Hybrid search (vector + keyword)
+│   │   └── context_retriever.py      # Context-aware retrieval
+│   ├── 📁 generation/                # Response generation
+│   │   ├── prompt_templates.py       # RAG prompt templates
+│   │   ├── context_formatter.py      # Format retrieved context
+│   │   └── response_synthesizer.py   # Synthesize final response
+│   └── rag_pipeline.py               # Main RAG orchestration
 ├── 📁 utils/                         # Utility functions
 │   ├── medical_utils.py              # Medical data processing
 │   ├── text_processing.py           # NLP preprocessing
 │   ├── image_processing.py          # Image analysis utilities
 │   ├── validation_utils.py          # Data validation
-│   └── monitoring_utils.py          # Logging & monitoring
+│   ├── monitoring_utils.py          # Logging & monitoring
+│   ├── nhs_utils.py                 # NHS data formatting
+│   ├── nice_utils.py                # NICE guidelines processing
+│   └── rag_utils.py                 # RAG helper functions
 ├── 📁 tools/                         # Development tools
 │   ├── 📁 data_generators/           # Synthetic data generation
+│   │   ├── postgres_seed_data.py     # PostgreSQL seed data
+│   │   └── chromadb_seed_data.py     # ChromaDB seed data
 │   ├── 📁 testing/                   # Testing utilities
-│   └── 📁 deployment/                # Deployment scripts
+│   │   ├── postgres_fixtures.py      # PostgreSQL test fixtures
+│   │   ├── chromadb_fixtures.py      # ChromaDB test fixtures
+│   │   └── rag_test_utils.py         # RAG testing utilities
+│   ├── 📁 deployment/                # Deployment scripts
+│   │   ├── postgres_setup.sh         # PostgreSQL deployment
+│   │   ├── chromadb_setup.sh         # ChromaDB deployment
+│   │   └── rag_index_builder.py      # Build RAG indexes
+│   └── 📁 monitoring/                # Monitoring tools
+│       ├── postgres_monitor.py       # PostgreSQL monitoring
+│       ├── chromadb_monitor.py       # ChromaDB monitoring
+│       └── rag_performance_monitor.py # RAG performance tracking
+├── 📁 bkdocs/                        # Existing docs folder
 ├── 📄 requirements.txt               # Python dependencies
+├── 📄 requirements-rag.txt           # RAG-specific dependencies
 ├── 📄 docker-compose.yml            # Local development setup
+├── 📄 docker-compose.rag.yml        # RAG services setup
 ├── 📄 .env.example                  # Environment variables template
-└── 📄 README.md                     # This file
+└── 📄 README.md                     # Project documentation
+
 ```
 
 
