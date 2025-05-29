@@ -1250,9 +1250,9 @@ __all__ = [
     "generate_object_path", "generate_file_url",
     
     # Metadata utilities
-    "create_file_metadata", "extract_file_content",
+    "create_file_metadata", "extract_file_content", "perform_content_analysis",
     
-    # Analysis utilities
+    # Analysis utilities - NOW PROPERLY IMPLEMENTED
     "analyze_image_file", "analyze_audio_file", "analyze_pdf_file",
     
     # Batch processing
