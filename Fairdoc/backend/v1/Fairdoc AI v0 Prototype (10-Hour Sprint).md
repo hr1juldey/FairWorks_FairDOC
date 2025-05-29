@@ -1,5 +1,3 @@
-
-
 # TODO.md - Fairdoc AI v1 Prototype (10-Hour Sprint)
 
 ## 🎯 **Sprint Goal**
@@ -8,77 +6,84 @@ Build a working MVP with chest pain triage flow: Patient chat → Case report �
 
 ---
 
-## ⏰ **Time Allocation (10 Hours Total)**
+## ⏰ **Time Allocation (10 Hours Total) - CURRENT PROGRESS: 2/10 HOURS COMPLETE**
 
-### **Phase 1: Core Infrastructure Setup (2 hours)**
+### **✅ Phase 1: Core Infrastructure Setup (2 hours) - COMPLETED**
 
-- [x] **Hour 1: Environment \& Database Setup**
-    - [x] Set up PostgreSQL database with Docker
-    - [x] Configure Redis for caching
-    - [x] Set up MinIO for object storage
-    - [x] Create `.env` configuration
-    - [x] Test all connections
-- [ ] **Hour 2: Essential Pydantic Models**
-    - [x] Create `CaseReport` model (v1/datamodels/medical_model.py)
-    - [x] Create `NICEProtocolQuestion` model
-    - [x] Create `PatientResponse` model
-    - [ ] Create database tables with SQLAlchemy
+- [x] **Hour 1: Environment & Database Setup - ✅ COMPLETED**
+  - [x] Set up PostgreSQL database with Docker ✅
+  - [x] Configure Redis for caching ✅
+  - [x] Set up MinIO for object storage ✅
+  - [x] **ADDED:** Set up ChromaDB vector database ✅
+  - [x] Create comprehensive `.env` configuration ✅
+  - [x] **ENHANCED:** Create docker-compose.yaml for all services ✅
+  - [x] **ENHANCED:** Test all connections (5/6 services working) ✅
 
+- [x] **Hour 2: Essential Data Models - ✅ COMPLETED**
+  - [x] **ENHANCED:** Create Pydantic v2 compliant models with ML scoring ✅
+  - [x] **ARCHITECTURAL FIX:** Separate SQLAlchemy models properly ✅
+  - [x] **MAJOR ADDITION:** Create 10 comprehensive NICE protocols JSON ✅
+  - [x] **ENHANCED:** Create database tables with mutable JSON support ✅
+  - [x] **ENHANCED:** Implement clean architecture separation ✅
 
-### **Phase 2: Core Backend API (3 hours)**
+### **🔄 Phase 2: Core Backend API (3 hours) - READY TO START**
 
 - [ ] **Hour 3: FastAPI Core Setup**
-    - [ ] Configure v1/app.py with essential endpoints
-    - [ ] Create database connection utilities
-    - [ ] Set up basic error handling
-    - [ ] Test API startup
+  - [ ] Configure v1/app.py with essential endpoints
+  - [ ] Create database connection utilities
+  - [ ] Set up basic error handling and middleware
+  - [ ] Implement health check endpoints
+  - [ ] Test API startup and basic functionality
+
 - [ ] **Hour 4: NICE Protocol Questions API**
-    - [ ] Research NHS NICE chest pain protocol questions
-    - [ ] Create questions database/JSON file
-    - [ ] Build `/api/v1/questions/chest-pain` endpoint
-    - [ ] Build `/api/v1/responses/submit` endpoint
-- [ ] **Hour 5: File Upload \& Case Report API**
-    - [ ] Create `/api/v1/files/upload` endpoint (MinIO integration)
-    - [ ] Build `/api/v1/case-reports/create` endpoint
-    - [ ] Basic validation and error handling
-    - [ ] Test file upload flow
+  - [ ] Build `/api/v1/protocols` endpoint (list all protocols)
+  - [ ] Build `/api/v1/protocols/{protocol_id}/questions` endpoint
+  - [ ] Build `/api/v1/questions/by-urgency/{category}` endpoint
+  - [ ] Build `/api/v1/responses/submit` endpoint
+  - [ ] Implement protocol selection logic
 
+- [ ] **Hour 5: File Upload & Case Report API**
+  - [ ] Create `/api/v1/files/upload` endpoint (MinIO integration)
+  - [ ] Build `/api/v1/case-reports/create` endpoint
+  - [ ] Build `/api/v1/case-reports/{case_id}` CRUD endpoints
+  - [ ] Implement file processing and validation
+  - [ ] Test complete case report workflow
 
-### **Phase 3: Mesop Frontend (2 hours)**
+### **🔄 Phase 3: Mesop Frontend (2 hours) - PENDING**
 
 - [ ] **Hour 6: Basic Mesop Chat Interface**
-    - [ ] Create `frontend/chat_app.py`
-    - [ ] Build WhatsApp-like chat UI
-    - [ ] Implement question-answer flow
-    - [ ] Add typing indicators and message states
-- [ ] **Hour 7: File Upload \& Progress UI**
-    - [ ] Add file upload component
-    - [ ] Create progress indicators
-    - [ ] Connect to backend APIs
-    - [ ] Add basic styling and responsive design
+  - [ ] Create `frontend/chat_app.py` with protocol selection
+  - [ ] Build WhatsApp-like chat UI with enhanced UX
+  - [ ] Implement dynamic question-answer flow
+  - [ ] Add typing indicators and progress tracking
 
+- [ ] **Hour 7: File Upload & Progress UI**
+  - [ ] Add file upload component with drag-drop
+  - [ ] Create real-time progress indicators
+  - [ ] Connect to backend APIs with error handling
+  - [ ] Add responsive design and mobile support
 
-### **Phase 4: AI Integration \& Background Jobs (2 hours)**
+### **🔄 Phase 4: AI Integration & Background Jobs (2 hours) - PENDING**
 
-- [ ] **Hour 8: Celery Setup \& Basic Jobs**
-    - [ ] Configure Celery with Redis broker
-    - [ ] Create `process_case_report` task
-    - [ ] Create `generate_pdf_report` task
-    - [ ] Basic notification system
-- [ ] **Hour 9: Essential AI Integration**
-    - [ ] Set up Ollama with Gemma 4B (lightweight for RTX 3060)
-    - [ ] Create case report text processing
-    - [ ] Implement basic urgency scoring (simple rule-based for MVP)
-    - [ ] Vector embedding for basic similarity matching
+- [ ] **Hour 8: Celery Setup & Basic Jobs**
+  - [ ] Configure Celery with Redis broker
+  - [ ] Create `process_case_report` task
+  - [ ] Create `generate_pdf_report` task with ReportLab
+  - [ ] Implement notification system
 
+- [ ] **Hour 9: Enhanced AI Integration**
+  - [ ] Set up Ollama with multiple models (Gemma, DeepSeek, Qwen)
+  - [ ] Implement ML-based triage scoring
+  - [ ] Create urgency/importance coordinate mapping
+  - [ ] Implement basic bias monitoring
 
-### **Phase 5: Integration \& Testing (1 hour)**
+### **🔄 Phase 5: Integration & Testing (1 hour) - PENDING**
 
-- [ ] **Hour 10: End-to-End Testing \& Polish**
-    - [ ] Full user flow testing
-    - [ ] Fix critical bugs
-    - [ ] Basic error handling improvements
-    - [ ] Documentation for demo
+- [ ] **Hour 10: End-to-End Testing & Polish**
+  - [ ] Full user flow testing across all 10 protocols
+  - [ ] Fix critical bugs and performance issues
+  - [ ] Basic error handling improvements
+  - [ ] Demo preparation and documentation
 
 ---
 
