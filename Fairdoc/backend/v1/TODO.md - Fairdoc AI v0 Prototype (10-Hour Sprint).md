@@ -13,10 +13,10 @@ Build a working MVP with chest pain triage flow: Patient chat â†’ Case report â†
 ### **Phase 1: Core Infrastructure Setup (2 hours)**
 
 - [ ] **Hour 1: Environment \& Database Setup**
-    - [ ] Set up PostgreSQL database with Docker
-    - [ ] Configure Redis for caching
-    - [ ] Set up MinIO for object storage
-    - [ ] Create `.env` configuration
+    - [x] Set up PostgreSQL database with Docker
+    - [x] Configure Redis for caching
+    - [x] Set up MinIO for object storage
+    - [x] Create `.env` configuration
     - [ ] Test all connections
 - [ ] **Hour 2: Essential Pydantic Models**
     - [ ] Create `CaseReport` model (v1/datamodels/medical_model.py)

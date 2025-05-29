@@ -1,829 +1,682 @@
 """
-NHS-compliant medical models for telemedicine diagnosis and patient management.
-Based on NICE guidelines, clinical pathways, and NHS digital health standards.
-Supports AI-assisted diagnosis with human clinician oversight.
+Medical Data Models - NICE/NIH Compliant - Pydantic v2
+General purpose medical triage models with ML scoring integration
 """
-from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any, Literal
-from uuid import UUID, uuid4
-from pydantic import Field, field_validator
-from enum import Enum
-import re
 
-from datamodels.base_models import (
-    BaseEntity, BaseResponse, TimestampMixin,
-    ValidationMixin, MetadataMixin, RiskLevel, UrgencyLevel,
-    Gender, Ethnicity
-)
+from pydantic import BaseModel, Field, field_validator, ConfigDict
+from typing import List, Optional, Dict, Any, Union, Tuple
+from datetime import datetime
+from enum import IntEnum, Enum
+import uuid
 
-# ============================================================================
-# NICE-COMPLIANT MEDICAL ENUMS
-# ============================================================================
+# =============================================================================
+# CORE ENUMS WITH ML SCORING - NICE/NIH Standards
+# =============================================================================
 
-class NICEPathwayCategory(str, Enum):
-    """NICE clinical pathway categories for telemedicine."""
-    CARDIOVASCULAR = "cardiovascular"
-    RESPIRATORY = "respiratory"
-    DERMATOLOGY = "dermatology"
-    MENTAL_HEALTH = "mental_health"
-    GASTROINTESTINAL = "gastrointestinal"
-    MUSCULOSKELETAL = "musculoskeletal"
-    ENDOCRINE = "endocrine"
-    NEUROLOGICAL = "neurological"
-    GENITOURINARY = "genitourinary"
-    INFECTIOUS_DISEASE = "infectious_disease"
-    PAIN_MANAGEMENT = "pain_management"
-
-class TelemedicineSuitability(str, Enum):
-    """Suitability for telemedicine diagnosis per NICE guidelines."""
-    HIGHLY_SUITABLE = "highly_suitable"       # Can be fully assessed remotely
-    MODERATELY_SUITABLE = "moderately_suitable"  # Remote assessment with limitations
-    LIMITED_SUITABILITY = "limited_suitability"  # Requires some physical examination
-    NOT_SUITABLE = "not_suitable"            # Requires in-person assessment
-    EMERGENCY_ONLY = "emergency_only"        # Emergency triage only
-
-class SymptomSeverity(str, Enum):
-    """Standardized symptom severity scale."""
-    NONE = "none"           # 0
-    MILD = "mild"           # 1-3
-    MODERATE = "moderate"   # 4-6
-    SEVERE = "severe"       # 7-8
-    VERY_SEVERE = "very_severe"  # 9-10
-
-class ClinicalDecisionStatus(str, Enum):
-    """Status of clinical decision making process."""
-    AI_ASSESSMENT_PENDING = "ai_assessment_pending"
-    AI_ASSESSMENT_COMPLETE = "ai_assessment_complete"
-    HUMAN_REVIEW_REQUIRED = "human_review_required"
-    HUMAN_REVIEW_IN_PROGRESS = "human_review_in_progress"
-    CLINICAL_DECISION_MADE = "clinical_decision_made"
-    TREATMENT_INITIATED = "treatment_initiated"
-    FOLLOW_UP_SCHEDULED = "follow_up_scheduled"
-
-class InterventionType(str, Enum):
-    """Types of primary interventions per NICE guidelines."""
-    SELF_CARE = "self_care"
-    PHARMACOLOGICAL = "pharmacological"
-    NON_PHARMACOLOGICAL = "non_pharmacological"
-    LIFESTYLE_MODIFICATION = "lifestyle_modification"
-    PSYCHOLOGICAL_INTERVENTION = "psychological_intervention"
-    URGENT_REFERRAL = "urgent_referral"
-    ROUTINE_REFERRAL = "routine_referral"
-    EMERGENCY_SERVICES = "emergency_services"
-    FOLLOW_UP_MONITORING = "follow_up_monitoring"
-
-class EscalationTrigger(str, Enum):
-    """Triggers for escalation to human clinician."""
-    RED_FLAG_SYMPTOMS = "red_flag_symptoms"
-    COMPLEX_PRESENTATION = "complex_presentation"
-    MULTIPLE_COMORBIDITIES = "multiple_comorbidities"
-    HIGH_RISK_PATIENT = "high_risk_patient"
-    AI_CONFIDENCE_LOW = "ai_confidence_low"
-    PATIENT_REQUEST = "patient_request"
-    CLINICAL_UNCERTAINTY = "clinical_uncertainty"
-    SAFEGUARDING_CONCERN = "safeguarding_concern"
-
-# ============================================================================
-# MEDICAL CODING MODELS
-# ============================================================================
-
-class SNOMEDCode(TimestampMixin, ValidationMixin):
-    """SNOMED CT codes for standardized medical terminology."""
-    concept_id: str = Field(..., pattern=r"^\d{6,18}$", description="SNOMED CT concept ID")
-    preferred_term: str = Field(..., max_length=255, description="Preferred clinical term")
-    semantic_tag: str = Field(..., description="Semantic category")
+class SeverityLevel(IntEnum):
+    """Pain/symptom severity levels with integer scores for ML evaluation"""
+    NONE = 0           # No pain/symptoms
+    MINIMAL = 1        # 1-2 on scale
+    MILD = 3           # 3-4 on scale
+    MODERATE = 5       # 5-6 on scale
+    SEVERE = 7         # 7-8 on scale
+    VERY_SEVERE = 9    # 9-10 on scale
     
-    # Additional metadata
-    is_active: bool = Field(default=True)
-    module_id: str = Field(default="999000031000000106", description="UK Edition module")
-    
-    @field_validator('concept_id')
     @classmethod
-    def validate_snomed_format(cls, v: str) -> str:
-        """Validate SNOMED CT concept ID format."""
-        if not v.isdigit() or len(v) < 6:
-            raise ValueError('SNOMED CT concept ID must be 6-18 digits')
-        return v
+    def from_scale_score(cls, score: int) -> 'SeverityLevel':
+        """Convert 0-10 pain scale to severity level"""
+        if score == 0:
+            return cls.NONE
+        elif 1 <= score <= 2:
+            return cls.MINIMAL
+        elif 3 <= score <= 4:
+            return cls.MILD
+        elif 5 <= score <= 6:
+            return cls.MODERATE
+        elif 7 <= score <= 8:
+            return cls.SEVERE
+        else:  # 9-10
+            return cls.VERY_SEVERE
 
-class ICD10Code(TimestampMixin, ValidationMixin):
-    """ICD-10 codes for diagnosis classification."""
-    code: str = Field(..., pattern=r"^[A-Z]\d{2}(\.[0-9X]{1,3})?$", description="ICD-10 code")
-    description: str = Field(..., max_length=255, description="Condition description")
-    category: str = Field(..., description="ICD-10 category")
+class UrgencyCategory(IntEnum):
+    """NHS urgency categories with integer scores for triage algorithms"""
+    SELF_CARE = 1          # Self-management advice
+    ROUTINE = 2            # GP appointment within 48 hours
+    LESS_URGENT = 3        # Care needed within 6 hours
+    URGENT = 4             # Urgent care needed within 1 hour
+    EMERGENCY = 5          # Life threatening - call 999
     
-    # NICE pathway mapping
-    nice_pathway: Optional[NICEPathwayCategory] = None
-    telemedicine_suitable: TelemedicineSuitability = Field(default=TelemedicineSuitability.MODERATELY_SUITABLE)
-    
-    @field_validator('code')
-    @classmethod
-    def validate_icd10_format(cls, v: str) -> str:
-        """Validate ICD-10 code format."""
-        pattern = re.compile(r"^[A-Z]\d{2}(\.[0-9X]{1,3})?$")
-        if not pattern.match(v):
-            raise ValueError('Invalid ICD-10 code format')
-        return v.upper()
-
-class NICEGuideline(TimestampMixin, ValidationMixin):
-    """NICE clinical guidelines and quality standards."""
-    guideline_id: str = Field(..., description="NICE guideline identifier (e.g., NG194)")
-    title: str = Field(..., max_length=500)
-    pathway_category: NICEPathwayCategory
-    
-    # Guideline content
-    recommendations: List[str] = Field(default_factory=list)
-    quality_statements: List[str] = Field(default_factory=list)
-    red_flag_indicators: List[str] = Field(default_factory=list)
-    
-    # Digital health considerations
-    telemedicine_guidance: Optional[str] = Field(None, max_length=1000)
-    ai_considerations: Optional[str] = Field(None, max_length=1000)
-    
-    # Validity and updates
-    published_date: datetime
-    last_updated: datetime
-    next_review_date: Optional[datetime] = None
-    
-    @field_validator('guideline_id')
-    @classmethod
-    def validate_nice_id(cls, v: str) -> str:
-        """Validate NICE guideline ID format."""
-        pattern = re.compile(r"^(NG|CG|QS|DG|IPG|MTG|TA)\d+$")
-        if not pattern.match(v):
-            raise ValueError('Invalid NICE guideline ID format')
-        return v.upper()
-
-# ============================================================================
-# SYMPTOM MODELS
-# ============================================================================
-
-class SymptomDescriptor(TimestampMixin, ValidationMixin):
-    """Standardized symptom description and classification."""
-    symptom_id: UUID = Field(default_factory=uuid4)
-    snomed_code: SNOMEDCode
-    
-    # Symptom characteristics
-    symptom_name: str = Field(..., max_length=100)
-    body_system: NICEPathwayCategory
-    description: str = Field(..., max_length=500)
-    
-    # Assessment parameters
-    severity_scale: Dict[str, str] = Field(
-        default_factory=lambda: {
-            "mild": "1-3: Minimal impact on daily activities",
-            "moderate": "4-6: Some impact on daily activities",
-            "severe": "7-8: Significant impact on daily activities",
-            "very_severe": "9-10: Unable to perform daily activities"
+    def get_timeframe_hours(self) -> Optional[float]:
+        """Get recommended timeframe in hours"""
+        timeframes = {
+            self.SELF_CARE: None,
+            self.ROUTINE: 48.0,
+            self.LESS_URGENT: 6.0,
+            self.URGENT: 1.0,
+            self.EMERGENCY: 0.0  # Immediate
         }
-    )
-    
-    # Telemedicine assessment
-    remotely_assessable: bool = Field(default=True)
-    requires_visual_inspection: bool = Field(default=False)
-    requires_physical_examination: bool = Field(default=False)
-    
-    # Clinical significance
-    red_flag_potential: bool = Field(default=False)
-    emergency_indicator: bool = Field(default=False)
-    nice_guidance_available: bool = Field(default=False)
-    
-    # Associated questions for AI assessment
-    assessment_questions: List[str] = Field(default_factory=list)
-    follow_up_questions: List[str] = Field(default_factory=list)
+        return timeframes[self]
 
-class PatientSymptom(BaseEntity, ValidationMixin, MetadataMixin):
-    """Individual patient's reported symptom with assessment."""
+class ImportanceLevel(IntEnum):
+    """Clinical importance levels for coordinate mapping"""
+    LOW = 1            # Minor conditions, self-limiting
+    MODERATE_LOW = 2   # Some clinical significance
+    MODERATE = 3       # Clinically important
+    MODERATE_HIGH = 4  # Significant clinical impact
+    HIGH = 5           # Major clinical significance
+
+class TriageDisposition(IntEnum):
+    """Final triage disposition with priority scores"""
+    SELF_CARE = 1             # Self-care with advice
+    PHARMACY = 2              # Pharmacy consultation
+    GP_ROUTINE = 3            # GP routine appointment
+    GP_EMERGENCY = 4          # GP emergency appointment
+    URGENT_CARE = 5           # Urgent Care Center
+    ED_URGENT = 6             # Emergency Department - urgent
+    ED_IMMEDIATE = 7          # Emergency Department - immediate
+    MENTAL_HEALTH = 8         # Mental health crisis team
+    DENTAL = 9                # Dental emergency
+
+class GenderType(str, Enum):
+    MALE = "male"
+    FEMALE = "female"
+    OTHER = "other"
+    PREFER_NOT_TO_SAY = "prefer_not_to_say"
+
+class QuestionType(str, Enum):
+    """NICE protocol question types"""
+    TEXT = "text"
+    NUMBER = "number"
+    MULTIPLE_CHOICE = "multiple_choice"
+    MULTIPLE_SELECT = "multiple_select"
+    YES_NO = "yes_no"
+    SCALE_1_10 = "scale_1_10"
+    FILE_UPLOAD = "file_upload"
+    DATE = "date"
+    TIME = "time"
+
+# =============================================================================
+# COORDINATE MAPPING SYSTEM FOR ML TRIAGE
+# =============================================================================
+
+class TriageCoordinate(BaseModel):
+    """X-Y coordinate system for triage decision making"""
+    model_config = ConfigDict(frozen=True)
     
-    # Patient and symptom identification
-    patient_id: UUID
-    symptom_descriptor_id: UUID
-    snomed_code: str = Field(..., description="SNOMED CT code for symptom")
+    urgency: float = Field(..., ge=-1.0, le=1.0, description="Urgency score: -1 (not urgent) to +1 (very urgent)")
+    importance: float = Field(..., ge=-1.0, le=1.0, description="Importance score: -1 (not important) to +1 (very important)")
     
-    # Patient demographics for bias monitoring
-    patient_gender: Optional[Gender] = None
-    patient_ethnicity: Optional[Ethnicity] = None
-    patient_age: Optional[int] = Field(None, ge=0, le=150)
+    def get_quadrant(self) -> str:
+        """Determine triage quadrant"""
+        if self.urgency >= 0 and self.importance >= 0:
+            return "urgent_important"      # High priority
+        elif self.urgency >= 0 and self.importance < 0:
+            return "urgent_not_important"  # Fast track
+        elif self.urgency < 0 and self.importance >= 0:
+            return "not_urgent_important"  # Planned care
+        else:
+            return "not_urgent_not_important"  # Self-care
     
-    # Symptom presentation
-    severity: SymptomSeverity
-    severity_score: int = Field(..., ge=0, le=10, description="Patient-rated severity 0-10")
-    onset_date: datetime = Field(..., description="When symptom first appeared")
-    duration: timedelta = Field(..., description="How long symptom has been present")
+    def get_priority_score(self) -> float:
+        """Calculate overall priority score (0-1)"""
+        # Weighted combination: urgency slightly more important than importance
+        return (0.6 * (self.urgency + 1) / 2) + (0.4 * (self.importance + 1) / 2)
     
-    # Symptom characteristics
-    location: Optional[str] = Field(None, max_length=100, description="Anatomical location")
-    character: Optional[str] = Field(None, max_length=100, description="Pain/symptom character")
-    radiation: Optional[str] = Field(None, max_length=100, description="Does symptom spread")
-    alleviating_factors: List[str] = Field(default_factory=list)
-    exacerbating_factors: List[str] = Field(default_factory=list)
-    associated_symptoms: List[str] = Field(default_factory=list)
+    def to_urgency_category(self) -> UrgencyCategory:
+        """Convert coordinate to NHS urgency category"""
+        priority = self.get_priority_score()
+        if priority >= 0.8:
+            return UrgencyCategory.EMERGENCY
+        elif priority >= 0.6:
+            return UrgencyCategory.URGENT
+        elif priority >= 0.4:
+            return UrgencyCategory.LESS_URGENT
+        elif priority >= 0.2:
+            return UrgencyCategory.ROUTINE
+        else:
+            return UrgencyCategory.SELF_CARE
+
+class RiskScoreWeights(BaseModel):
+    """Configurable weights for risk scoring algorithm"""
+    model_config = ConfigDict(frozen=True)
     
-    # Time patterns
-    pattern: Optional[str] = Field(None, description="constant, intermittent, episodic")
-    time_of_day_variation: Optional[str] = None
-    seasonal_variation: Optional[str] = None
+    age_weight: float = Field(default=0.15, ge=0.0, le=1.0)
+    gender_weight: float = Field(default=0.05, ge=0.0, le=1.0)
+    symptom_severity_weight: float = Field(default=0.25, ge=0.0, le=1.0)
+    red_flags_weight: float = Field(default=0.30, ge=0.0, le=1.0)
+    medical_history_weight: float = Field(default=0.15, ge=0.0, le=1.0)
+    vital_signs_weight: float = Field(default=0.10, ge=0.0, le=1.0)
+
+# =============================================================================
+# BASE MEDICAL MODELS - Generic for all conditions
+# =============================================================================
+
+class Demographics(BaseModel):
+    """Patient demographics following NHS standards"""
+    model_config = ConfigDict(str_strip_whitespace=True)
     
-    # Impact assessment
-    functional_impact: SymptomSeverity = Field(default=SymptomSeverity.MILD)
-    sleep_impact: SymptomSeverity = Field(default=SymptomSeverity.NONE)
-    work_impact: SymptomSeverity = Field(default=SymptomSeverity.NONE)
-    quality_of_life_impact: int = Field(default=0, ge=0, le=10)
+    age: int = Field(..., ge=0, le=150, description="Patient age in years")
+    gender: GenderType = Field(..., description="Patient gender")
+    pregnancy_status: Optional[bool] = Field(default=None, description="If female, pregnancy status")
+    ethnicity: Optional[str] = Field(default=None, max_length=100, description="Patient ethnicity (optional)")
+    postcode_sector: Optional[str] = Field(default=None, max_length=10, description="Postcode sector for location")
     
-    # Clinical assessment
-    urgency_level: UrgencyLevel = Field(default=UrgencyLevel.ROUTINE)
-    risk_level: RiskLevel = Field(default=RiskLevel.LOW)
-    red_flag_identified: bool = Field(default=False)
-    red_flag_details: List[str] = Field(default_factory=list)
-    
-    # AI assessment
-    ai_assessed: bool = Field(default=False)
-    ai_confidence_score: Optional[float] = Field(None, ge=0.0, le=1.0)
-    ai_suggested_conditions: List[str] = Field(default_factory=list)
-    
-    @field_validator('duration')
+    @field_validator('age')
     @classmethod
-    def validate_duration(cls, v: timedelta, info) -> timedelta:
-        """Validate symptom duration is reasonable."""
-        if v.total_seconds() < 0:
-            raise ValueError('Duration cannot be negative')
-        
-        # Check if duration is consistent with onset
-        if hasattr(info, 'data') and 'onset_date' in info.data:
-            onset = info.data['onset_date']
-            if isinstance(onset, datetime):
-                expected_duration = datetime.now() - onset
-                if abs((v - expected_duration).total_seconds()) > 86400:  # 1 day tolerance
-                    raise ValueError('Duration inconsistent with onset date')
-        
+    def validate_age(cls, v: int) -> int:
+        if not 0 <= v <= 150:
+            raise ValueError('Age must be between 0 and 150')
         return v
+    
+    def get_age_risk_score(self) -> float:
+        """Calculate age-based risk score (0-1)"""
+        if self.age < 18:
+            return 0.1
+        elif self.age < 45:
+            return 0.2
+        elif self.age < 65:
+            return 0.4
+        elif self.age < 75:
+            return 0.6
+        else:
+            return 0.8
+
+class VitalSigns(BaseModel):
+    """Standard vital signs measurements with normal ranges"""
+    model_config = ConfigDict(validate_default=True)
+    
+    systolic_bp: Optional[int] = Field(default=None, ge=50, le=300, description="Systolic blood pressure mmHg")
+    diastolic_bp: Optional[int] = Field(default=None, ge=30, le=200, description="Diastolic blood pressure mmHg")
+    heart_rate: Optional[int] = Field(default=None, ge=30, le=300, description="Heart rate beats per minute")
+    respiratory_rate: Optional[int] = Field(default=None, ge=8, le=60, description="Respiratory rate per minute")
+    temperature: Optional[float] = Field(default=None, ge=32.0, le=45.0, description="Temperature in Celsius")
+    oxygen_saturation: Optional[int] = Field(default=None, ge=70, le=100, description="Oxygen saturation percentage")
+    blood_glucose: Optional[float] = Field(default=None, ge=2.0, le=30.0, description="Blood glucose mmol/L")
+    peak_flow: Optional[int] = Field(default=None, ge=50, le=800, description="Peak expiratory flow L/min")
+    
+    def calculate_vital_signs_score(self) -> float:
+        """Calculate abnormal vital signs score (0-1)"""
+        score = 0.0
+        count = 0
+        
+        # Blood pressure scoring
+        if self.systolic_bp is not None and self.diastolic_bp is not None:
+            if self.systolic_bp > 180 or self.diastolic_bp > 110:
+                score += 0.8  # Hypertensive crisis
+            elif self.systolic_bp > 140 or self.diastolic_bp > 90:
+                score += 0.4  # High BP
+            elif self.systolic_bp < 90:
+                score += 0.6  # Hypotension
+            count += 1
+        
+        # Heart rate scoring
+        if self.heart_rate is not None:
+            if self.heart_rate > 120 or self.heart_rate < 50:
+                score += 0.6
+            elif self.heart_rate > 100 or self.heart_rate < 60:
+                score += 0.3
+            count += 1
+        
+        # Temperature scoring
+        if self.temperature is not None:
+            if self.temperature > 38.5 or self.temperature < 35.0:
+                score += 0.7
+            elif self.temperature > 37.5 or self.temperature < 36.0:
+                score += 0.3
+            count += 1
+        
+        # Oxygen saturation scoring
+        if self.oxygen_saturation is not None:
+            if self.oxygen_saturation < 90:
+                score += 0.9
+            elif self.oxygen_saturation < 95:
+                score += 0.5
+            count += 1
+        
+        return min(score / max(count, 1), 1.0)
+
+class MedicalHistory(BaseModel):
+    """Comprehensive medical history with risk scoring"""
+    model_config = ConfigDict(str_strip_whitespace=True)
+    
+    conditions: List[str] = Field(default_factory=list, description="Known medical conditions")
+    medications: List[str] = Field(default_factory=list, description="Current medications")
+    allergies: List[str] = Field(default_factory=list, description="Known allergies")
+    surgeries: List[str] = Field(default_factory=list, description="Previous surgeries")
+    family_history: List[str] = Field(default_factory=list, description="Relevant family history")
+    smoking_status: Optional[str] = Field(default=None, description="Never/Former/Current smoker")
+    alcohol_units_weekly: Optional[int] = Field(default=None, ge=0, le=200, description="Alcohol units per week")
+    
+    @field_validator('conditions', 'medications', 'allergies', 'surgeries', 'family_history')
+    @classmethod
+    def validate_string_lists(cls, v: List[str]) -> List[str]:
+        return [item.strip().lower() for item in v if item.strip()]
     
     def calculate_risk_score(self) -> float:
-        """Calculate overall risk score for this symptom."""
-        base_score = self.severity_score / 10.0
+        """Calculate medical history risk score (0-1)"""
+        score = 0.0
         
-        # Adjust for red flags
-        if self.red_flag_identified:
-            base_score = min(1.0, base_score + 0.3)
-        
-        # Adjust for functional impact
-        impact_multiplier = {
-            SymptomSeverity.NONE: 1.0,
-            SymptomSeverity.MILD: 1.1,
-            SymptomSeverity.MODERATE: 1.3,
-            SymptomSeverity.SEVERE: 1.6,
-            SymptomSeverity.VERY_SEVERE: 2.0
-        }
-        
-        base_score *= impact_multiplier.get(self.functional_impact, 1.0)
-        
-        return min(1.0, base_score)
-
-# ============================================================================
-# DIAGNOSIS MODELS
-# ============================================================================
-
-class DifferentialDiagnosis(TimestampMixin, ValidationMixin):
-    """Potential diagnosis with evidence and probability."""
-    diagnosis_id: UUID = Field(default_factory=uuid4)
-    
-    # Medical coding
-    icd10_code: str = Field(..., description="Primary ICD-10 code")
-    snomed_codes: List[str] = Field(default_factory=list, description="Related SNOMED CT codes")
-    
-    # Diagnosis details
-    condition_name: str = Field(..., max_length=200)
-    description: str = Field(..., max_length=1000)
-    pathway_category: NICEPathwayCategory
-    
-    # Clinical evidence
-    supporting_symptoms: List[str] = Field(default_factory=list)
-    contradicting_symptoms: List[str] = Field(default_factory=list)
-    required_investigations: List[str] = Field(default_factory=list)
-    
-    # Probability and confidence
-    probability_score: float = Field(..., ge=0.0, le=1.0, description="Likelihood of this diagnosis")
-    confidence_level: float = Field(..., ge=0.0, le=1.0, description="Confidence in assessment")
-    evidence_strength: Literal["weak", "moderate", "strong"] = "moderate"
-    
-    # NICE compliance
-    nice_guideline_ref: Optional[str] = None
-    evidence_based: bool = Field(default=True)
-    
-    # Telemedicine considerations
-    telemedicine_diagnosable: TelemedicineSuitability
-    requires_physical_exam: bool = Field(default=False)
-    requires_investigations: bool = Field(default=False)
-    
-    # Risk stratification
-    urgency_level: UrgencyLevel = Field(default=UrgencyLevel.ROUTINE)
-    risk_level: RiskLevel = Field(default=RiskLevel.LOW)
-    
-    def update_probability(self, new_evidence: Dict[str, Any]):
-        """Update diagnosis probability based on new evidence."""
-        # Bayesian-style probability update
-        prior = self.probability_score
-        
-        # Evidence weighting
-        evidence_weight = len(new_evidence.get('supporting', [])) * 0.1
-        contradicting_weight = len(new_evidence.get('contradicting', [])) * 0.15
-        
-        # Update probability
-        posterior = prior + evidence_weight - contradicting_weight
-        self.probability_score = max(0.0, min(1.0, posterior))
-        
-        self.update_timestamp()
-
-class ClinicalAssessment(BaseEntity, ValidationMixin, MetadataMixin):
-    """Comprehensive clinical assessment combining symptoms and differential diagnoses."""
-    
-    # Patient identification
-    patient_id: UUID
-    assessment_id: UUID = Field(default_factory=uuid4)
-    
-    # Patient demographics for bias monitoring
-    patient_gender: Optional[Gender] = None
-    patient_ethnicity: Optional[Ethnicity] = None
-    patient_age: Optional[int] = Field(None, ge=0, le=150)
-    
-    # Assessment context
-    assessment_type: Literal["initial", "follow_up", "urgent", "routine"] = "initial"
-    presentation_mode: Literal["telemedicine", "face_to_face", "telephone", "digital_triage"] = "telemedicine"
-    
-    # Clinical presentation
-    chief_complaint: str = Field(..., max_length=500, description="Primary presenting complaint")
-    history_of_present_illness: str = Field(..., max_length=2000)
-    symptoms: List[UUID] = Field(default_factory=list, description="References to PatientSymptom IDs")
-    
-    # Medical history
-    past_medical_history: List[str] = Field(default_factory=list)
-    current_medications: List[str] = Field(default_factory=list)
-    allergies: List[str] = Field(default_factory=list)
-    family_history: List[str] = Field(default_factory=list)
-    social_history: Dict[str, Any] = Field(default_factory=dict)
-    
-    # Assessment findings
-    differential_diagnoses: List[UUID] = Field(default_factory=list, description="DifferentialDiagnosis IDs")
-    most_likely_diagnosis: Optional[UUID] = None
-    
-    # Clinical decision making
-    decision_status: ClinicalDecisionStatus = Field(default=ClinicalDecisionStatus.AI_ASSESSMENT_PENDING)
-    escalation_triggers: List[EscalationTrigger] = Field(default_factory=list)
-    escalation_required: bool = Field(default=False)
-    escalation_urgency: UrgencyLevel = Field(default=UrgencyLevel.ROUTINE)
-    
-    # AI assessment
-    ai_processing_started: Optional[datetime] = None
-    ai_processing_completed: Optional[datetime] = None
-    ai_confidence_score: Optional[float] = Field(None, ge=0.0, le=1.0)
-    ai_recommendations: List[str] = Field(default_factory=list)
-    
-    # Human clinician review
-    clinician_review_required: bool = Field(default=False)
-    clinician_id: Optional[UUID] = None
-    clinician_notes: Optional[str] = Field(None, max_length=2000)
-    clinician_agreement_with_ai: Optional[bool] = None
-    
-    # Assessment outcomes
-    primary_diagnosis: Optional[str] = None
-    secondary_diagnoses: List[str] = Field(default_factory=list)
-    diagnostic_certainty: Literal["definitive", "probable", "possible", "uncertain"] = "uncertain"
-    
-    # Safety netting
-    red_flags_assessed: bool = Field(default=False)
-    safety_net_advice: List[str] = Field(default_factory=list)
-    follow_up_required: bool = Field(default=False)
-    follow_up_timeframe: Optional[timedelta] = None
-    
-    def add_escalation_trigger(self, trigger: EscalationTrigger, details: str = ""):
-        """Add escalation trigger and update status."""
-        self.escalation_triggers.append(trigger)
-        self.escalation_required = True
-        
-        # Determine urgency based on trigger type
-        urgent_triggers = [
-            EscalationTrigger.RED_FLAG_SYMPTOMS,
-            EscalationTrigger.HIGH_RISK_PATIENT,
-            EscalationTrigger.SAFEGUARDING_CONCERN
+        # High-risk conditions
+        high_risk_conditions = [
+            "diabetes", "heart disease", "stroke", "cancer", "kidney disease",
+            "liver disease", "copd", "asthma", "hypertension", "atrial fibrillation"
         ]
         
-        if trigger in urgent_triggers:
-            self.escalation_urgency = UrgencyLevel.URGENT
+        for condition in self.conditions:
+            if any(risk in condition.lower() for risk in high_risk_conditions):
+                score += 0.2
         
-        self.add_metadata(f"escalation_{trigger.value}", {
-            "trigger": trigger.value,
-            "details": details,
-            "timestamp": datetime.utcnow().isoformat()
-        })
+        # Smoking risk
+        if self.smoking_status == "Current":
+            score += 0.3
+        elif self.smoking_status == "Former":
+            score += 0.1
         
-        self.update_timestamp()
-    
-    def calculate_assessment_complexity(self) -> float:
-        """Calculate complexity score for resource allocation."""
-        complexity_score = 0.0
+        # Alcohol risk
+        if self.alcohol_units_weekly and self.alcohol_units_weekly > 14:
+            score += 0.2
         
-        # Number of symptoms
-        complexity_score += len(self.symptoms) * 0.1
-        
-        # Number of differential diagnoses
-        complexity_score += len(self.differential_diagnoses) * 0.15
-        
-        # Comorbidities
-        complexity_score += len(self.past_medical_history) * 0.05
-        
-        # Red flags or escalation triggers
-        complexity_score += len(self.escalation_triggers) * 0.2
-        
-        # AI confidence (lower confidence = higher complexity)
-        if self.ai_confidence_score:
-            complexity_score += (1.0 - self.ai_confidence_score) * 0.3
-        
-        return min(1.0, complexity_score)
+        return min(score, 1.0)
 
-# ============================================================================
-# INTERVENTION AND TREATMENT MODELS
-# ============================================================================
+class UploadedFile(BaseModel):
+    """File attachment model with metadata"""
+    model_config = ConfigDict(str_strip_whitespace=True)
+    
+    file_id: str = Field(default_factory=lambda: str(uuid.uuid4()), description="Unique file identifier")
+    filename: str = Field(..., min_length=1, max_length=255, description="Original filename")
+    file_type: str = Field(..., description="MIME type")
+    file_category: str = Field(..., description="medical_image/lab_report/prescription/other")
+    minio_url: str = Field(..., description="MinIO storage URL")
+    file_size_bytes: int = Field(..., ge=0, description="File size in bytes")
+    upload_timestamp: datetime = Field(default_factory=datetime.now, description="Upload time")
+    description: Optional[str] = Field(default=None, max_length=500, description="User description of file")
+    ai_analysis: Optional[Dict[str, Any]] = Field(default=None, description="AI analysis results")
 
-class PrimaryIntervention(TimestampMixin, ValidationMixin):
-    """Primary intervention recommendations based on NICE guidelines."""
-    intervention_id: UUID = Field(default_factory=uuid4)
-    
-    # Intervention classification
-    intervention_type: InterventionType
-    nice_guideline_ref: Optional[str] = None
-    evidence_level: Literal["high", "moderate", "low", "very_low"] = "moderate"
-    
-    # Intervention details
-    intervention_name: str = Field(..., max_length=200)
-    description: str = Field(..., max_length=1000)
-    instructions: List[str] = Field(default_factory=list)
-    
-    # Suitability criteria
-    suitable_for_telemedicine: bool = Field(default=True)
-    age_restrictions: Optional[str] = None
-    contraindications: List[str] = Field(default_factory=list)
-    precautions: List[str] = Field(default_factory=list)
-    
-    # Expected outcomes
-    expected_benefit: str = Field(..., max_length=500)
-    time_to_benefit: Optional[timedelta] = None
-    success_rate: Optional[float] = Field(None, ge=0.0, le=1.0)
-    
-    # Monitoring requirements
-    requires_monitoring: bool = Field(default=False)
-    monitoring_frequency: Optional[timedelta] = None
-    monitoring_parameters: List[str] = Field(default_factory=list)
-    
-    # Safety considerations
-    side_effects: List[str] = Field(default_factory=list)
-    warning_signs: List[str] = Field(default_factory=list)
-    when_to_seek_help: List[str] = Field(default_factory=list)
+# =============================================================================
+# NICE PROTOCOL MODELS
+# =============================================================================
 
-class TreatmentPlan(BaseEntity, ValidationMixin, MetadataMixin):
-    """Comprehensive treatment plan with interventions and monitoring."""
+class NICEProtocolQuestion(BaseModel):
+    """NICE clinical protocol question"""
+    model_config = ConfigDict(str_strip_whitespace=True)
     
-    # Plan identification
-    patient_id: UUID
-    assessment_id: UUID
-    plan_id: UUID = Field(default_factory=uuid4)
-    
-    # Plan overview
-    primary_diagnosis: str = Field(..., max_length=200)
-    treatment_goals: List[str] = Field(default_factory=list)
-    target_outcomes: List[str] = Field(default_factory=list)
-    
-    # Interventions
-    primary_interventions: List[UUID] = Field(default_factory=list, description="PrimaryIntervention IDs")
-    immediate_actions: List[str] = Field(default_factory=list)
-    ongoing_management: List[str] = Field(default_factory=list)
-    
-    # Monitoring and follow-up
-    follow_up_required: bool = Field(default=False)
-    follow_up_timeframe: Optional[timedelta] = None
-    monitoring_plan: Dict[str, Any] = Field(default_factory=dict)
-    
-    # Safety netting
-    red_flag_symptoms: List[str] = Field(default_factory=list)
-    when_to_seek_urgent_care: List[str] = Field(default_factory=list)
-    emergency_contact_info: Optional[str] = None
-    
-    # Plan approval and execution
-    approved_by_clinician: bool = Field(default=False)
-    approving_clinician_id: Optional[UUID] = None
-    plan_started: Optional[datetime] = None
-    plan_completed: Optional[datetime] = None
-    
-    # Patient engagement
-    patient_consent: bool = Field(default=False)
-    patient_understanding_confirmed: bool = Field(default=False)
-    written_information_provided: bool = Field(default=False)
-    
-    def activate_plan(self, clinician_id: UUID):
-        """Activate treatment plan with clinician approval."""
-        self.approved_by_clinician = True
-        self.approving_clinician_id = clinician_id
-        self.plan_started = datetime.utcnow()
-        self.update_timestamp()
+    question_id: int = Field(..., description="Unique question identifier")
+    category: str = Field(..., description="Question category")
+    question_text: str = Field(..., min_length=1, max_length=1000, description="Question text")
+    question_type: QuestionType = Field(..., description="Type of question input")
+    options: Optional[List[str]] = Field(default=None, description="Available options for choice questions")
+    validation_rules: Optional[Dict[str, Any]] = Field(default=None, description="Validation rules")
+    is_required: bool = Field(default=True, description="Whether question is mandatory")
+    is_red_flag: bool = Field(default=False, description="Whether question identifies red flag symptoms")
+    order_index: int = Field(..., ge=0, description="Question order in protocol")
+    condition_specific: Optional[str] = Field(default=None, description="Specific condition this applies to")
+    next_question_logic: Optional[Dict[str, Any]] = Field(default=None, description="Conditional question logic")
 
-# ============================================================================
-# CONDITION ROUTING MODELS
-# ============================================================================
+class PatientResponse(BaseModel):
+    """Patient response to a protocol question with scoring"""
+    model_config = ConfigDict(str_strip_whitespace=True)
+    
+    response_id: str = Field(default_factory=lambda: str(uuid.uuid4()), description="Unique response ID")
+    question_id: int = Field(..., description="Question being answered")
+    response_text: str = Field(..., min_length=1, description="Patient's text response")
+    response_value: Optional[Union[str, int, float, bool, List[str]]] = Field(default=None, description="Structured response value")
+    confidence_level: Optional[float] = Field(default=None, ge=0, le=1, description="Patient's confidence in answer")
+    timestamp: datetime = Field(default_factory=datetime.now, description="Response timestamp")
+    response_time_seconds: Optional[int] = Field(default=None, ge=0, description="Time taken to respond")
 
-class SpecialtyRouting(TimestampMixin, ValidationMixin):
-    """Routing logic for specialist referrals based on conditions."""
-    
-    # Condition identification
-    condition_codes: List[str] = Field(..., description="ICD-10 or SNOMED codes")
-    condition_category: NICEPathwayCategory
-    
-    # Specialist requirements
-    primary_specialty: str = Field(..., max_length=100, description="Primary specialty required")
-    secondary_specialties: List[str] = Field(default_factory=list)
-    subspecialty_required: Optional[str] = None
-    
-    # Urgency and priority
-    default_urgency: UrgencyLevel = Field(default=UrgencyLevel.ROUTINE)
-    escalation_criteria: List[str] = Field(default_factory=list)
-    
-    # Telemedicine suitability
-    telemedicine_first_contact: bool = Field(default=True)
-    telemedicine_follow_up: bool = Field(default=True)
-    requires_face_to_face: bool = Field(default=False)
-    
-    # Resource requirements
-    estimated_consultation_time: timedelta = Field(default=timedelta(minutes=20))
-    requires_investigations: bool = Field(default=False)
-    requires_multidisciplinary_team: bool = Field(default=False)
+# =============================================================================
+# CHEST PAIN SPECIFIC MODELS - Disease Specialization with ML Scoring
+# =============================================================================
 
-class PatientRoutingDecision(BaseEntity, ValidationMixin, MetadataMixin):
-    """Individual patient routing decision with audit trail."""
+class ChestPainCharacteristics(BaseModel):
+    """Detailed chest pain assessment with ML scoring"""
+    model_config = ConfigDict(str_strip_whitespace=True)
     
-    # Patient and assessment context
-    patient_id: UUID
-    assessment_id: UUID
-    routing_id: UUID = Field(default_factory=uuid4)
+    location: str = Field(..., description="Pain location")
+    radiation_areas: List[str] = Field(default_factory=list, description="Areas where pain radiates")
+    character: str = Field(..., description="Pain character")
+    severity_score: int = Field(..., ge=0, le=10, description="Pain severity 0-10 scale")
+    onset_description: str = Field(..., description="How pain started")
+    duration_description: str = Field(..., description="How long pain has lasted")
+    timing_pattern: str = Field(..., description="Pattern (constant/intermittent/waves)")
     
-    # Patient demographics for resource planning
-    patient_gender: Optional[Gender] = None
-    patient_ethnicity: Optional[Ethnicity] = None
-    patient_age: Optional[int] = Field(None, ge=0, le=150)
+    # Red flag indicators with boolean scoring
+    is_crushing: bool = Field(default=False, description="Crushing chest pain (red flag)")
+    is_radiating_left_arm: bool = Field(default=False, description="Radiates to left arm (red flag)")
+    is_radiating_jaw: bool = Field(default=False, description="Radiates to jaw/neck (red flag)")
+    is_exertional: bool = Field(default=False, description="Brought on by exertion")
+    relieved_by_rest: bool = Field(default=False, description="Relieved by rest")
+    relieved_by_gtn: bool = Field(default=False, description="Relieved by GTN spray")
     
-    # Routing decision
-    recommended_pathway: NICEPathwayCategory
-    specialty_required: str = Field(..., max_length=100)
-    urgency_level: UrgencyLevel
-    risk_level: RiskLevel
+    triggers: List[str] = Field(default_factory=list, description="What triggers the pain")
+    relief_factors: List[str] = Field(default_factory=list, description="What relieves the pain")
+    associated_activities: List[str] = Field(default_factory=list, description="Activities when pain occurs")
     
-    # Decision rationale
-    routing_criteria_met: List[str] = Field(default_factory=list)
-    escalation_triggers: List[EscalationTrigger] = Field(default_factory=list)
-    ai_recommendation: Optional[str] = Field(None, max_length=500)
-    clinician_override: bool = Field(default=False)
-    override_reason: Optional[str] = None
+    def get_severity_level(self) -> SeverityLevel:
+        """Convert severity score to enum"""
+        return SeverityLevel.from_scale_score(self.severity_score)
     
-    # Resource allocation
-    estimated_wait_time: Optional[timedelta] = None
-    priority_score: float = Field(default=0.5, ge=0.0, le=1.0)
-    resource_requirements: Dict[str, Any] = Field(default_factory=dict)
-    
-    # Execution tracking
-    referral_initiated: bool = Field(default=False)
-    specialist_assigned: Optional[UUID] = None
-    appointment_scheduled: Optional[datetime] = None
-    
-    # Outcomes
-    patient_seen: bool = Field(default=False)
-    routing_accuracy: Optional[bool] = None  # Was the routing decision correct?
-    patient_satisfaction: Optional[int] = Field(None, ge=1, le=5)
-    
-    def calculate_priority_score(self) -> float:
-        """Calculate priority score for queue management."""
-        base_score = 0.5
+    def calculate_cardiac_risk_score(self) -> float:
+        """Calculate cardiac risk score based on pain characteristics (0-1)"""
+        score = 0.0
         
-        # Urgency multiplier
-        urgency_weights = {
-            UrgencyLevel.ROUTINE: 1.0,
-            UrgencyLevel.URGENT: 1.5,
-            UrgencyLevel.EMERGENT: 2.0,
-            UrgencyLevel.IMMEDIATE: 3.0
-        }
+        # Pain character scoring
+        if "crushing" in self.character.lower() or "pressure" in self.character.lower():
+            score += 0.3
+        elif "sharp" in self.character.lower() or "stabbing" in self.character.lower():
+            score += 0.1
         
-        # Risk multiplier
-        risk_weights = {
-            RiskLevel.LOW: 1.0,
-            RiskLevel.MODERATE: 1.3,
-            RiskLevel.HIGH: 1.6,
-            RiskLevel.CRITICAL: 2.0
-        }
+        # Radiation scoring (highest risk)
+        if self.is_radiating_left_arm:
+            score += 0.4
+        if self.is_radiating_jaw:
+            score += 0.3
         
-        score = base_score * urgency_weights.get(self.urgency_level, 1.0)
-        score *= risk_weights.get(self.risk_level, 1.0)
+        # Pain characteristics
+        if self.is_exertional:
+            score += 0.2
+        if self.relieved_by_rest:
+            score += 0.2
+        if self.relieved_by_gtn:
+            score += 0.3
         
-        # Age adjustment (older patients get slight priority)
-        if self.patient_age and self.patient_age > 65:
-            score *= 1.1
+        # Severity scoring
+        if self.severity_score >= 7:
+            score += 0.2
         
-        # Escalation triggers
-        score += len(self.escalation_triggers) * 0.1
-        
-        self.priority_score = min(1.0, score)
-        return self.priority_score
+        return min(score, 1.0)
 
-# ============================================================================
-# CONDITION-SPECIFIC MODELS
-# ============================================================================
+class ChestPainRedFlags(BaseModel):
+    """Red flag symptoms with binary scoring"""
+    model_config = ConfigDict(validate_default=True)
+    
+    acute_onset_severe_pain: bool = Field(default=False)
+    tearing_interscapular_pain: bool = Field(default=False)
+    syncope_with_chest_pain: bool = Field(default=False)
+    hypotension: bool = Field(default=False)
+    new_murmur: bool = Field(default=False)
+    unequal_arm_bp: bool = Field(default=False)
+    absent_pulse: bool = Field(default=False)
+    
+    def count_red_flags(self) -> int:
+        """Count number of red flags present"""
+        flags = [
+            self.acute_onset_severe_pain, self.tearing_interscapular_pain,
+            self.syncope_with_chest_pain, self.hypotension, self.new_murmur,
+            self.unequal_arm_bp, self.absent_pulse
+        ]
+        return sum(flags)
+    
+    def get_red_flag_score(self) -> float:
+        """Get red flag urgency score (0-1)"""
+        count = self.count_red_flags()
+        if count >= 3:
+            return 1.0
+        elif count >= 2:
+            return 0.8
+        elif count >= 1:
+            return 0.6
+        else:
+            return 0.0
 
-class ChestPainAssessment(BaseEntity, ValidationMixin):
-    """Specialized assessment model for chest pain presentations."""
+class ChestPainAssociatedSymptoms(BaseModel):
+    """Associated symptoms with scoring weights"""
+    model_config = ConfigDict(validate_default=True)
     
-    patient_id: UUID
-    assessment_id: UUID
-    
-    # Chest pain characteristics
-    pain_location: Literal["central", "left_sided", "right_sided", "epigastric", "back"] = "central"
-    pain_character: Literal["sharp", "dull", "crushing", "burning", "stabbing", "aching"] = "aching"
-    pain_severity: int = Field(..., ge=0, le=10)
-    pain_duration: timedelta
-    pain_radiation: bool = Field(default=False)
-    radiation_sites: List[str] = Field(default_factory=list)
-    
-    # Associated symptoms
     shortness_of_breath: bool = Field(default=False)
-    nausea_vomiting: bool = Field(default=False)
+    cough: bool = Field(default=False)
+    wheeze: bool = Field(default=False)
     sweating: bool = Field(default=False)
+    nausea: bool = Field(default=False)
+    vomiting: bool = Field(default=False)
     dizziness: bool = Field(default=False)
     palpitations: bool = Field(default=False)
+    fatigue: bool = Field(default=False)
+    syncope: bool = Field(default=False)
+    fever: bool = Field(default=False)
+    leg_swelling: bool = Field(default=False)
     
-    # Risk factors
-    cardiovascular_risk_factors: List[str] = Field(default_factory=list)
-    previous_cardiac_history: bool = Field(default=False)
-    family_history_cardiac: bool = Field(default=False)
-    
-    # Clinical scores
-    heart_score: Optional[int] = Field(None, ge=0, le=10, description="HEART score for ACS risk")
-    well_score: Optional[int] = Field(None, ge=0, le=12, description="Wells score for PE risk")
-    
-    # NICE pathway compliance
-    nice_cg95_compliant: bool = Field(default=True, description="NICE CG95 Chest Pain compliance")
-    troponin_required: bool = Field(default=False)
-    ecg_required: bool = Field(default=True)
-    
-    def calculate_heart_score(self) -> int:
-        """Calculate HEART score for acute coronary syndrome risk."""
-        score = 0
+    def calculate_symptom_score(self) -> float:
+        """Calculate weighted symptom score for urgency (0-1)"""
+        # Symptom weights based on clinical significance
+        weights = {
+            'shortness_of_breath': 0.3,
+            'sweating': 0.25,
+            'nausea': 0.2,
+            'syncope': 0.4,
+            'dizziness': 0.15,
+            'palpitations': 0.2,
+            'fatigue': 0.1,
+            'vomiting': 0.15,
+            'fever': 0.1,
+            'cough': 0.05,
+            'wheeze': 0.1,
+            'leg_swelling': 0.1
+        }
         
-        # History (placeholder - would need more detailed history)
-        if len(self.cardiovascular_risk_factors) >= 3:
-            score += 2
-        elif len(self.cardiovascular_risk_factors) >= 1:
-            score += 1
+        score = 0.0
+        for symptom, weight in weights.items():
+            if getattr(self, symptom, False):
+                score += weight
         
-        # ECG (would need ECG interpretation)
-        score += 1  # Placeholder
-        
-        # Age
-        if hasattr(self, 'patient_age'):
-            if self.patient_age >= 65:
-                score += 2
-            elif self.patient_age >= 45:
-                score += 1
-        
-        # Risk factors
-        if self.previous_cardiac_history:
-            score += 2
-        elif self.family_history_cardiac:
-            score += 1
-        
-        # Troponin (would need lab values)
-        score += 1  # Placeholder
-        
-        self.heart_score = min(10, score)
-        return self.heart_score
+        return min(score, 1.0)
 
-# ============================================================================
-# RESPONSE MODELS
-# ============================================================================
+# =============================================================================
+# AI ASSESSMENT WITH COORDINATE MAPPING
+# =============================================================================
 
-class SymptomAssessmentResponse(BaseResponse):
-    """Response for symptom assessment requests."""
-    symptoms: List[PatientSymptom]
-    overall_risk_level: RiskLevel
-    urgency_level: UrgencyLevel
-    recommended_pathway: NICEPathwayCategory
-    ai_confidence: float
-    escalation_required: bool
-
-class DiagnosisResponse(BaseResponse):
-    """Response for diagnosis requests."""
-    assessment: ClinicalAssessment
-    differential_diagnoses: List[DifferentialDiagnosis]
-    recommended_investigations: List[str]
-    treatment_plan: Optional[TreatmentPlan]
-    routing_decision: PatientRoutingDecision
-
-class SpecialistRoutingResponse(BaseResponse):
-    """Response for specialist routing requests."""
-    routing_decision: PatientRoutingDecision
-    available_specialists: List[Dict[str, Any]]
-    estimated_wait_time: timedelta
-    alternative_pathways: List[str]
-
-# ============================================================================
-# NICE PATHWAY CONFIGURATIONS
-# ============================================================================
-
-
-NICE_PATHWAY_CONFIGS = {
-    NICEPathwayCategory.CARDIOVASCULAR: {
-        "primary_guidelines": ["NG194", "CG95", "NG185"],
-        "telemedicine_suitable": True,
-        "red_flags": [
-            "Chest pain with radiation",
-            "Severe breathlessness",
-            "Syncope",
-            "Severe hypertension"
-        ],
-        "specialist_routing": "Cardiology",
-        "max_ai_confidence_threshold": 0.7
-    },
+class RiskFactorAssessment(BaseModel):
+    """Risk factor scoring with numerical values"""
+    model_config = ConfigDict(validate_default=True)
     
-    NICEPathwayCategory.RESPIRATORY: {
-        "primary_guidelines": ["NG117", "QS25", "NG80"],
-        "telemedicine_suitable": True,
-        "red_flags": [
-            "Severe breathlessness at rest",
-            "Cyanosis",
-            "Stridor",
-            "Haemoptysis"
-        ],
-        "specialist_routing": "Respiratory Medicine",
-        "max_ai_confidence_threshold": 0.8
-    },
-    
-    NICEPathwayCategory.DERMATOLOGY: {
-        "primary_guidelines": ["NG12", "CG153", "NG142"],
-        "telemedicine_suitable": True,
-        "red_flags": [
-            "Rapidly changing lesion",
-            "Ulceration",
-            "Irregular borders",
-            "Multiple colors"
-        ],
-        "specialist_routing": "Dermatology",
-        "max_ai_confidence_threshold": 0.9
-    },
-    
-    NICEPathwayCategory.MENTAL_HEALTH: {
-        "primary_guidelines": ["NG222", "CG136", "NG185"],
-        "telemedicine_suitable": True,
-        "red_flags": [
-            "Suicidal ideation",
-            "Psychosis",
-            "Self-harm",
-            "Severe agitation"
-        ],
-        "specialist_routing": "Psychiatry",
-        "max_ai_confidence_threshold": 0.6
-    }
-}
+    age_risk_score: float = Field(..., ge=0, le=1, description="Age-related risk (0-1)")
+    gender_risk_score: float = Field(..., ge=0, le=1, description="Gender-related risk (0-1)")
+    smoking_risk_score: float = Field(default=0.0, ge=0, le=1, description="Smoking-related risk (0-1)")
+    diabetes_risk_score: float = Field(default=0.0, ge=0, le=1, description="Diabetes-related risk (0-1)")
+    hypertension_risk_score: float = Field(default=0.0, ge=0, le=1, description="Hypertension risk (0-1)")
+    family_history_risk_score: float = Field(default=0.0, ge=0, le=1, description="Family history risk (0-1)")
+    overall_cardiovascular_risk: float = Field(..., ge=0, le=1, description="Combined CV risk (0-1)")
 
-# Default symptom-to-pathway mapping
-SYMPTOM_PATHWAY_MAPPING = {
-    "chest pain": NICEPathwayCategory.CARDIOVASCULAR,
-    "shortness of breath": NICEPathwayCategory.RESPIRATORY,
-    "skin lesion": NICEPathwayCategory.DERMATOLOGY,
-    "depression": NICEPathwayCategory.MENTAL_HEALTH,
-    "abdominal pain": NICEPathwayCategory.GASTROINTESTINAL,
-    "back pain": NICEPathwayCategory.MUSCULOSKELETAL,
-    "headache": NICEPathwayCategory.NEUROLOGICAL,
-    "fatigue": NICEPathwayCategory.ENDOCRINE,
-    "urinary symptoms": NICEPathwayCategory.GENITOURINARY,
-    "fever": NICEPathwayCategory.INFECTIOUS_DISEASE
-}
+class AIAssessment(BaseModel):
+    """AI-generated medical assessment with coordinate mapping"""
+    model_config = ConfigDict(validate_default=True)
+    
+    assessment_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    
+    # Core triage coordinates
+    triage_coordinate: TriageCoordinate = Field(..., description="X-Y triage coordinates")
+    
+    # Component scores
+    symptom_severity_score: float = Field(..., ge=0, le=1, description="Symptom severity (0-1)")
+    red_flags_score: float = Field(..., ge=0, le=1, description="Red flags severity (0-1)")
+    vital_signs_score: float = Field(default=0.0, ge=0, le=1, description="Vital signs abnormality (0-1)")
+    risk_factors: RiskFactorAssessment = Field(..., description="Risk factor analysis")
+    
+    # Clinical assessment
+    differential_diagnoses: List[str] = Field(..., min_items=1, description="Possible conditions ranked by likelihood")
+    red_flags_identified: List[str] = Field(default_factory=list, description="Red flag symptoms identified")
+    
+    # Disposition
+    recommended_disposition: TriageDisposition = Field(..., description="Recommended care pathway")
+    urgency_category: UrgencyCategory = Field(..., description="NHS urgency category")
+    recommended_timeframe: str = Field(..., description="Timeframe for seeking care")
+    
+    # Clinical reasoning
+    clinical_reasoning: str = Field(..., min_length=1, description="AI reasoning for assessment")
+    confidence_level: float = Field(..., ge=0, le=1, description="Confidence in assessment")
+    uncertainty_factors: List[str] = Field(default_factory=list, description="Uncertainty factors")
+    
+    # Safety netting
+    safety_netting_advice: List[str] = Field(..., min_items=1, description="Safety netting instructions")
+    return_if_worse_advice: List[str] = Field(..., min_items=1, description="When to return for reassessment")
+    
+    # Metadata
+    assessment_timestamp: datetime = Field(default_factory=datetime.now)
+    processing_time_ms: Optional[int] = Field(default=None, ge=0)
+    model_version: str = Field(..., description="AI model version used")
+    
+    def calculate_overall_priority_score(self, weights: Optional[RiskScoreWeights] = None) -> float:
+        """Calculate weighted overall priority score (0-1)"""
+        if weights is None:
+            weights = RiskScoreWeights()
+        
+        score = (
+            weights.symptom_severity_weight * self.symptom_severity_score +
+            weights.red_flags_weight * self.red_flags_score +
+            weights.vital_signs_weight * self.vital_signs_score +
+            weights.medical_history_weight * self.risk_factors.overall_cardiovascular_risk
+        )
+        
+        return min(score, 1.0)
 
-# NICE red flag symptoms requiring immediate escalation
-NICE_RED_FLAGS = {
-    "cardiovascular": [
-        "Central chest pain with radiation to arm/jaw",
-        "Chest pain with severe breathlessness",
-        "Chest pain with loss of consciousness",
-        "Signs of heart failure"
-    ],
-    "respiratory": [
-        "Acute severe breathlessness",
-        "Stridor",
-        "Cyanosis",
-        "Massive haemoptysis"
-    ],
-    "neurological": [
-        "Sudden severe headache",
-        "Focal neurological deficit",
-        "Altered consciousness",
-        "Signs of meningism"
-    ],
-    "gastrointestinal": [
-        "Severe abdominal pain with rigidity",
-        "Significant GI bleeding",
-        "Signs of bowel obstruction",
-        "Severe dehydration"
-    ]
-}
+# =============================================================================
+# COMPREHENSIVE CASE REPORT
+# =============================================================================
+
+class CaseReport(BaseModel):
+    """Comprehensive medical case report with ML scoring"""
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        validate_default=True,
+        json_encoders={datetime: lambda v: v.isoformat()}
+    )
+    
+    # Case identification
+    case_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    patient_id: str = Field(..., min_length=1)
+    session_id: Optional[str] = Field(default=None)
+    
+    # Demographics and basic info
+    demographics: Demographics = Field(...)
+    
+    # Chief complaint
+    chief_complaint: str = Field(..., min_length=1, max_length=1000)
+    presenting_complaint_category: str = Field(...)
+    
+    # Clinical data
+    vital_signs: Optional[VitalSigns] = Field(default=None)
+    medical_history: MedicalHistory = Field(default_factory=MedicalHistory)
+    
+    # Disease-specific assessments
+    chest_pain_assessment: Optional[ChestPainCharacteristics] = Field(default=None)
+    chest_pain_red_flags: Optional[ChestPainRedFlags] = Field(default=None)
+    associated_symptoms: Optional[ChestPainAssociatedSymptoms] = Field(default=None)
+    
+    # Data and responses
+    patient_responses: List[PatientResponse] = Field(default_factory=list)
+    uploaded_files: List[UploadedFile] = Field(default_factory=list)
+    
+    # AI analysis
+    ai_assessment: Optional[AIAssessment] = Field(default=None)
+    
+    # Case management
+    status: str = Field(default="created")
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
+    completed_at: Optional[datetime] = Field(default=None)
+    
+    # Quality metrics
+    data_quality_score: Optional[float] = Field(default=None, ge=0, le=1)
+    protocol_compliance: Optional[bool] = Field(default=None)
+    clinical_review_required: bool = Field(default=False)
+    
+    # Report generation
+    pdf_report_url: Optional[str] = Field(default=None)
+    
+    def calculate_composite_scores(self) -> Tuple[float, float, float]:
+        """Calculate composite urgency, importance, and priority scores"""
+        urgency_score = 0.0
+        importance_score = 0.0
+        
+        # Age-based scoring
+        urgency_score += self.demographics.get_age_risk_score() * 0.2
+        importance_score += self.demographics.get_age_risk_score() * 0.3
+        
+        # Chest pain specific scoring
+        if self.chest_pain_assessment:
+            cardiac_risk = self.chest_pain_assessment.calculate_cardiac_risk_score()
+            urgency_score += cardiac_risk * 0.4
+            importance_score += cardiac_risk * 0.4
+        
+        # Red flags scoring
+        if self.chest_pain_red_flags:
+            red_flag_score = self.chest_pain_red_flags.get_red_flag_score()
+            urgency_score += red_flag_score * 0.5
+            importance_score += red_flag_score * 0.3
+        
+        # Associated symptoms scoring
+        if self.associated_symptoms:
+            symptom_score = self.associated_symptoms.calculate_symptom_score()
+            urgency_score += symptom_score * 0.3
+            importance_score += symptom_score * 0.2
+        
+        # Vital signs scoring
+        if self.vital_signs:
+            vital_score = self.vital_signs.calculate_vital_signs_score()
+            urgency_score += vital_score * 0.4
+            importance_score += vital_score * 0.2
+        
+        # Medical history scoring
+        history_score = self.medical_history.calculate_risk_score()
+        urgency_score += history_score * 0.2
+        importance_score += history_score * 0.3
+        
+        # Normalize scores to [-1, 1] range
+        urgency_normalized = min(max((urgency_score * 2) - 1, -1), 1)
+        importance_normalized = min(max((importance_score * 2) - 1, -1), 1)
+        
+        # Calculate priority score (0-1)
+        priority_score = (urgency_score + importance_score) / 2
+        
+        return urgency_normalized, importance_normalized, priority_score
+
+# =============================================================================
+# UTILITY FUNCTIONS
+# =============================================================================
+
+def create_triage_coordinate(urgency: float, importance: float) -> TriageCoordinate:
+    """Create triage coordinate with validation"""
+    return TriageCoordinate(urgency=urgency, importance=importance)
+
+def calculate_cardiovascular_risk_score(demographics: Demographics, medical_history: MedicalHistory) -> float:
+    """Calculate comprehensive cardiovascular risk score"""
+    risk_score = 0.0
+    
+    # Age risk (using demographics method)
+    risk_score += demographics.get_age_risk_score() * 0.3
+    
+    # Medical history risk
+    risk_score += medical_history.calculate_risk_score() * 0.7
+    
+    return min(risk_score, 1.0)
+
+# =============================================================================
+# EXPORT MODELS
+# =============================================================================
+
+
+__all__ = [
+    # Enums with ML scoring
+    "SeverityLevel", "UrgencyCategory", "ImportanceLevel", "TriageDisposition", "GenderType", "QuestionType",
+    
+    # Coordinate system
+    "TriageCoordinate", "RiskScoreWeights",
+    
+    # Base models
+    "Demographics", "VitalSigns", "MedicalHistory", "UploadedFile",
+    
+    # Protocol models
+    "NICEProtocolQuestion", "PatientResponse",
+    
+    # Disease-specific models
+    "ChestPainCharacteristics", "ChestPainRedFlags", "ChestPainAssociatedSymptoms",
+    
+    # Assessment models
+    "RiskFactorAssessment", "AIAssessment",
+    
+    # Main case model
+    "CaseReport",
+    
+    # Utility functions
+    "create_triage_coordinate", "calculate_cardiovascular_risk_score"
+]
