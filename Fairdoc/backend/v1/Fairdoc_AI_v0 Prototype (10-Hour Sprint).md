@@ -130,7 +130,6 @@ CREATE TABLE patient_responses (
 );
 ```
 
-
 #### **Environment Configuration**
 
 ```bash
@@ -143,7 +142,6 @@ MINIO_SECRET_KEY=minioadmin
 OLLAMA_BASE_URL=http://localhost:11434
 CELERY_BROKER_URL=redis://localhost:6379/1
 ```
-
 
 ### **🔧 Pydantic Models (v1/datamodels/medical_model.py)**
 
@@ -260,7 +258,6 @@ class PatientResponse(BaseModel):
     response_data: Optional[Dict[str, Any]] = None
     timestamp: datetime = Field(default_factory=datetime.now)
 ```
-
 
 ### **📋 NHS NICE Protocol Questions (Data)**
 
@@ -395,7 +392,6 @@ CHEST_PAIN_QUESTIONS = [
 ]
 ```
 
-
 ### **🌐 API Endpoints (v1/api/routes.py)**
 
 ```python
@@ -498,7 +494,6 @@ async def download_case_report_pdf(case_id: int, db = Depends(get_db)):
     
     return {"pdf_url": pdf_url}
 ```
-
 
 ### **🎨 Mesop Frontend (frontend/chat_app.py)**
 
@@ -912,7 +907,6 @@ if __name__ == "__main__":
     me.run()
 ```
 
-
 ### **⚙️ Celery Tasks (v1/tasks/process_case.py)**
 
 ```python
@@ -1197,7 +1191,6 @@ def update_case_pdf_url(case_id: int, pdf_url: str):
     print(f"Case {case_id} PDF available at: {pdf_url}")
 ```
 
-
 ### **🚀 Quick Start Script**
 
 ```bash
@@ -1242,7 +1235,6 @@ echo "3. Open browser to http://localhost:8000 for API"
 echo "4. Open browser to http://localhost:32123 for chat interface"
 ```
 
-
 ---
 
 ## 🎯 **Success Criteria for 10-Hour Sprint**
@@ -1256,7 +1248,6 @@ echo "4. Open browser to http://localhost:32123 for chat interface"
 - [ ] PDF report generation
 - [ ] End-to-end flow from chat → report
 
-
 ### **🔧 Technical Deliverables**
 
 - [ ] Working FastAPI backend with core endpoints
@@ -1265,7 +1256,6 @@ echo "4. Open browser to http://localhost:32123 for chat interface"
 - [ ] Basic Celery background job processing
 - [ ] MinIO file storage integration
 - [ ] Simple PDF report generation
-
 
 ### **📊 Performance Targets**
 
@@ -1284,20 +1274,17 @@ echo "4. Open browser to http://localhost:32123 for chat interface"
 - Pre-programmed response templates
 - Simple keyword matching for conditions
 
-
 ### **If Mesop is Too Complex**
 
 - Fall back to Streamlit for UI
 - Use simple HTML forms
 - Basic REST API testing with Postman
 
-
 ### **If File Upload Fails**
 
 - Skip file processing for MVP
 - Use text-only assessment
 - Implement file upload in post-MVP
-
 
 ### **If Time Runs Short**
 
@@ -1320,37 +1307,10 @@ echo "4. Open browser to http://localhost:32123 for chat interface"
 
 ---
 
-**🎯 Total Estimated Time: 10 hours**
-**👥 Team Size: 1 developer**
-**🎥 Demo Ready: End of Day 1**
+- **🎯 Total Estimated Time: 10 hours**
+
+- **👥 Team Size: 1 developer**
+
+- **🎥 Demo Ready: End of Day 1**
 
 <div style="text-align: center">⁂</div>
-
-[^1]: 111.json
-
-[^2]: 999.json
-
-[^3]: ehr.json
-
-[^4]: requirements.txt
-
-[^5]: README.md
-
-[^6]: https://en.wikipedia.org/wiki/Paris
-
-[^7]: https://www.coe.int/en/web/interculturalcities/paris
-
-[^8]: https://en.wikipedia.org/wiki/List_of_capitals_of_France
-
-[^9]: https://www.britannica.com/place/France
-
-[^10]: https://home.adelphi.edu/~ca19535/page 4.html
-
-[^11]: https://testbook.com/question-answer/which-is-the-capital-city-of-france--61c5718c1415c5341398033a
-
-[^12]: https://www.britannica.com/place/Paris
-
-[^13]: https://multimedia.europarl.europa.eu/en/video/infoclip-european-union-capitals-paris-france_I199003
-
-[^14]: https://www.cia-france.com/french-kids-teenage-courses/paris-school/visit-paris
-
