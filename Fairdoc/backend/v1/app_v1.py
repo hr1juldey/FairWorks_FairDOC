@@ -16,6 +16,12 @@ from .core.exceptions import configure_exception_handlers
 
 # API routers
 from .api.auth import auth_router
+# Add these imports at the top
+from .api.protocols import protocols_router
+from .api.cases import cases_router
+from .api.files import files_router
+
+
 
 # Database and health
 from .data.database import get_database_health, init_database
@@ -193,9 +199,9 @@ app.include_router(
 )
 
 # TODO: Register additional routers as they're created
-# app.include_router(protocols_router, prefix=settings.API_V1_PREFIX, tags=["NICE Protocols"])
-# app.include_router(cases_router, prefix=settings.API_V1_PREFIX, tags=["Case Management"])
-# app.include_router(files_router, prefix=settings.API_V1_PREFIX, tags=["File Management"])
+app.include_router(protocols_router, prefix=settings.API_V1_PREFIX, tags=["NICE Protocols"])
+app.include_router(cases_router, prefix=settings.API_V1_PREFIX, tags=["Case Management"])
+app.include_router(files_router, prefix=settings.API_V1_PREFIX, tags=["File Management"])
 
 # =============================================================================
 # DEVELOPMENT SERVER

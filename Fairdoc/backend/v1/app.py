@@ -15,9 +15,9 @@ from datetime import datetime
 
 # Import core modules
 from core.config import settings, db_manager, current_environment
-from core.websocket_manager import ConnectionManager
+from core.websocket_manager import ConnectionManager  # type: ignore
 from datamodels.auth_models import UserLogin, TokenResponse, UserCreate
-from services.auth_service import AuthService
+from services.auth_service import AuthService  # type: ignore
 
 # Configure logging
 logging.basicConfig(
@@ -314,6 +314,7 @@ async def get_metrics():
 # ============================================================================
 # APPLICATION ENTRY POINT
 # ============================================================================
+
 
 if __name__ == "__main__":
     # Configure uvicorn based on environment
