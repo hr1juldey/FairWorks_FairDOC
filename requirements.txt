@@ -11,6 +11,7 @@ pydantic-settings
 python-multipart
 python-jose[cryptography]
 passlib[bcrypt]
+ollama==0.4.9
 
 # Database & Storage
 sqlalchemy>=2.0

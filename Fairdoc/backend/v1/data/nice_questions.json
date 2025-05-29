@@ -1,0 +1,633 @@
+{
+  "protocol_collection": {
+    "name": "NICE Clinical Protocols - NHS 111/999 Triage",
+    "version": "v1.0",
+    "last_updated": "2025-05-29",
+    "description": "Comprehensive collection of NICE-compliant clinical protocols for emergency and non-emergency triage",
+    "total_protocols": 10,
+    "nhs_111_protocols": 7,
+    "nhs_999_protocols": 3
+  },
+  "protocols": [
+    {
+      "protocol_id": 1,
+      "protocol_name": "Chest Pain Assessment",
+      "nice_guideline": "NICE CG95",
+      "urgency_category": "111_urgent",
+      "condition_type": "cardiovascular",
+      "description": "Assessment of chest pain of recent onset",
+      "questions": [
+        {
+          "question_id": 1,
+          "category": "demographics",
+          "question_text": "What is your age?",
+          "question_type": "number",
+          "validation_rules": {"min": 0, "max": 150, "required": true},
+          "is_required": true,
+          "is_red_flag": false,
+          "order_index": 1,
+          "scoring_weight": 0.2
+        },
+        {
+          "question_id": 2,
+          "category": "pain_assessment",
+          "question_text": "On a scale of 0-10, how severe is your chest pain?",
+          "question_type": "scale_1_10",
+          "options": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
+          "validation_rules": {"min": 0, "max": 10, "required": true},
+          "is_required": true,
+          "is_red_flag": true,
+          "order_index": 2,
+          "scoring_weight": 0.3
+        },
+        {
+          "question_id": 3,
+          "category": "pain_assessment",
+          "question_text": "Is the pain crushing, squeezing, or like a tight band?",
+          "question_type": "yes_no",
+          "options": ["Yes", "No"],
+          "validation_rules": {"required": true},
+          "is_required": true,
+          "is_red_flag": true,
+          "order_index": 3,
+          "scoring_weight": 0.4
+        },
+        {
+          "question_id": 4,
+          "category": "associated_symptoms",
+          "question_text": "Are you experiencing shortness of breath, sweating, or nausea?",
+          "question_type": "multiple_select",
+          "options": ["Shortness of breath", "Sweating", "Nausea", "None"],
+          "validation_rules": {"required": true},
+          "is_required": true,
+          "is_red_flag": true,
+          "order_index": 4,
+          "scoring_weight": 0.3
+        }
+      ],
+      "red_flag_threshold": 0.6,
+      "disposition_mapping": {
+        "high_risk": "999_emergency",
+        "medium_risk": "111_urgent",
+        "low_risk": "gp_routine"
+      }
+    },
+    {
+      "protocol_id": 2,
+      "protocol_name": "Shortness of Breath Assessment",
+      "nice_guideline": "NICE CG191",
+      "urgency_category": "111_urgent",
+      "condition_type": "respiratory",
+      "description": "Assessment of acute breathlessness and respiratory distress",
+      "questions": [
+        {
+          "question_id": 5,
+          "category": "respiratory_assessment",
+          "question_text": "How severe is your breathing difficulty right now?",
+          "question_type": "multiple_choice",
+          "options": ["Mild - can speak full sentences", "Moderate - can speak short phrases", "Severe - can only speak single words", "Unable to speak"],
+          "validation_rules": {"required": true},
+          "is_required": true,
+          "is_red_flag": true,
+          "order_index": 1,
+          "scoring_weight": 0.4
+        },
+        {
+          "question_id": 6,
+          "category": "respiratory_assessment",
+          "question_text": "When did the breathing difficulty start?",
+          "question_type": "multiple_choice",
+          "options": ["Minutes ago", "Hours ago", "Days ago", "Gradual over weeks"],
+          "validation_rules": {"required": true},
+          "is_required": true,
+          "is_red_flag": true,
+          "order_index": 2,
+          "scoring_weight": 0.3
+        },
+        {
+          "question_id": 7,
+          "category": "associated_symptoms",
+          "question_text": "Do you have any of these symptoms?",
+          "question_type": "multiple_select",
+          "options": ["Chest pain", "Cough", "Fever", "Leg swelling", "Wheezing", "None"],
+          "validation_rules": {"required": true},
+          "is_required": true,
+          "is_red_flag": false,
+          "order_index": 3,
+          "scoring_weight": 0.2
+        },
+        {
+          "question_id": 8,
+          "category": "medical_history",
+          "question_text": "Do you have asthma, COPD, or heart problems?",
+          "question_type": "multiple_select",
+          "options": ["Asthma", "COPD", "Heart disease", "Blood clots", "None"],
+          "validation_rules": {"required": true},
+          "is_required": true,
+          "is_red_flag": false,
+          "order_index": 4,
+          "scoring_weight": 0.1
+        }
+      ],
+      "red_flag_threshold": 0.5,
+      "disposition_mapping": {
+        "high_risk": "999_emergency",
+        "medium_risk": "111_urgent",
+        "low_risk": "111_standard"
+      }
+    },
+    {
+      "protocol_id": 3,
+      "protocol_name": "Abdominal Pain Assessment",
+      "nice_guideline": "NICE CG141",
+      "urgency_category": "111_standard",
+      "condition_type": "gastrointestinal",
+      "description": "Assessment of acute abdominal pain",
+      "questions": [
+        {
+          "question_id": 9,
+          "category": "pain_assessment",
+          "question_text": "Where is your abdominal pain located?",
+          "question_type": "multiple_choice",
+          "options": ["Upper right", "Upper left", "Lower right", "Lower left", "Central/around belly button", "All over"],
+          "validation_rules": {"required": true},
+          "is_required": true,
+          "is_red_flag": false,
+          "order_index": 1,
+          "scoring_weight": 0.2
+        },
+        {
+          "question_id": 10,
+          "category": "pain_assessment",
+          "question_text": "How severe is your abdominal pain (0-10)?",
+          "question_type": "scale_1_10",
+          "options": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
+          "validation_rules": {"min": 0, "max": 10, "required": true},
+          "is_required": true,
+          "is_red_flag": true,
+          "order_index": 2,
+          "scoring_weight": 0.3
+        },
+        {
+          "question_id": 11,
+          "category": "associated_symptoms",
+          "question_text": "Are you experiencing any of these symptoms?",
+          "question_type": "multiple_select",
+          "options": ["Nausea", "Vomiting", "Fever", "Diarrhea", "Constipation", "Blood in stool", "None"],
+          "validation_rules": {"required": true},
+          "is_required": true,
+          "is_red_flag": true,
+          "order_index": 3,
+          "scoring_weight": 0.3
+        },
+        {
+          "question_id": 12,
+          "category": "pain_characteristics",
+          "question_text": "Does the pain get worse when you move or cough?",
+          "question_type": "yes_no",
+          "options": ["Yes", "No"],
+          "validation_rules": {"required": true},
+          "is_required": true,
+          "is_red_flag": true,
+          "order_index": 4,
+          "scoring_weight": 0.2
+        }
+      ],
+      "red_flag_threshold": 0.6,
+      "disposition_mapping": {
+        "high_risk": "111_urgent",
+        "medium_risk": "111_standard",
+        "low_risk": "gp_routine"
+      }
+    },
+    {
+      "protocol_id": 4,
+      "protocol_name": "Headache Assessment",
+      "nice_guideline": "NICE CG150",
+      "urgency_category": "111_standard",
+      "condition_type": "neurological",
+      "description": "Assessment of headache and facial pain",
+      "questions": [
+        {
+          "question_id": 13,
+          "category": "pain_assessment",
+          "question_text": "How severe is your headache (0-10)?",
+          "question_type": "scale_1_10",
+          "options": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
+          "validation_rules": {"min": 0, "max": 10, "required": true},
+          "is_required": true,
+          "is_red_flag": true,
+          "order_index": 1,
+          "scoring_weight": 0.3
+        },
+        {
+          "question_id": 14,
+          "category": "onset_characteristics",
+          "question_text": "How quickly did this headache start?",
+          "question_type": "multiple_choice",
+          "options": ["Sudden onset (thunderclap)", "Over minutes", "Over hours", "Gradual over days"],
+          "validation_rules": {"required": true},
+          "is_required": true,
+          "is_red_flag": true,
+          "order_index": 2,
+          "scoring_weight": 0.4
+        },
+        {
+          "question_id": 15,
+          "category": "associated_symptoms",
+          "question_text": "Do you have any of these symptoms with your headache?",
+          "question_type": "multiple_select",
+          "options": ["Fever", "Neck stiffness", "Nausea/vomiting", "Vision changes", "Confusion", "Rash", "None"],
+          "validation_rules": {"required": true},
+          "is_required": true,
+          "is_red_flag": true,
+          "order_index": 3,
+          "scoring_weight": 0.3
+        }
+      ],
+      "red_flag_threshold": 0.7,
+      "disposition_mapping": {
+        "high_risk": "999_emergency",
+        "medium_risk": "111_urgent",
+        "low_risk": "gp_routine"
+      }
+    },
+    {
+      "protocol_id": 5,
+      "protocol_name": "Back Pain Assessment",
+      "nice_guideline": "NICE NG59",
+      "urgency_category": "111_standard",
+      "condition_type": "musculoskeletal",
+      "description": "Assessment of low back pain and sciatica",
+      "questions": [
+        {
+          "question_id": 16,
+          "category": "pain_assessment",
+          "question_text": "How severe is your back pain (0-10)?",
+          "question_type": "scale_1_10",
+          "options": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
+          "validation_rules": {"min": 0, "max": 10, "required": true},
+          "is_required": true,
+          "is_red_flag": false,
+          "order_index": 1,
+          "scoring_weight": 0.2
+        },
+        {
+          "question_id": 17,
+          "category": "neurological_symptoms",
+          "question_text": "Do you have numbness, tingling, or weakness in your legs?",
+          "question_type": "multiple_select",
+          "options": ["Numbness in legs", "Tingling in legs", "Weakness in legs", "Loss of bladder control", "Loss of bowel control", "None"],
+          "validation_rules": {"required": true},
+          "is_required": true,
+          "is_red_flag": true,
+          "order_index": 2,
+          "scoring_weight": 0.4
+        },
+        {
+          "question_id": 18,
+          "category": "pain_characteristics",
+          "question_text": "Does the pain shoot down your leg?",
+          "question_type": "yes_no",
+          "options": ["Yes", "No"],
+          "validation_rules": {"required": true},
+          "is_required": true,
+          "is_red_flag": false,
+          "order_index": 3,
+          "scoring_weight": 0.2
+        },
+        {
+          "question_id": 19,
+          "category": "onset",
+          "question_text": "When did your back pain start?",
+          "question_type": "multiple_choice",
+          "options": ["Today", "This week", "This month", "More than a month ago"],
+          "validation_rules": {"required": true},
+          "is_required": true,
+          "is_red_flag": false,
+          "order_index": 4,
+          "scoring_weight": 0.2
+        }
+      ],
+      "red_flag_threshold": 0.6,
+      "disposition_mapping": {
+        "high_risk": "111_urgent",
+        "medium_risk": "gp_routine",
+        "low_risk": "self_care"
+      }
+    },
+    {
+      "protocol_id": 6,
+      "protocol_name": "Mental Health Crisis Assessment",
+      "nice_guideline": "NICE CG90",
+      "urgency_category": "111_urgent",
+      "condition_type": "mental_health",
+      "description": "Assessment of depression, anxiety, and suicidal ideation",
+      "questions": [
+        {
+          "question_id": 20,
+          "category": "suicide_risk",
+          "question_text": "Are you having thoughts of hurting yourself or ending your life?",
+          "question_type": "yes_no",
+          "options": ["Yes", "No"],
+          "validation_rules": {"required": true},
+          "is_required": true,
+          "is_red_flag": true,
+          "order_index": 1,
+          "scoring_weight": 0.5
+        },
+        {
+          "question_id": 21,
+          "category": "mood_assessment",
+          "question_text": "How would you rate your mood over the past 2 weeks?",
+          "question_type": "multiple_choice",
+          "options": ["Very low/depressed", "Low", "Moderate", "Good", "Very good"],
+          "validation_rules": {"required": true},
+          "is_required": true,
+          "is_red_flag": true,
+          "order_index": 2,
+          "scoring_weight": 0.3
+        },
+        {
+          "question_id": 22,
+          "category": "functioning",
+          "question_text": "Are you able to carry out daily activities?",
+          "question_type": "multiple_choice",
+          "options": ["Not at all", "With great difficulty", "With some difficulty", "Mostly normal", "Completely normal"],
+          "validation_rules": {"required": true},
+          "is_required": true,
+          "is_red_flag": false,
+          "order_index": 3,
+          "scoring_weight": 0.2
+        }
+      ],
+      "red_flag_threshold": 0.4,
+      "disposition_mapping": {
+        "high_risk": "999_emergency",
+        "medium_risk": "111_urgent",
+        "low_risk": "gp_routine"
+      }
+    },
+    {
+      "protocol_id": 7,
+      "protocol_name": "Skin Problems Assessment",
+      "nice_guideline": "NICE CG153",
+      "urgency_category": "111_standard",
+      "condition_type": "dermatological",
+      "description": "Assessment of skin conditions and rashes",
+      "questions": [
+        {
+          "question_id": 23,
+          "category": "rash_characteristics",
+          "question_text": "What does your skin problem look like?",
+          "question_type": "multiple_select",
+          "options": ["Red rash", "Blisters", "Raised bumps", "Itchy patches", "Open sores", "Scaling/flaking"],
+          "validation_rules": {"required": true},
+          "is_required": true,
+          "is_red_flag": false,
+          "order_index": 1,
+          "scoring_weight": 0.2
+        },
+        {
+          "question_id": 24,
+          "category": "systemic_symptoms",
+          "question_text": "Do you have fever, difficulty breathing, or swelling?",
+          "question_type": "multiple_select",
+          "options": ["Fever", "Difficulty breathing", "Swelling of face/lips", "Widespread rash", "None"],
+          "validation_rules": {"required": true},
+          "is_required": true,
+          "is_red_flag": true,
+          "order_index": 2,
+          "scoring_weight": 0.4
+        },
+        {
+          "question_id": 25,
+          "category": "onset",
+          "question_text": "How quickly did the skin problem develop?",
+          "question_type": "multiple_choice",
+          "options": ["Minutes", "Hours", "Days", "Weeks", "Months"],
+          "validation_rules": {"required": true},
+          "is_required": true,
+          "is_red_flag": true,
+          "order_index": 3,
+          "scoring_weight": 0.3
+        }
+      ],
+      "red_flag_threshold": 0.6,
+      "disposition_mapping": {
+        "high_risk": "999_emergency",
+        "medium_risk": "111_urgent",
+        "low_risk": "gp_routine"
+      }
+    },
+    {
+      "protocol_id": 8,
+      "protocol_name": "Stroke/TIA Assessment",
+      "nice_guideline": "NICE CG68",
+      "urgency_category": "999_emergency",
+      "condition_type": "neurological_emergency",
+      "description": "FAST assessment for stroke and TIA",
+      "questions": [
+        {
+          "question_id": 26,
+          "category": "facial_weakness",
+          "question_text": "Is there facial drooping or weakness on one side?",
+          "question_type": "yes_no",
+          "options": ["Yes", "No"],
+          "validation_rules": {"required": true},
+          "is_required": true,
+          "is_red_flag": true,
+          "order_index": 1,
+          "scoring_weight": 0.3
+        },
+        {
+          "question_id": 27,
+          "category": "arm_weakness",
+          "question_text": "Is there weakness in one or both arms?",
+          "question_type": "yes_no",
+          "options": ["Yes", "No"],
+          "validation_rules": {"required": true},
+          "is_required": true,
+          "is_red_flag": true,
+          "order_index": 2,
+          "scoring_weight": 0.3
+        },
+        {
+          "question_id": 28,
+          "category": "speech_problems",
+          "question_text": "Is there slurred speech or difficulty speaking?",
+          "question_type": "yes_no",
+          "options": ["Yes", "No"],
+          "validation_rules": {"required": true},
+          "is_required": true,
+          "is_red_flag": true,
+          "order_index": 3,
+          "scoring_weight": 0.3
+        },
+        {
+          "question_id": 29,
+          "category": "onset_time",
+          "question_text": "When did these symptoms start?",
+          "question_type": "multiple_choice",
+          "options": ["Less than 4.5 hours ago", "4.5-24 hours ago", "More than 24 hours ago", "Unknown"],
+          "validation_rules": {"required": true},
+          "is_required": true,
+          "is_red_flag": true,
+          "order_index": 4,
+          "scoring_weight": 0.1
+        }
+      ],
+      "red_flag_threshold": 0.3,
+      "disposition_mapping": {
+        "high_risk": "999_emergency",
+        "medium_risk": "999_emergency",
+        "low_risk": "111_urgent"
+      }
+    },
+    {
+      "protocol_id": 9,
+      "protocol_name": "Cardiac Arrest/Heart Attack Assessment",
+      "nice_guideline": "NICE CG167",
+      "urgency_category": "999_emergency",
+      "condition_type": "cardiovascular_emergency",
+      "description": "Assessment of acute coronary syndrome and cardiac arrest",
+      "questions": [
+        {
+          "question_id": 30,
+          "category": "consciousness",
+          "question_text": "Is the person conscious and responding?",
+          "question_type": "yes_no",
+          "options": ["Yes", "No"],
+          "validation_rules": {"required": true},
+          "is_required": true,
+          "is_red_flag": true,
+          "order_index": 1,
+          "scoring_weight": 0.4
+        },
+        {
+          "question_id": 31,
+          "category": "breathing",
+          "question_text": "Is the person breathing normally?",
+          "question_type": "yes_no",
+          "options": ["Yes", "No"],
+          "validation_rules": {"required": true},
+          "is_required": true,
+          "is_red_flag": true,
+          "order_index": 2,
+          "scoring_weight": 0.4
+        },
+        {
+          "question_id": 32,
+          "category": "chest_pain",
+          "question_text": "Is there severe crushing chest pain?",
+          "question_type": "yes_no",
+          "options": ["Yes", "No"],
+          "validation_rules": {"required": true},
+          "is_required": true,
+          "is_red_flag": true,
+          "order_index": 3,
+          "scoring_weight": 0.2
+        }
+      ],
+      "red_flag_threshold": 0.2,
+      "disposition_mapping": {
+        "high_risk": "999_emergency",
+        "medium_risk": "999_emergency",
+        "low_risk": "999_emergency"
+      }
+    },
+    {
+      "protocol_id": 10,
+      "protocol_name": "Anaphylaxis Assessment",
+      "nice_guideline": "NICE CG134",
+      "urgency_category": "999_emergency",
+      "condition_type": "allergic_emergency",
+      "description": "Assessment of severe allergic reaction and anaphylaxis",
+      "questions": [
+        {
+          "question_id": 33,
+          "category": "breathing_difficulty",
+          "question_text": "Is there difficulty breathing or wheezing?",
+          "question_type": "yes_no",
+          "options": ["Yes", "No"],
+          "validation_rules": {"required": true},
+          "is_required": true,
+          "is_red_flag": true,
+          "order_index": 1,
+          "scoring_weight": 0.3
+        },
+        {
+          "question_id": 34,
+          "category": "swelling",
+          "question_text": "Is there swelling of face, lips, tongue, or throat?",
+          "question_type": "yes_no",
+          "options": ["Yes", "No"],
+          "validation_rules": {"required": true},
+          "is_required": true,
+          "is_red_flag": true,
+          "order_index": 2,
+          "scoring_weight": 0.3
+        },
+        {
+          "question_id": 35,
+          "category": "circulation",
+          "question_text": "Is there rapid pulse, dizziness, or collapse?",
+          "question_type": "multiple_select",
+          "options": ["Rapid pulse", "Dizziness", "Feeling faint", "Collapsed", "None"],
+          "validation_rules": {"required": true},
+          "is_required": true,
+          "is_red_flag": true,
+          "order_index": 3,
+          "scoring_weight": 0.3
+        },
+        {
+          "question_id": 36,
+          "category": "trigger",
+          "question_text": "Was there recent exposure to known allergen?",
+          "question_type": "multiple_choice",
+          "options": ["Food allergen", "Medication", "Insect sting", "Unknown trigger", "No known exposure"],
+          "validation_rules": {"required": true},
+          "is_required": true,
+          "is_red_flag": false,
+          "order_index": 4,
+          "scoring_weight": 0.1
+        }
+      ],
+      "red_flag_threshold": 0.3,
+      "disposition_mapping": {
+        "high_risk": "999_emergency",
+        "medium_risk": "999_emergency",
+        "low_risk": "111_urgent"
+      }
+    }
+  ],
+  "global_settings": {
+    "default_timeout_minutes": 30,
+    "max_questions_per_session": 20,
+    "require_completion_percentage": 80,
+    "enable_adaptive_questioning": true,
+    "bias_monitoring": true,
+    "clinical_override_allowed": true
+  },
+  "scoring_framework": {
+    "urgency_calculation": {
+      "red_flags_weight": 0.4,
+      "symptom_severity_weight": 0.3,
+      "onset_timing_weight": 0.2,
+      "patient_demographics_weight": 0.1
+    },
+    "disposition_thresholds": {
+      "999_emergency": 0.8,
+      "111_urgent": 0.6,
+      "111_standard": 0.4,
+      "gp_routine": 0.2,
+      "self_care": 0.0
+    }
+  },
+  "integration_points": {
+    "nhs_111_api": "https://api.nhs.uk/111",
+    "nhs_999_dispatch": "https://api.nhs.uk/999",
+    "gp_connect": "https://api.nhs.uk/gp-connect",
+    "nhs_digital_api": "https://api.nhs.uk/digital"
+  }
+}
