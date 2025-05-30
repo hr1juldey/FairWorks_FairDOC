@@ -15,7 +15,7 @@ from datetime import datetime
 from enum import Enum
 import uuid
 
-from .sqlalchemy_models import Base
+from datamodels.sqlalchemy_models import Base
 
 # =============================================================================
 # USER ROLES AND PERMISSIONS (V1 SPECIFIC)
