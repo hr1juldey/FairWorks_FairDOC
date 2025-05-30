@@ -162,10 +162,10 @@ def input_field_wrapper_style():  # The rounded container for the text area
 def native_textarea_style():
     return me.Style(
         background="transparent",
-        border=me.Border.all(me.BorderSide(style="none")), 
+        border=me.Border.all(me.BorderSide(style="none")),
         outline="none",
         width="100%",
-        color=WHATSAPP_LIGHT_COLORS["input_field_text"], # Dark grey text
+        color=WHATSAPP_LIGHT_COLORS["input_field_text"],  # Dark grey text
         font_size="15px",
         line_height="20px",
         overflow_y="hidden",
