@@ -3,7 +3,7 @@ Enhanced multi-modal chat and conversation models for Fairdoc Medical AI Backend
 Supports text, audio, images, emojis, medical files, and real-time communication.
 Fixed for Pydantic V2 with proper imports and enum usage.
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, List, Dict, Any, Union, Literal
 from uuid import UUID
 from pydantic import Field, field_validator
@@ -352,12 +352,12 @@ class MultiModalMessage(BaseEntity, ValidationMixin, MetadataMixin):
     
     def mark_delivered(self):
         """Mark message as delivered with timestamp."""
-        self.delivered_at = datetime.datetime()
+        self.delivered_at = lambda: datetime.now(timezone.utc)()
         self.update_timestamp()  # From TimestampMixin
     
     def mark_read(self):
         """Mark message as read with timestamp."""
-        self.read_at = datetime.datetime()
+        self.read_at = lambda: datetime.now(timezone.utc)()
         self.update_timestamp()
     
     def assess_message_risk(self) -> RiskLevel:
@@ -401,7 +401,7 @@ class ConversationParticipant(TimestampMixin, UUIDMixin):
     def leave_conversation(self) -> None:
         """Mark participant as left with timestamp."""
         self.is_active = False
-        self.left_at = datetime.datetime()
+        self.left_at = lambda: datetime.now(timezone.utc)()
         self.update_timestamp()
 
 class ConversationSummary(TimestampMixin, ValidationMixin):
@@ -459,7 +459,7 @@ class MultiModalConversation(BaseEntity, ValidationMixin, MetadataMixin):
     estimated_duration: Optional[timedelta] = Field(None, description="Expected duration")
     
     # Timing (created_at and updated_at handled by BaseEntity)
-    last_activity_at: datetime = Field(default_factory=datetime.datetime)
+    last_activity_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     completed_at: Optional[datetime] = None
     
     # Message tracking
@@ -520,7 +520,7 @@ class MultiModalConversation(BaseEntity, ValidationMixin, MetadataMixin):
     
     def update_activity(self) -> None:
         """Update last activity timestamp."""
-        self.last_activity_at = datetime.datetime()
+        self.last_activity_at = lambda: datetime.now(timezone.utc)()
         self.update_timestamp()
     
     def escalate_conversation(self, reason: str, risk_level: RiskLevel) -> None:
@@ -529,11 +529,11 @@ class MultiModalConversation(BaseEntity, ValidationMixin, MetadataMixin):
         self.overall_risk_level = risk_level
         self.human_takeover = True
         self.human_takeover_reason = reason
-        self.human_takeover_at = datetime.datetime()
+        self.human_takeover_at = lambda: datetime.now(timezone.utc)()
         
         # Track escalation
         self.risk_escalations.append({
-            "timestamp": datetime.datetime().isoformat(),
+            "timestamp": lambda: datetime.now(timezone.utc)().isoformat(),
             "reason": reason,
             "risk_level": risk_level.value,
             "escalated_from": self.priority.value
@@ -543,7 +543,7 @@ class MultiModalConversation(BaseEntity, ValidationMixin, MetadataMixin):
     def add_bias_alert(self, bias_type: str, severity: float, details: Dict[str, Any]) -> None:
         """Add bias detection alert."""
         alert = {
-            "timestamp": datetime.datetime().isoformat(),
+            "timestamp": lambda: datetime.now(timezone.utc)().isoformat(),
             "bias_type": bias_type,
             "severity": severity,
             "details": details
@@ -556,7 +556,7 @@ class MultiModalConversation(BaseEntity, ValidationMixin, MetadataMixin):
         pain_entry = {
             "score": score,
             "risk_level": risk_level.value,
-            "timestamp": datetime.datetime().isoformat()
+            "timestamp": lambda: datetime.now(timezone.utc)().isoformat()
         }
         self.pain_scores_recorded.append(pain_entry)
         
@@ -606,12 +606,13 @@ class WebSocketConnection(BaseEntity):
     
     def update_ping(self):
         """Update ping timestamp."""
-        self.last_ping = datetime.datetime()
+        self.last_ping = lambda: datetime.now(timezone.utc)()
         self.update_timestamp()
     
     def update_pong(self):
         """Update pong timestamp and calculate latency."""
-        now = datetime.datetime()
+        def now():
+            return datetime.now(timezone.utc)()
         self.last_pong = now
         if self.last_ping:
             self.latency_ms = (now - self.last_ping).total_seconds() * 1000
@@ -620,7 +621,7 @@ class WebSocketConnection(BaseEntity):
     def disconnect(self, reason: Optional[str] = None):
         """Mark connection as disconnected with timestamp."""
         self.status = WebSocketConnectionStatus.DISCONNECTED
-        self.disconnected_at = datetime.datetime()
+        self.disconnected_at = lambda: datetime.now(timezone.utc)()
         if reason:
             self.add_metadata("disconnect_reason", reason)
         self.update_timestamp()

@@ -2,16 +2,49 @@
 V1 File Management Utilities - Production Grade
 Enhanced file operations with comprehensive security scanning
 """
-
+# === SMART IMPORT SETUP - ADD TO TOP OF FILE ===
+import sys
 import os
+from pathlib import Path
+
+# Setup paths once to prevent double imports
+if not hasattr(sys, '_fairdoc_paths_setup'):
+    current_dir = Path(__file__).parent
+    v1_dir = current_dir.parent
+    backend_dir = v1_dir.parent
+    project_root = backend_dir.parent
+    
+    paths_to_add = [str(project_root), str(backend_dir), str(v1_dir)]
+    for path in paths_to_add:
+        if path not in sys.path:
+            sys.path.insert(0, path)
+    
+    sys._fairdoc_paths_setup = True
+
+# Standard imports first
 import uuid
 import mimetypes
 import hashlib
 import time
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional, List, Tuple
-from pathlib import Path
 import logging
+
+# Smart internal imports with fallbacks
+try:
+    # Try absolute imports first
+    from datamodels.file_models import FileCategory, FileStatus, FileValidationResult
+    from core.config import get_v1_settings
+except ImportError:
+    # Fallback to relative imports
+    from ..datamodels.file_models import FileCategory, FileStatus, FileValidationResult
+    from ..core.config import get_v1_settings
+
+# === END SMART IMPORT SETUP ===
+
+
+from pathlib import Path
+
 
 from datamodels.file_models import (
     FileCategory, FileStatus, FileValidationResult,

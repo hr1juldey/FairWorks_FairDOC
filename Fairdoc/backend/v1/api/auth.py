@@ -3,13 +3,55 @@ V1 NHS Complete Authentication API - Doctor Authentication System
 Full NHS doctor authentication with GMC verification and medical permissions
 Uses ALL imported functions and models for comprehensive medical security
 """
+# === SMART IMPORT SETUP - ADD TO TOP OF FILE ===
+import sys
+import os
+from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, status, Request, Form
-from sqlalchemy.orm import Session
-from typing import Dict, Any, Optional, List
-from datetime import datetime, timedelta
-import logging
 import uuid
+# Setup paths once to prevent double imports
+if not hasattr(sys, '_fairdoc_paths_setup'):
+    current_dir = Path(__file__).parent
+    v1_dir = current_dir.parent
+    backend_dir = v1_dir.parent
+    project_root = backend_dir.parent
+    
+    paths_to_add = [str(project_root), str(backend_dir), str(v1_dir)]
+    for path in paths_to_add:
+        if path not in sys.path:
+            sys.path.insert(0, path)
+    
+    sys._fairdoc_paths_setup = True
+
+# Standard imports first
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import Request, Form
+from sqlalchemy.orm import Session
+from typing import List, Dict, Any, Optional
+import logging
+from datetime import datetime, timedelta
+
+# Smart internal imports with fallbacks
+try:
+    # Try absolute imports first
+    from data.database import get_db, CaseReportCRUD
+    from datamodels.file_models import FileUploadRequest, FileUploadResponse
+    from datamodels.sqlalchemy_models import CaseReportDB
+    from core.security import get_current_active_user
+    from datamodels.auth_models import UserDB
+    from utils.file_utils import validate_medical_file, upload_file_to_minio
+except ImportError:
+    # Fallback to relative imports
+    from ..data.database import get_db, CaseReportCRUD
+    from ..datamodels.file_models import FileUploadRequest, FileUploadResponse
+    from ..datamodels.sqlalchemy_models import CaseReportDB
+    from ..core.security import get_current_active_user
+    from ..datamodels.auth_models import UserDB
+    from ..utils.file_utils import validate_medical_file, upload_file_to_minio
+
+# === END SMART IMPORT SETUP ===
+
+
 
 # =============================================================================
 # COMPLETE IMPORTS - ALL WILL BE USED

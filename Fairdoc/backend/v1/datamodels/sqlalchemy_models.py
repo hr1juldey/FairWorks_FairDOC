@@ -18,7 +18,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.dialects.postgresql import JSONB
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 # SQLAlchemy base
 Base = declarative_base()
@@ -64,11 +64,11 @@ class CaseReportDB(Base):
     
     # Case management
     status = Column(String(20), default="created", nullable=False)
-    created_at = Column(DateTime, default=datetime.datetime, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(
         DateTime,
-        default=datetime.datetime,
-        onupdate=datetime.datetime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
         nullable=False
     )
     completed_at = Column(DateTime, nullable=True)
@@ -121,11 +121,11 @@ class NICEProtocolQuestionDB(Base):
     protocol_version = Column(String(20), default="v1.0", nullable=False)
     nice_guideline_ref = Column(String(50), nullable=True)
     clinical_rationale = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.datetime, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(
         DateTime,
-        default=datetime.datetime,
-        onupdate=datetime.datetime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
         nullable=False
     )
     
@@ -160,7 +160,7 @@ class PatientResponseDB(Base):
     response_value = Column(MutableDict.as_mutable(JSONB), nullable=True)
     confidence_level = Column(Float, nullable=True)
     response_time_seconds = Column(Integer, nullable=True)
-    timestamp = Column(DateTime, default=datetime.datetime, nullable=False)
+    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     
     # Relationships
     case_report = relationship("CaseReportDB", back_populates="responses")
@@ -189,7 +189,7 @@ class UploadedFileDB(Base):
     file_category = Column(String(50), nullable=False)
     minio_url = Column(String(500), nullable=False)
     file_size_bytes = Column(Integer, nullable=False)
-    upload_timestamp = Column(DateTime, default=datetime.datetime, nullable=False)
+    upload_timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     description = Column(Text, nullable=True)
     ai_analysis = Column(MutableDict.as_mutable(JSONB), nullable=True)
     

@@ -7,7 +7,7 @@ Integrates with NICE protocols and ML scoring system
 from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 
 # Import our infrastructure
@@ -424,7 +424,7 @@ async def process_case_report(
             db=db,
             case_id=case_id,
             status="processing",
-            ai_assessment={"processing_started": datetime.datetime().isoformat()}
+            ai_assessment={"processing_started": lambda: datetime.now(timezone.utc)().isoformat()}
         )
         
         # Queue background processing (placeholder for Celery task)
@@ -487,7 +487,7 @@ async def simulate_case_processing(case_report_id: int, response_count: int):
         
         # Create mock AI assessment
         ai_assessment = {
-            "processing_completed": datetime.datetime().isoformat(),
+            "processing_completed": lambda: datetime.now(timezone.utc)().isoformat(),
             "urgency_score": urgency_score,
             "importance_score": importance_score,
             "predicted_conditions": ["Chest pain assessment", "Cardiovascular evaluation"],
@@ -508,7 +508,7 @@ async def simulate_case_processing(case_report_id: int, response_count: int):
             case_report.urgency_score = urgency_score
             case_report.importance_score = importance_score
             case_report.ai_assessment = ai_assessment
-            case_report.completed_at = datetime.datetime()
+            case_report.completed_at = lambda: datetime.now(timezone.utc)()
             
             db.commit()
             

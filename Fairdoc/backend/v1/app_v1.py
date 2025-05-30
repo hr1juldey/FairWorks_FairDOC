@@ -4,27 +4,66 @@ Medical-grade triage system with NHS compliance
 Senior backend architecture with proper separation of concerns
 """
 
+# === SMART IMPORT SETUP - ADD TO TOP OF FILE ===
+import sys
+import os
+from pathlib import Path
+
+# Setup paths once to prevent double imports
+if not hasattr(sys, '_fairdoc_paths_setup'):
+    current_dir = Path(__file__).parent
+    v1_dir = current_dir
+    backend_dir = v1_dir.parent
+    project_root = backend_dir.parent
+    
+    paths_to_add = [str(project_root), str(backend_dir), str(v1_dir)]
+    for path in paths_to_add:
+        if path not in sys.path:
+            sys.path.insert(0, path)
+    
+    sys._fairdoc_paths_setup = True
+
+# Setup universal imports first
+import import_config  # This sets up all paths
+
+# Standard imports first
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 import logging
 import uvicorn
 
-# Core configuration and middleware
-from core.config import get_v1_settings
-from core.middleware import configure_middleware
-from core.exceptions import configure_exception_handlers
+# Smart internal imports with fallbacks
+try:
+    # Try absolute imports first
+    from core.config import get_v1_settings
+    from core.middleware import configure_middleware
+    from core.exceptions import configure_exception_handlers
+    
+    # API routers
+    from api.auth import auth_router
+    from api.protocols import protocols_router
+    from api.cases import cases_router
+    from api.files import files_router
+    
+    # Database and health
+    from data.database import get_database_health, init_database
+    
+except ImportError:
+    # Fallback to relative imports
+    from .core.config import get_v1_settings
+    from .core.middleware import configure_middleware
+    from .core.exceptions import configure_exception_handlers
+    
+    # API routers
+    from .api.auth import auth_router
+    from .api.protocols import protocols_router
+    from .api.cases import cases_router
+    from .api.files import files_router
+    
+    # Database and health
+    from .data.database import get_database_health, init_database
 
-# API routers
-from api.auth import auth_router
-# Add these imports at the top
-from api.protocols import protocols_router
-from api.cases import cases_router
-from api.files import files_router
-
-
-
-# Database and health
-from data.database import get_database_health, init_database
+# === END SMART IMPORT SETUP ===
 
 # =============================================================================
 # LOGGING CONFIGURATION
@@ -52,7 +91,7 @@ async def lifespan(app: FastAPI):
     """Application lifespan management"""
     
     # Startup
-    logger.info("🚀 Starting Fairdoc AI ..")
+    logger.info("🚀 Starting Fairdoc AI v1...")
     
     try:
         # Initialize database
@@ -80,7 +119,7 @@ async def lifespan(app: FastAPI):
     yield
     
     # Shutdown
-    logger.info("🛑 Shutting down Fairdoc AI ..")
+    logger.info("🛑 Shutting down Fairdoc AI v1...")
 
 # =============================================================================
 # FASTAPI APPLICATION SETUP
@@ -198,7 +237,7 @@ app.include_router(
     tags=["Authentication"]
 )
 
-# TODO: Register additional routers as they're created
+# Register additional routers
 app.include_router(protocols_router, prefix=settings.API_V1_PREFIX, tags=["NICE Protocols"])
 app.include_router(cases_router, prefix=settings.API_V1_PREFIX, tags=["Case Management"])
 app.include_router(files_router, prefix=settings.API_V1_PREFIX, tags=["File Management"])
