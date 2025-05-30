@@ -38,15 +38,15 @@ try:
     from core.config import get_v1_settings
 except ImportError:
     # Fallback to relative imports
-    from ..datamodels.sqlalchemy_models import Base, CaseReportDB, NICEProtocolQuestionDB
-    from ..core.config import get_v1_settings
+    from datamodels.sqlalchemy_models import Base, CaseReportDB, NICEProtocolQuestionDB
+    from core.config import get_v1_settings
 
 # === END SMART IMPORT SETUP ===
 
 from pathlib import Path
 
 # Import models from proper location (separation of concerns)
-from ..datamodels.sqlalchemy_models import (
+from datamodels.sqlalchemy_models import (
     Base,
     CaseReportDB,
     NICEProtocolQuestionDB,
@@ -59,7 +59,7 @@ from ..datamodels.sqlalchemy_models import (
 )
 
 # Import configuration
-from ..core.config import get_v1_settings
+from core.config import get_v1_settings
 
 # =============================================================================
 # LOGGING SETUP
@@ -160,7 +160,7 @@ async def init_database() -> bool:
     Returns True if successful, False otherwise
     """
     try:
-        logger.info("🔨 Initializing V1 database...")
+        logger.info("🔨 Initializing V1 database.")
         
         # Create all tables
         Base.metadata.create_all(bind=engine)

@@ -1,69 +1,63 @@
 """
 Fairdoc AI v1 - Clean FastAPI Application
 Medical-grade triage system with NHS compliance
-Senior backend architecture with proper separation of concerns
+Fixed imports for direct execution
 """
 
-# === SMART IMPORT SETUP - ADD TO TOP OF FILE ===
 import sys
 import os
 from pathlib import Path
 
-# Setup paths once to prevent double imports
-if not hasattr(sys, '_fairdoc_paths_setup'):
-    current_dir = Path(__file__).parent
-    v1_dir = current_dir
+# === CRITICAL PATH SETUP FOR DIRECT EXECUTION ===
+def setup_python_paths():
+    """Setup Python paths for direct script execution"""
+    current_file = Path(__file__).resolve()
+    v1_dir = current_file.parent
     backend_dir = v1_dir.parent
     project_root = backend_dir.parent
     
-    paths_to_add = [str(project_root), str(backend_dir), str(v1_dir)]
+    # Add all necessary paths
+    paths_to_add = [
+        str(project_root),      # Fairdoc/
+        str(backend_dir),       # Fairdoc/backend/
+        str(v1_dir),           # Fairdoc/backend/v1/
+        str(v1_dir / "api"),
+        str(v1_dir / "core"),
+        str(v1_dir / "data"),
+        str(v1_dir / "datamodels"),
+        str(v1_dir / "utils"),
+        str(v1_dir / "services")
+    ]
+    
     for path in paths_to_add:
         if path not in sys.path:
             sys.path.insert(0, path)
     
-    sys._fairdoc_paths_setup = True
+    # Set environment variable
+    os.environ['PYTHONPATH'] = os.pathsep.join(paths_to_add + [os.environ.get('PYTHONPATH', '')])
 
-# Setup universal imports first
-import import_config  # This sets up all paths
+# Setup paths immediately
+setup_python_paths()
 
-# Standard imports first
+# Standard library imports
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 import logging
 import uvicorn
 
-# Smart internal imports with fallbacks
-try:
-    # Try absolute imports first
-    from core.config import get_v1_settings
-    from core.middleware import configure_middleware
-    from core.exceptions import configure_exception_handlers
-    
-    # API routers
-    from api.auth import auth_router
-    from api.protocols import protocols_router
-    from api.cases import cases_router
-    from api.files import files_router
-    
-    # Database and health
-    from data.database import get_database_health, init_database
-    
-except ImportError:
-    # Fallback to relative imports
-    from .core.config import get_v1_settings
-    from .core.middleware import configure_middleware
-    from .core.exceptions import configure_exception_handlers
-    
-    # API routers
-    from .api.auth import auth_router
-    from .api.protocols import protocols_router
-    from .api.cases import cases_router
-    from .api.files import files_router
-    
-    # Database and health
-    from .data.database import get_database_health, init_database
+# Internal imports - now using absolute paths
+from core.config import get_v1_settings
+from core.middleware import configure_middleware
+from core.exceptions import configure_exception_handlers
 
-# === END SMART IMPORT SETUP ===
+# API routers
+from api.auth import auth_router
+from api.protocols import protocols_router
+from api.cases import cases_router
+from api.files import files_router
+
+# Database
+from data.database import get_database_health, init_database
 
 # =============================================================================
 # LOGGING CONFIGURATION
@@ -125,7 +119,6 @@ async def lifespan(app: FastAPI):
 # FASTAPI APPLICATION SETUP
 # =============================================================================
 
-
 app = FastAPI(
     title=settings.APP_NAME,
     description="NHS-compliant medical triage system with comprehensive NICE protocols",
@@ -182,7 +175,7 @@ async def health_check():
             "endpoints": {
                 "authentication": f"{settings.API_V1_PREFIX}/auth",
                 "protocols": f"{settings.API_V1_PREFIX}/protocols",
-                "case_reports": f"{settings.API_V1_PREFIX}/case-reports",
+                "case_reports": f"{settings.API_V1_PREFIX}/cases",
                 "files": f"{settings.API_V1_PREFIX}/files",
                 "documentation": f"{settings.API_V1_PREFIX}/docs"
             },
@@ -228,7 +221,6 @@ async def root():
 # =============================================================================
 # API ROUTER REGISTRATION
 # =============================================================================
-
 
 # Register authentication router
 app.include_router(
