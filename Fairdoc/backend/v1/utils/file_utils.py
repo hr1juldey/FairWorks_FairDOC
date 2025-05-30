@@ -13,11 +13,11 @@ from typing import Dict, Any, Optional, List, Tuple
 from pathlib import Path
 import logging
 
-from ..datamodels.file_models import (
+from datamodels.file_models import (
     FileCategory, FileStatus, FileValidationResult,
     FileSecurityScan, FileValidators, SecurityThreatLevel
 )
-from ..core.config import get_v1_settings
+from core.config import get_v1_settings
 
 logger = logging.getLogger(__name__)
 settings = get_v1_settings()

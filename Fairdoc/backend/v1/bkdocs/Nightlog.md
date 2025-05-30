@@ -1,15 +1,6 @@
 
-# track the real world time in this chat and analyze if we are late or on track to complete
 
-actual submission is 4 pm gmt 0 may 30th 2025
-
-I am in kolkata  I need 3 hours to record video and presentation for this
-
-I haven't slept for 3 days so I might need 4 to 5 hours of sleep
-
-plus account for the testing and frontend etc
-
-## **🚨 REAL-WORLD TIME ANALYSIS - PROJECT DEADLINE TRACKING**
+# **🚨 REAL-WORLD TIME ANALYSIS - PROJECT DEADLINE TRACKING**
 
 Based on the time calculations from the search results, here's our detailed timeline analysis:
 

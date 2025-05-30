@@ -10,21 +10,21 @@ import logging
 import uvicorn
 
 # Core configuration and middleware
-from .core.config import get_v1_settings
-from .core.middleware import configure_middleware
-from .core.exceptions import configure_exception_handlers
+from core.config import get_v1_settings
+from core.middleware import configure_middleware
+from core.exceptions import configure_exception_handlers
 
 # API routers
-from .api.auth import auth_router
+from api.auth import auth_router
 # Add these imports at the top
-from .api.protocols import protocols_router
-from .api.cases import cases_router
-from .api.files import files_router
+from api.protocols import protocols_router
+from api.cases import cases_router
+from api.files import files_router
 
 
 
 # Database and health
-from .data.database import get_database_health, init_database
+from data.database import get_database_health, init_database
 
 # =============================================================================
 # LOGGING CONFIGURATION
@@ -52,7 +52,7 @@ async def lifespan(app: FastAPI):
     """Application lifespan management"""
     
     # Startup
-    logger.info("🚀 Starting Fairdoc AI v1...")
+    logger.info("🚀 Starting Fairdoc AI ..")
     
     try:
         # Initialize database
@@ -80,7 +80,7 @@ async def lifespan(app: FastAPI):
     yield
     
     # Shutdown
-    logger.info("🛑 Shutting down Fairdoc AI v1...")
+    logger.info("🛑 Shutting down Fairdoc AI ..")
 
 # =============================================================================
 # FASTAPI APPLICATION SETUP
