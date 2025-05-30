@@ -14,15 +14,15 @@ WHATSAPP_DARK_COLORS = {
     "input_field_text": "#E9EDEF",
     "input_placeholder_text": "#8696A0",
     "icon_color": "#AEBAC1",
-    "icon_active_color": "#00A884", # WhatsApp Green for send
+    "icon_active_color": "#00A884",  # WhatsApp Green for send
     "timestamp_text": "#8696A0",
     "link_text": "#53BDEB",
     "divider_color": "#2C3E46",
     "primary_text": "#E9EDEF",
     "secondary_text": "#AEBAC1",
-    "green_accent": "#00A884", # Used for active send icon
-    "error_text": "#F37A7A", # A common error red for dark themes
-    "error_bg": "#4B2226",  # Dark red background for error messages
+    "green_accent": "#00A884",  # Used for active send icon
+    "error_text": "#F37A7A",
+    "error_bg": "#4B2226",
 }
 
 # --- Core Layout Styles ---
@@ -44,7 +44,7 @@ def chat_area_style():
         display="flex",
         flex_direction="column",
         overflow_y="auto",
-        padding=me.Padding.symmetric(horizontal=0, vertical=10), # No horizontal padding here
+        padding=me.Padding.symmetric(horizontal=0, vertical=10),
         background=WHATSAPP_DARK_COLORS["app_bg"]
     )
 
@@ -61,9 +61,9 @@ def chat_header_style():
 
 def chat_header_avatar_style():
     return me.Style(
-        width=40, 
-        height=40, 
-        border_radius="50%", 
+        width=40,
+        height=40,
+        border_radius="50%",
         background=WHATSAPP_DARK_COLORS["active_chat_bg"],
         margin=me.Margin(right=12)
     )
@@ -78,34 +78,38 @@ def chat_header_icons_style():
     return me.Style(display="flex", gap=20)
 
 # --- Chat Bubble Styles ---
-def message_bubble_base_style():
+# REMOVED message_bubble_base_style() function to avoid complex inheritance issues
+
+def sent_bubble_style():
     return me.Style(
+        # Base properties directly inlined:
         padding=me.Padding(top=6, bottom=8, left=9, right=9),
         border_radius=8,
         max_width="65%",
         box_shadow="0 1px 0.5px rgba(0,0,0,0.3)",
-        margin=me.Margin(bottom=3)
-    )
+        # margin=me.Margin(bottom=3), # This will be overridden by more specific margin below
 
-def sent_bubble_style():
-    return me.Style(
+        # Sent-specific properties:
         background=WHATSAPP_DARK_COLORS["message_sent_bg"],
         color=WHATSAPP_DARK_COLORS["message_sent_text"],
-        align_self="flex-end",
-        margin=me.Margin(left="auto", bottom=3, right=10, top=3), # Added top margin
-        # Inherit base styles, Pydantic v1 way; adjust if Mesop's Style is not a simple dict
-        **{k: v for k, v in message_bubble_base_style().__dict__.items() if not k.startswith('_')}
+        align_self="flex-end", # Align to right
+        margin=me.Margin(left="auto", bottom=3, right=10, top=3) # Specific margin for sent
     )
-
 
 def received_bubble_style():
     return me.Style(
+        # Base properties directly inlined:
+        padding=me.Padding(top=6, bottom=8, left=9, right=9),
+        border_radius=8,
+        max_width="65%",
+        box_shadow="0 1px 0.5px rgba(0,0,0,0.3)",
+        # margin=me.Margin(bottom=3), # This will be overridden by more specific margin below
+
+        # Received-specific properties:
         background=WHATSAPP_DARK_COLORS["message_received_bg"],
         color=WHATSAPP_DARK_COLORS["message_received_text"],
-        align_self="flex-start",
-        margin=me.Margin(right="auto", bottom=3, left=10, top=3), # Added top margin
-        # Inherit base styles
-        **{k: v for k, v in message_bubble_base_style().__dict__.items() if not k.startswith('_')}
+        align_self="flex-start", # Align to left
+        margin=me.Margin(right="auto", bottom=3, left=10, top=3) # Specific margin for received
     )
 
 def message_text_style():
@@ -115,8 +119,8 @@ def timestamp_style():
     return me.Style(
         font_size="11px",
         color=WHATSAPP_DARK_COLORS["timestamp_text"],
-        margin=me.Margin(top=4, left=8),
-        align_self="flex-end"
+        margin=me.Margin(top=4, left=8), # This margin is for the text itself
+        # align_self="flex-end" # This should be on the container holding the timestamp text and ticks, if any
     )
 
 # --- Chat Input Styles ---
@@ -127,18 +131,18 @@ def chat_input_bar_style():
         display="flex",
         align_items="center",
         gap=12,
-        width="100%" # Ensure it spans full width
+        width="100%"
     )
 
 def input_field_wrapper_style():
     return me.Style(
         flex_grow=1,
         background=WHATSAPP_DARK_COLORS["input_field_bg"],
-        border_radius=8, # WhatsApp uses less rounded input fields
+        border_radius=8,
         padding=me.Padding.symmetric(horizontal=12),
         display="flex",
         align_items="center",
-        height=42 # Typical height for WhatsApp input area
+        height=42
     )
 
 def native_textarea_style():
@@ -150,9 +154,9 @@ def native_textarea_style():
         color=WHATSAPP_DARK_COLORS["input_field_text"],
         font_size="15px",
         line_height="20px",
-        overflow_y="hidden", # Manage scroll within the single line if needed
-        padding=me.Padding(top=8, bottom=8), # Adjust to vertically center text
-        height="22px", # To make it appear single line
+        overflow_y="hidden",
+        padding=me.Padding(top=6, bottom=12),
+        height="32px",
         vertical_align="middle",
         font_family="'Segoe UI', Helvetica, Arial, sans-serif"
     )

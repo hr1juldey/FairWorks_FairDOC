@@ -1,31 +1,40 @@
 import mesop as me
-import utils.path_setup # CRITICAL: This must be the first Fairdoc/msp import
+import utils.path_setup  # CRITICAL: This must be the first Fairdoc/msp import
 
 # Import pages (after path setup)
-from pages import chat_page  # Import the module
-from pages import report_page # Import the module
+import pages.chat_page
+import pages.report_page
 from state.state_manager import initialize_app_state, AppState
 from styles.whatsapp_dark_theme import app_container_style
 
-# Global on_load for all pages, or define per page if needed
-def on_load_main(e: me.LoadEvent):
-    me.set_theme_mode("dark") 
-    # Initialize state with a session_id. In a real app, this might come from URL or auth.
-    initialize_app_state(session_id="user_session_123") 
+def on_load(e: me.LoadEvent):
+    me.set_theme_mode("dark")  # Force dark mode
+    initialize_app_state()    # Initialize state on first load or reload
 
 @me.page(
-    path="/", # Default page, will render chat_page content
+    path="/",  # Default page
     title="NHS AI Triage",
-    on_load=on_load_main # Apply the on_load handler
+    on_load=on_load
 )
-def main_app_page():
-    # This page can act as a router or directly render the default page.
-    # For simplicity, we'll call the chat_page's rendering function directly.
-    # Ensure chat_page.chat_page_content is the function that builds the UI.
-    chat_page.chat_page_content()
-
+def main_app_container():
+    state = me.state(AppState)
+    with me.box(style=app_container_style()):
+        if state.current_page == "chat":
+            pages.chat_page.chat_page()  # Render the chat page content
+        elif state.current_page == "report":
+            pages.report_page.report_page()  # Render the report page content
+        # Add routing for other pages here if needed
+        
+        # Simple navigation example (can be improved with a proper sidebar/header)
+        # with me.box(style=me.Style(position="fixed", bottom=10, left=10)):
+        #     me.button("Chat", on_click=lambda e: setattr(state, 'current_page', 'chat'))
+        #     me.button("Report", on_click=lambda e: setattr(state, 'current_page', 'report'))
 
 if __name__ == "__main__":
+    # This will automatically discover and run pages if using Mesop CLI
+    # For direct python main.py execution, you might need to specify the app.
+    # However, Mesop's primary run method is `mesop main.py`
     print("Starting Mesop app. Ensure you run with `mesop main.py` or `mesop run main.py`")
-    # To run directly with `python main.py`, you'd typically use Mesop's CLI execution.
-    # For development, `mesop main.py` is standard.
+    # If you must run with `python main.py`, use:
+    # import mesop.cli.execute_module
+    # mesop.cli.execute_module.execute_module()
