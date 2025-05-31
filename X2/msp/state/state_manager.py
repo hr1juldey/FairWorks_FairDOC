@@ -129,11 +129,21 @@ class ClinicalAnalysisState:
     risk_level: str = "ROUTINE"
     risk_color: str = "#4CAF50"
     recommended_action: str = ""
+    # FIXED: Use empty lists instead of None to prevent deserialization errors
     flagged_phrases: List[Dict[str, Any]] = None
     risk_factors: List[str] = None
     analysis_timestamp: str = ""
     nice_protocol: str = ""
     clinical_entities: List[Dict[str, Any]] = None
+    
+    def __post_init__(self):
+        """Initialize None list fields to prevent deserialization errors"""
+        if self.flagged_phrases is None:
+            self.flagged_phrases = []
+        if self.risk_factors is None:
+            self.risk_factors = []
+        if self.clinical_entities is None:
+            self.clinical_entities = []
 
 @me.stateclass  
 class PatientDataState:
@@ -145,10 +155,20 @@ class PatientDataState:
     birth_date: str = ""
     address: str = ""
     phone: str = ""
+    # FIXED: Use empty lists instead of None
     allergies: List[str] = None
     current_medications: List[str] = None
     medical_conditions: List[Dict[str, Any]] = None
     pregnancy_status: bool = False
+    
+    def __post_init__(self):
+        """Initialize None list fields to prevent deserialization errors"""
+        if self.allergies is None:
+            self.allergies = []
+        if self.current_medications is None:
+            self.current_medications = []
+        if self.medical_conditions is None:
+            self.medical_conditions = []
 
 @me.stateclass
 class UploadedFileState:
@@ -168,14 +188,26 @@ class BiasMonitoringState:
     individual_fairness: float = 0.0
     counterfactual_fairness: float = 0.0
     overall_fairness_score: float = 0.0
+    # FIXED: Use empty list instead of None
     bias_flags: List[str] = None
     monitoring_timestamp: str = ""
+    
+    def __post_init__(self):
+        """Initialize None list fields to prevent deserialization errors"""
+        if self.bias_flags is None:
+            self.bias_flags = []
 
 @me.stateclass
 class ReportTabsState:
     """State for report tab management"""
     active_tab: str = "overview"
+    # FIXED: Use empty dict instead of None
     tabs_expanded: Dict[str, bool] = None
+    
+    def __post_init__(self):
+        """Initialize None dict fields to prevent deserialization errors"""
+        if self.tabs_expanded is None:
+            self.tabs_expanded = {"ehr_overview": True, "nice_protocol": True}
 
 @me.stateclass
 class AppState:
@@ -187,7 +219,7 @@ class AppState:
     selected_feature: str = ""
     newsletter_subscribed: bool = False
     
-    # Chat functionality
+    # Chat functionality - FIXED: Use empty list instead of None
     chat_history: List[ChatMessage] = None
     current_input: str = ""
     is_bot_typing: bool = False
@@ -200,50 +232,58 @@ class AppState:
     report_generation_complete: bool = False
     report_error_message: Optional[str] = None
     
-    # Clinical analysis data
-    clinical_analysis: Optional[ClinicalAnalysisState] = None
+    # Clinical analysis data - FIXED: Initialize with actual instance
+    clinical_analysis: ClinicalAnalysisState = None
     
-    # Patient data
-    patient_data: Optional[PatientDataState] = None
+    # Patient data - FIXED: Initialize with actual instance
+    patient_data: PatientDataState = None
     
     # EHR integration
     ehr_data_json: Optional[str] = None
     
-    # Document management
+    # Document management - FIXED: Use empty list instead of None
     uploaded_files: List[UploadedFileState] = None
     
-    # Bias monitoring
-    bias_monitoring: Optional[BiasMonitoringState] = None
+    # Bias monitoring - FIXED: Initialize with actual instance
+    bias_monitoring: BiasMonitoringState = None
     
-    # Report UI state
-    report_tabs: Optional[ReportTabsState] = None
+    # Report UI state - FIXED: Initialize with actual instance
+    report_tabs: ReportTabsState = None
     
-    # Clinical alerts and notifications
+    # Clinical alerts and notifications - FIXED: Use empty list instead of None
     active_alerts: List[Dict[str, Any]] = None
     emergency_escalation: bool = False
+    
+    def __post_init__(self):
+        """Initialize all nested objects and None fields to prevent deserialization errors"""
+        # Initialize list fields
+        if self.chat_history is None:
+            self.chat_history = []
+        if self.uploaded_files is None:
+            self.uploaded_files = []
+        if self.active_alerts is None:
+            self.active_alerts = []
+        
+        # Initialize nested state objects - CRITICAL FIX
+        if self.clinical_analysis is None:
+            self.clinical_analysis = ClinicalAnalysisState()
+        if self.patient_data is None:
+            self.patient_data = PatientDataState()
+        if self.bias_monitoring is None:
+            self.bias_monitoring = BiasMonitoringState()
+        if self.report_tabs is None:
+            self.report_tabs = ReportTabsState()
 
 def initialize_app_state(session_id: str = "default_session"):
     """Initialize comprehensive application state from database."""
     state = me.state(AppState)
     state.session_id = session_id
     
-    # Initialize nested state objects if None
-    if state.clinical_analysis is None:
-        state.clinical_analysis = ClinicalAnalysisState()
-    if state.patient_data is None:
-        state.patient_data = PatientDataState()
-    if state.bias_monitoring is None:
-        state.bias_monitoring = BiasMonitoringState()
-    if state.report_tabs is None:
-        state.report_tabs = ReportTabsState()
-        state.report_tabs.tabs_expanded = {"ehr_overview": True, "nice_protocol": True}
-    if state.uploaded_files is None:
-        state.uploaded_files = []
-    if state.active_alerts is None:
-        state.active_alerts = []
+    # The __post_init__ method will handle initialization of nested objects
+    # No need for manual initialization here since it's done in __post_init__
     
     # Load chat history
-    if state.chat_history is None:
+    if not state.chat_history:  # Changed from None check
         state.chat_history = load_chat_history_from_db(session_id)
         if not state.chat_history:
             add_chat_message("assistant", "Hello! I'm your NHS Digital Triage assistant. How can I help you today?", session_id)
@@ -309,7 +349,7 @@ def initialize_app_state(session_id: str = "default_session"):
 def add_chat_message(role: Role, content: str, session_id: str):
     """Add chat message and update clinical analysis if needed."""
     state = me.state(AppState)
-    if state.chat_history is None:
+    if not state.chat_history:  # Changed from None check
         state.chat_history = []
     
     timestamp_str = datetime.now().strftime("%I:%M %p").lstrip("0")
@@ -342,7 +382,7 @@ def update_clinical_analysis():
     # Calculate urgency and risk assessment
     urgency_data = calculate_urgency_score(chat_data, patient_data_dict)
     
-    # Update clinical analysis state
+    # Update clinical analysis state - Now safe since object exists
     clinical = state.clinical_analysis
     clinical.urgency_score = urgency_data.get("urgency_score", 0.0)
     clinical.risk_level = urgency_data.get("risk_level", "ROUTINE")
@@ -383,9 +423,7 @@ def update_patient_data(patient_updates: Dict[str, Any]):
     """Update patient data from EHR or manual input."""
     state = me.state(AppState)
     
-    if state.patient_data is None:
-        state.patient_data = PatientDataState()
-    
+    # Now safe since patient_data is always initialized
     patient = state.patient_data
     
     # Update patient fields if provided

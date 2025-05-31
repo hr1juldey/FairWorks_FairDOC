@@ -191,7 +191,7 @@ def render_report_not_started_status(state: AppState):
                 padding=me.Padding.symmetric(horizontal=20, vertical=10),
                 border_radius="6px",
                 font_weight="600",
-                border="none",
+                # REMOVED: border="none", - not needed in Mesop
                 cursor="pointer",
                 margin=me.Margin(top=12)
             )
@@ -313,7 +313,7 @@ def render_no_report_available():
                 padding=me.Padding.symmetric(horizontal=24, vertical=12),
                 border_radius="8px",
                 font_weight="600",
-                border="none",
+                # REMOVED: border="none", - not needed in Mesop
                 cursor="pointer"
             )
         )

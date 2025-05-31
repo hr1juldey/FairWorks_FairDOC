@@ -12,7 +12,7 @@ def render_shared_navigation():
     with me.box(style=me.Style(
         background="rgba(255, 255, 255, 0.95)",
         backdrop_filter="blur(10px)",
-        border_bottom="1px solid rgba(19, 102, 217, 0.1)",
+        border=me.Border(bottom=me.BorderSide(width=1, style="solid", color="rgba(19, 102, 217, 0.1)")),
         padding=me.Padding.symmetric(vertical=16),
         position="sticky",
         top="0",
@@ -44,7 +44,7 @@ def render_brand_section():
             on_click=lambda e: me.navigate("/"),
             style=me.Style(
                 background="transparent",
-                border="none",
+                # REMOVED: border="none", - not needed in Mesop
                 font_size="1.5rem",
                 font_weight="700",
                 color=GOVERNMENT_COLORS["primary"],
@@ -60,7 +60,7 @@ def render_nav_links():
             on_click=lambda e: me.navigate("/"),
             style=me.Style(
                 background="transparent",
-                border="none",
+                # REMOVED: border="none", - not needed in Mesop
                 color=GOVERNMENT_COLORS["text_secondary"],
                 font_weight="500",
                 padding=me.Padding.symmetric(horizontal=16, vertical=8),
@@ -73,7 +73,7 @@ def render_nav_links():
             on_click=navigate_to_chat,
             style=me.Style(
                 background="transparent",
-                border="none",
+                # REMOVED: border="none", - not needed in Mesop
                 color=GOVERNMENT_COLORS["text_secondary"],
                 font_weight="500",
                 padding=me.Padding.symmetric(horizontal=16, vertical=8),
@@ -86,7 +86,7 @@ def render_nav_links():
             on_click=navigate_to_report,
             style=me.Style(
                 background="transparent",
-                border="none",
+                # REMOVED: border="none", - not needed in Mesop
                 color=GOVERNMENT_COLORS["text_secondary"],
                 font_weight="500",
                 padding=me.Padding.symmetric(horizontal=16, vertical=8),
@@ -106,7 +106,7 @@ def render_nav_cta():
             padding=me.Padding.symmetric(horizontal=20, vertical=8),
             border_radius="6px",
             font_weight="600",
-            border="none",
+            # REMOVED: border="none", - not needed in Mesop
             cursor="pointer"
         )
     )

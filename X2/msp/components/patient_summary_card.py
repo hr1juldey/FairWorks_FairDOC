@@ -14,7 +14,7 @@ def render_patient_summary_card(patient_data: Optional[Dict[str, Any]] = None):
     if not patient_data:
         render_no_patient_data_card()
         return
-    
+
     with me.box(style=me.Style(
         background="white",
         border=me.Border.all(me.BorderSide(width=1, style="solid", color=GOVERNMENT_COLORS["medium_grey"])),
@@ -110,11 +110,18 @@ def render_medical_alerts(patient_data: Dict[str, Any]):
     # Check for high-risk indicators
     alerts = []
     
-    age = patient_data.get("age", 0)
-    if age > 65:
-        alerts.append("🔸 Elderly patient - Enhanced monitoring recommended")
-    elif age < 18:
-        alerts.append("🔸 Pediatric patient - Age-appropriate protocols required")
+    # FIXED: Proper None handling for age comparison
+    age = patient_data.get("age")
+    if age is not None:  # Only check age if it's not None
+        try:
+            age_int = int(age)  # Convert to int in case it's a string
+            if age_int > 65:
+                alerts.append("🔸 Elderly patient - Enhanced monitoring recommended")
+            elif age_int < 18:
+                alerts.append("🔸 Pediatric patient - Age-appropriate protocols required")
+        except (ValueError, TypeError):
+            # Handle case where age can't be converted to int
+            pass
     
     # Check for pregnancy (if applicable)
     if patient_data.get("pregnancy_status"):
@@ -122,12 +129,12 @@ def render_medical_alerts(patient_data: Dict[str, Any]):
     
     # Allergies
     allergies = patient_data.get("allergies", [])
-    if allergies:
+    if allergies and len(allergies) > 0:
         alerts.append(f"⚠️ Known allergies: {', '.join(allergies)}")
     
     # Current medications
     medications = patient_data.get("current_medications", [])
-    if medications:
+    if medications and len(medications) > 0:
         alerts.append(f"💊 Current medications: {len(medications)} active prescriptions")
     
     if alerts:

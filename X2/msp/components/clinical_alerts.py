@@ -55,15 +55,12 @@ def render_clinical_alert(
     
     with me.box(style=me.Style(
         background=style_config["background"],
-        border=me.Border.all(me.BorderSide(
-            width=1,
-            style="solid", 
-            color=style_config["border_color"]
-        )),
-        border_left=me.BorderSide(
-            width=4,
-            style="solid",
-            color=style_config["border_color"]
+        # FIXED: Use proper Border object instead of border_left parameter
+        border=me.Border(
+            top=me.BorderSide(width=1, style="solid", color=style_config["border_color"]),
+            right=me.BorderSide(width=1, style="solid", color=style_config["border_color"]),
+            bottom=me.BorderSide(width=1, style="solid", color=style_config["border_color"]),
+            left=me.BorderSide(width=4, style="solid", color=style_config["border_color"])
         ),
         border_radius="8px",
         padding=me.Padding.all(16),
