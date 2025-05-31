@@ -7,7 +7,7 @@ import mesop as me
 
 # Government Digital Infrastructure Color Palette
 GOVERNMENT_COLORS = {
-    "primary": "#1366D9",           # Government Blue
+    "primary": "#1366D9",          # Government Blue
     "primary_dark": "#0D47A1",     # Darker Blue  
     "secondary": "#00A884",        # WhatsApp Green (trust/health)
     "accent": "#FF6B35",           # Saffron Orange (energy)
