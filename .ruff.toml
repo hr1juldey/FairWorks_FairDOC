@@ -41,9 +41,10 @@ ignore = [
   "E501",  # line-too-long (handled by line-length)
   "F401",  # unused imports (often typing-only)
   "D",     # disable all docstring rules
-  "E402", # Module level import not on top,
-  "E305", # 2 lines blank
+  "E402",  # Module level import not on top,
+  "E305",  # 2 lines blank
   "W293",  # blank line contains whitespace (auto-fixable) :contentReference[oaicite:11]{index=11}
+  "W291",  # whitespace
 ]
 
 # Files & directories to skip entirely

@@ -22,7 +22,7 @@ class SmoothScrollExtension:
     def scroll_into_view_smooth(
         key: str,
         behavior: ScrollBehavior = "smooth",
-        block: ScrollBlock = "start", 
+        block: ScrollBlock = "start",
         inline: ScrollInline = "nearest",
         duration_ms: int = 500,
         easing: Literal["linear", "ease-in", "ease-out", "ease-in-out"] = "ease-out"
@@ -33,7 +33,7 @@ class SmoothScrollExtension:
         Args:
             key: The unique identifier of the component to scroll to
             behavior: Scroll animation type ("auto", "smooth", "instant")
-            block: Vertical alignment ("start", "center", "end", "nearest") 
+            block: Vertical alignment ("start", "center", "end", "nearest")
             inline: Horizontal alignment ("start", "center", "end", "nearest")
             duration_ms: Duration of smooth scroll animation in milliseconds
             easing: Animation easing function
@@ -45,7 +45,7 @@ class SmoothScrollExtension:
             def on_click(e: me.ClickEvent):
                 yield from smooth_scroll_to_element(
                     key="chat_end_anchor",
-                    behavior="smooth", 
+                    behavior="smooth",
                     block="end",
                     duration_ms=300
                 )
@@ -65,7 +65,7 @@ class SmoothScrollExtension:
         yield from SmoothScrollExtension._animate_smooth_scroll(
             key=key,
             block=block,
-            inline=inline, 
+            inline=inline,
             duration_ms=duration_ms,
             easing=easing
         )
@@ -93,7 +93,7 @@ class SmoothScrollExtension:
         me.scroll_into_view(key=key)
         yield
     
-    @staticmethod 
+    @staticmethod
     def _scroll_animation_feedback(duration_ms: int, easing: str) -> Generator[None, None, None]:
         """
         Provide visual feedback during scroll animation.
@@ -110,7 +110,7 @@ class SmoothScrollExtension:
             # Apply easing function
             if easing == "ease-in":
                 eased_progress = progress * progress
-            elif easing == "ease-out": 
+            elif easing == "ease-out":
                 eased_progress = 1 - (1 - progress) * (1 - progress)
             elif easing == "ease-in-out":
                 if progress < 0.5:
@@ -143,7 +143,7 @@ class SmoothScrollExtension:
         yield from SmoothScrollExtension._animate_smooth_scroll(
             key="app_top_anchor",  # Assumes there's a top anchor
             block="start",
-            inline="nearest", 
+            inline="nearest",
             duration_ms=duration_ms,
             easing="ease-out"
         )
@@ -164,7 +164,7 @@ class SmoothScrollExtension:
             key="app_bottom_anchor",  # Assumes there's a bottom anchor
             block="end",
             inline="nearest",
-            duration_ms=duration_ms, 
+            duration_ms=duration_ms,
             easing="ease-out"
         )
 
@@ -174,7 +174,7 @@ smooth_scroll = SmoothScrollExtension()
 # Convenience functions that can be imported directly
 def smooth_scroll_to_element(
     key: str,
-    behavior: ScrollBehavior = "smooth", 
+    behavior: ScrollBehavior = "smooth",
     block: ScrollBlock = "end",
     inline: ScrollInline = "nearest",
     duration_ms: int = 300
@@ -192,7 +192,7 @@ def smooth_scroll_to_element(
     yield from smooth_scroll.scroll_into_view_smooth(
         key=key,
         behavior=behavior,
-        block=block, 
+        block=block,
         inline=inline,
         duration_ms=duration_ms
     )
@@ -284,7 +284,7 @@ def scroll_progress_indicator():
             style=me.Style(
                 position="fixed",
                 top=0,
-                left=0, 
+                left=0,
                 width=f"{state.scroll_progress * 100}%",
                 height="2px",
                 background="#00A884",  # WhatsApp green

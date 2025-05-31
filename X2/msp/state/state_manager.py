@@ -3,7 +3,7 @@ import mesop as me
 from typing import List, Literal, Optional
 from datetime import datetime
 import sqlite3
-import json # Import json for serialization/deserialization
+import json  # Import json for serialization/deserialization
 from utils.path_setup import setup_project_paths  # Ensures paths are set up
 setup_project_paths()
 
@@ -37,7 +37,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS app_sessions (
             session_id TEXT PRIMARY KEY,
             current_input TEXT,
-            is_bot_typing INTEGER, 
+            is_bot_typing INTEGER,
             last_active TEXT
             /* New columns will be added below if they don't exist */
         )
@@ -66,7 +66,7 @@ def init_db():
     conn.commit()
     conn.close()
 
-init_db() # Initialize DB when module is loaded
+init_db()  # Initialize DB when module is loaded
 
 @me.stateclass
 class ChatMessage:
@@ -75,7 +75,7 @@ class ChatMessage:
     timestamp: str = ""
     message_id: str = ""
 
-class ReportContentStructure: # Conceptual model, not a stateclass
+class ReportContentStructure:  # Conceptual model, not a stateclass
     title: str = "Medical Assessment Report"
     sections: list[dict] = None
     is_generating: bool = False
@@ -94,6 +94,9 @@ class AppState:
     report_generation_progress: str = ""
     report_generation_complete: bool = False
     report_error_message: Optional[str] = None
+    home_page_viewed: bool = False
+    selected_feature: str = ""
+    newsletter_subscribed: bool = False
 
 def initialize_app_state(session_id: str = "default_session"):
     state = me.state(AppState)
@@ -116,8 +119,8 @@ def initialize_app_state(session_id: str = "default_session"):
         state.report_error_message = session_data.get("report_error_message")
     else:
         save_session_data_to_db(
-            session_id, 
-            state.current_input, 
+            session_id,
+            state.current_input,
             state.is_bot_typing,
             state.report_data_json,
             state.report_is_generating,
@@ -166,8 +169,8 @@ def load_chat_history_from_db(session_id: str) -> list[ChatMessage]:
     return [ChatMessage(role=row[0], content=row[1], timestamp=row[2], message_id=row[3]) for row in rows]
 
 def save_session_data_to_db(
-    session_id: str, 
-    current_input: str, 
+    session_id: str,
+    current_input: str,
     is_bot_typing: bool,
     report_data_json: Optional[str],
     report_is_generating: bool,
@@ -184,13 +187,13 @@ def save_session_data_to_db(
             report_data_json, report_is_generating, report_generation_progress,
             report_generation_complete, report_error_message
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) 
-    ''', ( # Ensure 9 placeholders match 9 values
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (  # Ensure 9 placeholders match 9 values
         session_id, current_input, 1 if is_bot_typing else 0, datetime.now().isoformat(),
-        report_data_json, 
-        1 if report_is_generating else 0, 
+        report_data_json,
+        1 if report_is_generating else 0,
         report_generation_progress,
-        1 if report_generation_complete else 0, 
+        1 if report_generation_complete else 0,
         report_error_message
     ))
     conn.commit()
@@ -198,23 +201,23 @@ def save_session_data_to_db(
 
 def load_session_data_from_db(session_id: str) -> Optional[dict]:
     conn = sqlite3.connect(DATABASE_FILE)
-    conn.row_factory = sqlite3.Row 
+    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     
     # Ensure all columns exist before trying to select them
-    existing_columns = [col[1] for col in cursor.execute(f"PRAGMA table_info(app_sessions);").fetchall()]
+    existing_columns = [col[1] for col in cursor.execute("PRAGMA table_info(app_sessions);").fetchall()]
     
     # Columns to select based on what's expected by AppState and what actually exists
     select_cols = ["current_input", "is_bot_typing"]
     report_cols_to_check = [
-        "report_data_json", "report_is_generating", 
-        "report_generation_progress", "report_generation_complete", 
+        "report_data_json", "report_is_generating",
+        "report_generation_progress", "report_generation_complete",
         "report_error_message"
     ]
     for col in report_cols_to_check:
         if col in existing_columns:
             select_cols.append(col)
-        else: # If column doesn't exist, we won't try to select it
+        else:  # If column doesn't exist, we won't try to select it
             print(f"Debug: Column '{col}' not found in 'app_sessions' for loading, will use default.")
 
     query = f"SELECT {', '.join(select_cols)} FROM app_sessions WHERE session_id = ?"
@@ -244,8 +247,8 @@ def update_report_state_in_app_and_db(
     if generation_complete is not None:
         state.report_generation_complete = generation_complete
     # Handle error_message, ensuring it can be None
-    state.report_error_message = error_message if error_message is not None else state.report_error_message # Keep existing if None passed
-    if error_message == "": # Explicitly clear error message if empty string passed
+    state.report_error_message = error_message if error_message is not None else state.report_error_message  # Keep existing if None passed
+    if error_message == "":  # Explicitly clear error message if empty string passed
         state.report_error_message = None
 
 

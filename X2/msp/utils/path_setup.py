@@ -11,7 +11,7 @@ def setup_project_paths():
 
     # Assuming this file is in msp/utils/
     # Project root is two levels up from here (msp/)
-    project_root = Path(__file__).resolve().parent.parent
+    project_root = Path(__file__).resolve().parent.parent.parent
     
     paths_to_add = [
         str(project_root),  # Adds 'msp' directory to sys.path
