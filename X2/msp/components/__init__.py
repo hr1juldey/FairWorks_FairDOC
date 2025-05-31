@@ -64,6 +64,7 @@ from .report_analysis import (
     render_differential_diagnosis
 )
 
+# FIXED: Only import functions that actually exist in report_transcript.py
 from .report_transcript import (
     render_transcript_tab,
     render_transcript_overview,
@@ -72,9 +73,17 @@ from .report_transcript import (
     render_clinical_inference_summary,
     render_quoted_statement,
     render_transcript_message,
-    render_highlighted_content,
     render_category_summary,
-    render_stat_card
+    render_stat_card,
+    render_no_quotes_message,
+    render_quote_header,
+    render_quote_content,
+    render_clinical_inference,
+    render_quote_footer,
+    render_message_header,
+    render_message_content,
+    render_no_clinical_concerns
+    # REMOVED: render_highlighted_content (moved to utils)
 )
 
 from .report_display import (
@@ -119,14 +128,13 @@ from .patient_summary_card import (
 from .document_uploader import (
     render_medical_document_uploader,
     handle_document_upload,
-    validate_medical_document,
+    simulate_upload_progress,
+    view_file_action,
+    remove_file_action,
     render_upload_progress,
-    render_uploaded_files_list,
+    render_uploaded_files_section,
     render_file_item,
     render_compliance_notice,
-    format_file_size,
-    view_file,
-    remove_file,
     DocumentUploaderState
 )
 
@@ -178,7 +186,7 @@ __all__ = [
     "render_ai_confidence_section",
     "render_differential_diagnosis",
     
-    # Reports - Transcript
+    # Reports - Transcript (UPDATED: removed non-existent functions)
     "render_transcript_tab",
     "render_transcript_overview",
     "render_key_quotes_section",
@@ -186,9 +194,16 @@ __all__ = [
     "render_clinical_inference_summary",
     "render_quoted_statement",
     "render_transcript_message",
-    "render_highlighted_content",
     "render_category_summary",
     "render_stat_card",
+    "render_no_quotes_message",
+    "render_quote_header",
+    "render_quote_content",
+    "render_clinical_inference",
+    "render_quote_footer",
+    "render_message_header",
+    "render_message_content",
+    "render_no_clinical_concerns",
     
     # Reports - Display & Generation
     "render_report_header",
@@ -221,17 +236,16 @@ __all__ = [
     "render_demographic_item",
     "render_medical_alerts",
     
-    # Document Uploader
+    # Document Uploader (UPDATED: with actual function names)
     "render_medical_document_uploader",
     "handle_document_upload",
-    "validate_medical_document",
+    "simulate_upload_progress",
+    "view_file_action",
+    "remove_file_action",
     "render_upload_progress",
-    "render_uploaded_files_list",
+    "render_uploaded_files_section",
     "render_file_item", 
     "render_compliance_notice",
-    "format_file_size",
-    "view_file",
-    "remove_file",
     "DocumentUploaderState",
     
     # Chat Components
