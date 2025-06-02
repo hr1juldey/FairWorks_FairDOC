@@ -1,31 +1,22 @@
 # msp/state/clinical_states.py
 
-import mesop as me
+from dataclasses import dataclass, field
 from typing import List, Dict, Any
 
-@me.stateclass
+@dataclass
 class ClinicalAnalysisState:
     """State for clinical analysis results"""
     urgency_score: float = 0.0
     risk_level: str = "ROUTINE"
     risk_color: str = "#4CAF50"
     recommended_action: str = ""
-    flagged_phrases: List[Dict[str, Any]] = None
-    risk_factors: List[str] = None
+    flagged_phrases: List[Dict[str, Any]] = field(default_factory=list)
+    risk_factors: List[str] = field(default_factory=list)
     analysis_timestamp: str = ""
     nice_protocol: str = ""
-    clinical_entities: List[Dict[str, Any]] = None
-    
-    def __post_init__(self):
-        """Initialize None list fields"""
-        if self.flagged_phrases is None:
-            self.flagged_phrases = []
-        if self.risk_factors is None:
-            self.risk_factors = []
-        if self.clinical_entities is None:
-            self.clinical_entities = []
+    clinical_entities: List[Dict[str, Any]] = field(default_factory=list)
 
-@me.stateclass
+@dataclass
 class BiasMonitoringState:
     """State for AI bias monitoring and fairness metrics"""
     demographic_parity: float = 0.0
@@ -33,10 +24,5 @@ class BiasMonitoringState:
     individual_fairness: float = 0.0
     counterfactual_fairness: float = 0.0
     overall_fairness_score: float = 0.0
-    bias_flags: List[str] = None
+    bias_flags: List[str] = field(default_factory=list)
     monitoring_timestamp: str = ""
-    
-    def __post_init__(self):
-        """Initialize None list fields"""
-        if self.bias_flags is None:
-            self.bias_flags = []

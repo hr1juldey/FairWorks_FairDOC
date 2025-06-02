@@ -1,15 +1,14 @@
 # msp/state/core_states.py
 
 import mesop as me
-from typing import List, Literal, Optional, Dict, Any, TYPE_CHECKING
+from typing import List, Literal, Optional, Dict, Any
 from datetime import datetime
 
-# Import types only for type checking to avoid circular imports
-if TYPE_CHECKING:
-    from .clinical_states import ClinicalAnalysisState, BiasMonitoringState
-    from .patient_states import PatientDataState
-    from .document_states import UploadedFileState
-    from .ui_states import ReportTabsState
+# Import nested state classes directly (not in TYPE_CHECKING)
+from .clinical_states import ClinicalAnalysisState, BiasMonitoringState
+from .patient_states import PatientDataState
+from .document_states import UploadedFileState
+from .ui_states import ReportTabsState
 
 Role = Literal["user", "assistant", "system"]
 
@@ -43,12 +42,12 @@ class AppState:
     report_generation_complete: bool = False
     report_error_message: Optional[str] = None
     
-    # FIXED: Proper type hints using TYPE_CHECKING imports
-    clinical_analysis: Optional['ClinicalAnalysisState'] = None
-    patient_data: Optional['PatientDataState'] = None
-    uploaded_files: Optional[List['UploadedFileState']] = None
-    bias_monitoring: Optional['BiasMonitoringState'] = None
-    report_tabs: Optional['ReportTabsState'] = None
+    # FIXED: Direct type references (no forward references)
+    clinical_analysis: Optional[ClinicalAnalysisState] = None
+    patient_data: Optional[PatientDataState] = None
+    uploaded_files: Optional[List[UploadedFileState]] = None
+    bias_monitoring: Optional[BiasMonitoringState] = None
+    report_tabs: Optional[ReportTabsState] = None
     
     # EHR integration
     ehr_data_json: Optional[str] = None
@@ -59,12 +58,6 @@ class AppState:
     
     def __post_init__(self):
         """Initialize all nested objects and None fields"""
-        # Import here to avoid circular imports (runtime imports)
-        from .clinical_states import ClinicalAnalysisState, BiasMonitoringState
-        from .document_states import UploadedFileState
-        from .ui_states import ReportTabsState
-        from .patient_states import PatientDataState
-        
         # Initialize list fields
         if self.chat_history is None:
             self.chat_history = []
