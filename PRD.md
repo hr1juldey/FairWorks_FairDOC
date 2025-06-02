@@ -665,17 +665,32 @@ flowchart TB
 
 ### Cost Estimates per Node (Illustrative for Cloud)
 
-| Component      | Spec                               | Cost/Month (Est. USD) | Notes                                     |
-|----------------|------------------------------------|-----------------------|-------------------------------------------|
-| GPU Node       | 8 vCPU, 32 GB RAM, NVIDIA T4 (16 GB) | $500 – $800           | For AI/ML inference                       |
-| CPU Node       | 4 vCPU, 16 GB RAM                  | $100 – $150           | App server, Celery (non-GPU tasks)        |
-| Redis Instance | 3 GB RAM, 2 vCPU                   | $30                   | Managed service (e.g., ElastiCache)       |
-| PostgreSQL Inst| db.r5.large (2 vCPU, 16 GB RAM)    | $200                  | Managed service (e.g., RDS)               |
-| ChromaDB       | 2 vCPU, 8 GB RAM                   | $100                  | Self-hosted or managed vector DB          |
-| MinIO/S3       | Variable (storage + egress)        | $50+                  | Based on usage                            |
-| **Total (per zone estimate)** |                                    | **\~$1000 - $1300+** | Excludes bandwidth, extensive logging etc |
+Certainly! Here's an updated and detailed infrastructure cost breakdown for Fairdoc, incorporating current AWS pricing and additional components:
 
-*(Costs are highly variable based on region, usage, and reserved instances vs. on-demand)*
+---
+
+## 💰 Fairdoc Infrastructure Cost Breakdown (Monthly Estimates)
+
+| **Component**            | **Specification**                    | **Estimated Monthly Cost (USD)** | **Notes**                                                                                    |
+| ------------------------ | ------------------------------------ | -------------------------------- | -------------------------------------------------------------------------------------------- |
+| **GPU Node**             | 8 vCPU, 32 GB RAM, NVIDIA T4 (16 GB) | \$378 – \$530                    | AWS g4dn.xlarge: \$0.526/hr (~~\$378/month); SageMaker: \$0.7364/hr (~~\$530/month)          |
+| **CPU Node**             | 4 vCPU, 16 GB RAM                    | \$100 – \$150                    | Suitable for application server and Celery tasks                                             |
+| **Redis Instance**       | 3 GB RAM, 2 vCPU                     | \$50 – \$100                     | AWS ElastiCache: \$0.032/hr for cache.t4g.small (\~\$23/month); higher for larger instances  |
+| **PostgreSQL Instance**  | db.r5.large (2 vCPU, 16 GB RAM)      | \$200                            | AWS RDS pricing for db.r5.large                                                              |
+| **ChromaDB**             | 2 vCPU, 8 GB RAM                     | \$100                            | Self-hosted or managed vector database                                                       |
+| **MinIO/S3 Storage**     | Variable (storage + egress)          | \$50+                            | Based on usage; AWS S3 pricing applies                                                       |
+| **Monitoring & Logging** | Prometheus, ELK Stack                | \$50 – \$100                     | Costs for data ingestion and storage                                                         |
+| **Bandwidth**            | Variable                             | \$100+                           | Depends on data transfer volumes                                                             |
+| **Total Estimated Cost** |                                      | **\$1,028 – \$1,330+**           | Excludes potential savings from reserved instances or spot pricing                           |
+
+-----
+
+**Additional Considerations:**
+
+* **Cost Optimization:** Utilizing spot instances or reserved instances can lead to significant savings, especially for GPU nodes.
+* **Scalability:** Costs may vary based on usage patterns, data transfer, and storage requirements.
+* **Compliance and Security:** Ensure that all components meet necessary compliance standards (e.g., HIPAA, GDPR) and implement robust security measures.
+
 
 -----
 
