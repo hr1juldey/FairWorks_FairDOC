@@ -39,6 +39,8 @@ NICE_PROTOCOL_MAPPING = {
     "anaphylaxis": "NICE CG134"
 }
 
+
+
 def calculate_urgency_score(chat_messages: List[Dict], patient_data: Optional[Dict] = None) -> Dict[str, Any]:
     """Calculate urgency score based on chat content and patient data"""
     
@@ -51,7 +53,6 @@ def calculate_urgency_score(chat_messages: List[Dict], patient_data: Optional[Di
         if message.get("role") == "user":
             content = message.get("content", "").lower()
             
-            # Check for red flag keywords
             for category, keywords in CLINICAL_RED_FLAGS.items():
                 for keyword in keywords:
                     if keyword in content:
@@ -60,23 +61,31 @@ def calculate_urgency_score(chat_messages: List[Dict], patient_data: Optional[Di
                             "phrase": keyword,
                             "category": category,
                             "severity": "high" if score > 0.6 else "medium",
-                            "message": content[:100] + "..." if len(content) > 100 else content
+                            "message": content[:100] + "..." if len(content) > 100 else content,
+                            "timestamp": message.get("timestamp", datetime.now().isoformat())
                         })
     
     # Apply patient data modifiers
     if patient_data:
-        age = patient_data.get("age", 0)
+        age_value = patient_data.get("age")
         conditions = patient_data.get("conditions", [])
         
-        # Age risk factors
-        if age > 65 or age < 5:
-            score += 0.1
-            risk_factors.append("Age-related risk factor")
-            
-        # Chronic conditions
+        # FIXED: Proper None handling for age comparison
+        if age_value is not None:
+            try:
+                age = int(age_value)
+                # FIXED: Now safe to compare since age is guaranteed to be an int
+                if age > 65 or age < 5:
+                    score += 0.1
+                    risk_factors.append("Age-related risk factor")
+            except (ValueError, TypeError):
+                # Skip age processing if invalid
+                pass
+        
+        # Process chronic conditions safely
         high_risk_conditions = ["diabetes", "copd", "heart disease", "cancer"]
         for condition in conditions:
-            if any(risk_cond in condition.lower() for risk_cond in high_risk_conditions):
+            if any(risk_cond in str(condition).lower() for risk_cond in high_risk_conditions):
                 score += 0.15
                 risk_factors.append(f"High-risk condition: {condition}")
     

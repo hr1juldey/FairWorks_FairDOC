@@ -1,54 +1,78 @@
-import mesop as me
-from typing import Callable, Any, Generator  # Import Callable
-from utils.path_setup import setup_project_paths  # Ensures paths are set up
-setup_project_paths()
-from styles.whatsapp_dark_theme import (
-    WHATSAPP_DARK_COLORS,
-    chat_input_bar_style,
-    input_field_wrapper_style,
-    native_textarea_style,
-    icon_button_style
-)
-# from state.state_manager import AppState # AppState is not directly used here if values are passed
+# msp/components/chat_input.py
 
-@me.component
+from utils.path_setup import setup_project_paths
+setup_project_paths()
+
+import mesop as me
+from typing import Callable
+from styles.government_digital_styles import GOVERNMENT_COLORS
+
 def render_chat_input(
     current_input_value: str,
-    # Use typing.Callable with the correct event types that the HANDLER functions expect
-    on_input_change: Callable[[me.InputEvent], Any | Generator[None, None, None]],
-    on_input_blur: Callable[[me.InputBlurEvent], Any | Generator[None, None, None]],
-    on_send_click: Callable[[me.ClickEvent], Any | Generator[None, None, None]],  # Assuming it's a click event from content_button
+    on_input_change: Callable,
+    on_input_blur: Callable,
+    on_send_click: Callable,
     is_bot_typing: bool
 ):
-    with me.box(style=chat_input_bar_style()):
-        with me.content_button(type="icon", style=icon_button_style()):
-            me.icon("mood", style=me.Style(color=WHATSAPP_DARK_COLORS["icon_color"]))
+    """Render Signal-style chat input area with full-width textarea."""
+    with me.box(style=me.Style(
+        padding=me.Padding.symmetric(horizontal=16, vertical=12),
+        background=GOVERNMENT_COLORS["bg_secondary"],
+        border=me.Border(top=me.BorderSide(width=1, style="solid", color=GOVERNMENT_COLORS["light_grey"])),
+        display="flex",
+        align_items="flex-end",  # Align items to bottom for multi-line input that grows
+        gap=12
+    )):
+        # Attachment button (placeholder, can be added later)
+        # with me.content_button(type="icon", on_click=lambda e: print("Attach clicked")):
+        #     me.icon("attach_file")
 
-        with me.content_button(type="icon", style=icon_button_style()):  # Placeholder for file upload
-            me.icon("attach_file", style=me.Style(color=WHATSAPP_DARK_COLORS["icon_color"]))
- 
-        with me.box(style=input_field_wrapper_style()):  # This container defines the visual bounds
+        # Text input area container - this box needs to grow
+        with me.box(style=me.Style(
+            flex_grow=1,  # Key: Allow this box to take up available horizontal space
+            background="white",
+            border_radius="20px",  # Rounded like Signal/WhatsApp
+            border=me.Border.all(me.BorderSide(width=1, style="solid", color=GOVERNMENT_COLORS["medium_grey"])),
+            padding=me.Padding.symmetric(horizontal=12, vertical=6),  # Adjusted padding for better fit
+            display="flex",  # Use flex to align textarea and potential emoji button
+            align_items="flex-end"  # Align items to bottom within this rounded box
+        )):
             me.native_textarea(
-                key="chat_main_input",
                 value=current_input_value,
-                placeholder="Type a message",
-                autosize=False,
-                min_rows=2,
-                max_rows=12,
-                style=native_textarea_style(),
-                on_input=on_input_change,  # This expects a function like: def handler(e: me.InputEvent): ...
-                on_blur=on_input_blur,   # This expects a function like: def handler(e: me.InputBlurEvent): ...
-                # If using Enter to send via shortcuts, on_send_click would need to handle TextareaShortcutEvent
-                # shortcuts={me.Shortcut(key="Enter"): on_send_click}
+                on_blur=on_input_blur,
+                on_input=on_input_change,
+                placeholder="Type a message...",
+                autosize=True,
+                min_rows=1,
+                max_rows=5,  # Limit max rows like Signal
+                style=me.Style(
+                    width="100%",  # Textarea will take full width of its parent flex item
+                    background="transparent",
+                    border=None,  # Remove default textarea border
+                    outline="none",  # Remove default textarea outline
+                    font_size="1rem",
+                    line_height="1.4",
+                    color=GOVERNMENT_COLORS["text_primary"],
+                    padding=me.Padding.all(0)  # Remove default padding of native_textarea if any conflicts
+                )
             )
+            # Placeholder for Emoji button (if you add it later)
+            # with me.content_button(type="icon", style=me.Style(margin=me.Margin(left=8))):
+            #     me.icon("sentiment_satisfied")
 
-        can_send = current_input_value.strip() != "" and not is_bot_typing
-        send_icon_color = WHATSAPP_DARK_COLORS["green_accent"] if can_send else WHATSAPP_DARK_COLORS["icon_color"]
-
+        # Send button (or mic button logic if input is empty)
+        send_enabled = len(current_input_value.strip()) > 0 and not is_bot_typing
         with me.content_button(
             type="icon",
-            on_click=on_send_click,  # This expects a function like: def handler(e: me.ClickEvent): ...
-            disabled=not can_send,
-            style=icon_button_style()
+            on_click=on_send_click,
+            disabled=not send_enabled,
+            style=me.Style(
+                background=GOVERNMENT_COLORS["primary"] if send_enabled else GOVERNMENT_COLORS["medium_grey"],
+                color="white",
+                width=40,  # Fixed size for icon button
+                height=40,  # Fixed size for icon button
+                border_radius="50%",  # Circular button
+                flex_shrink=0  # Prevent send button from shrinking
+            )
         ):
-            me.icon("send", style=me.Style(color=send_icon_color))
+            me.icon("send")
