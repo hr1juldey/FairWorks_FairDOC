@@ -630,6 +630,8 @@ flowchart TB
 
 ```
 
+-----
+
 * **v0 Focus:** PostgreSQL for `case_reports` (using Pydantic models like `CaseReportV0`) and `attachments`. MinIO for storing uploaded files and the final PDF report.
 
 ### Network Layer (Specialist Marketplace)
