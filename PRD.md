@@ -1307,7 +1307,7 @@ SOFTWARE.
 
 ## 14\. 📚 References
 
-*(From Prompt & General Knowledge)*
+*(From Deep Research)*
 
   * **Digital Public Infrastructure (DPI):**
       * Stanford Social Innovation Review – Digital Public Infrastructure for the Developing World
