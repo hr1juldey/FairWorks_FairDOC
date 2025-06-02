@@ -606,19 +606,27 @@ flowchart TB
 -----
 
 ```mermaid
+---
+config:
+  layout: elk
+  theme: neo-dark
+---
 flowchart TB
-  V["🏥 EHR Integration<br/>(🚫 Not Available in v0)"]:::data
-  W["📑 FHIR R4 API<br/>(🚫 Not Available in v0)"]:::data
-  X["🗄️ PostgreSQL DB<br/>(Users, Case Reports, Attachments)"]:::data
-  Y["📦 MinIO Object Storage<br/>(Uploaded Files, PDF Reports)"]:::data
-
-  subgraph "💾 Data Layer - Core Components (v0)"
+ subgraph subGraph0["💾 Data Layer - Core Components (v0)"]
+        W["📑 FHIR R4 API<br>(🚫 Not Available in v0)"]
+        V["🏥 EHR Integration<br>(🚫 Not Available in v0)"]
+        X["🗄️ PostgreSQL DB<br>(Users, Case Reports, Attachments)"]
+        Y["📦 MinIO Object Storage<br>(Uploaded Files, PDF Reports)"]
+  end
     V --> W
     W --> X
     X --> Y
-  end
+     V:::data
+     W:::data
+     X:::data
+     Y:::data
+    classDef data fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px,color:#1B5E20
 
-  classDef data fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px,color:#1B5E20;
 
 ```
 
