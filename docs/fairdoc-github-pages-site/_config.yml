@@ -1,0 +1,33 @@
+# _config.yml
+
+theme: jekyll-theme-minimal # Or choose another GitHub Pages supported theme like jekyll-theme-cayman, jekyll-theme-merlot
+title: Fairdoc AI Documentation
+description: Open-Source Digital Public Infrastructure for Healthcare - Product Requirements and Documentation
+logo: # Optional: add a URL to a logo image if you have one
+
+# Navigation (some themes might use this to build a nav bar)
+# You can also manage navigation manually in index.md or with includes for more control.
+# navigation:
+#   - title: Home
+#     url: /
+#   - title: Vision & Goals
+#     url: /vision-and-goals
+#   - title: Features
+#     url: /features/
+#   - title: Architecture
+#     url: /architecture/
+#   - title: Developer Guide
+#     url: /developer-guide/
+#   - title: Roadmap
+#     url: /roadmap-timeline/
+
+# Markdown settings
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
+# Plugins (GitHub Pages supports a limited set by default)
+plugins:
+  - jekyll-feed
+  # - jekyll-seo-tag # Good for SEO
