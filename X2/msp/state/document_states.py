@@ -1,8 +1,8 @@
 # msp/state/document_states.py
 
-import mesop as me
+from dataclasses import dataclass
 
-@me.stateclass
+@dataclass
 class UploadedFileState:
     """State for uploaded medical documents"""
     file_id: str = ""

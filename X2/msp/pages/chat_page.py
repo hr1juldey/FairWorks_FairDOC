@@ -38,6 +38,7 @@ def on_chat_page_load(e: me.LoadEvent):
         sidebar_state.is_expanded = True
         sidebar_state._initialized = True
 
+# FIXED: Added missing closing parenthesis
 @me.page(
     path="/chat",
     title="Fairdoc AI - Secure Chat",
@@ -140,8 +141,9 @@ def render_typing_indicator():
         align_items="center",
         gap=8
     )):
-        # Simple typing indicator - could be enhanced with animation
-        me.progress_spinner(size="small")
+        # Control size via container
+        with me.box(style=me.Style(width=16, height=16)):
+            me.progress_spinner()
         me.text("Assistant is typing...", style=me.Style(
             font_style="italic",
             font_size="0.9rem",
@@ -149,7 +151,6 @@ def render_typing_indicator():
         ))
 
 # Event Handlers following Mesop best practices
-
 def handle_input_change(event: me.InputEvent):
     """Handle input change events - regular function pattern"""
     state = me.state(AppState)
@@ -213,66 +214,3 @@ def handle_send_message_click(event: me.ClickEvent):
 
     # Step 6: Final smooth scroll to bottom
     yield from whatsapp_smooth_scroll("chat_end_anchor")
-
-# Sidebar management functions following Mesop component patterns
-
-def toggle_sidebar_expanded():
-    """Toggle sidebar expansion state"""
-    sidebar_state = me.state(ChatSidebarState)
-    sidebar_state.is_expanded = not sidebar_state.is_expanded
-
-def update_sidebar_search(search_term: str):
-    """Update sidebar search term"""
-    sidebar_state = me.state(ChatSidebarState)
-    sidebar_state.search_term = search_term
-
-def select_chat_from_sidebar(session_id: str):
-    """Select a chat session from sidebar"""
-    # Update sidebar state
-    sidebar_state = me.state(ChatSidebarState)
-    sidebar_state.active_chat_session_id = session_id
-    
-    # Update main app state
-    app_state = me.state(AppState)
-    if app_state.session_id != session_id:
-        # Load the selected chat session
-        app_state.session_id = session_id
-        initialize_app_state(session_id)
-
-# Utility functions for chat management
-
-def start_new_chat_session():
-    """Start a new chat session following Mesop state patterns"""
-    app_state = me.state(AppState)
-    sidebar_state = me.state(ChatSidebarState)
-    
-    # Generate new session ID
-    new_session_id = "chat_session_" + datetime.now().strftime("%Y%m%d_%H%M%S")
-    
-    # Update states
-    app_state.session_id = new_session_id
-    sidebar_state.active_chat_session_id = new_session_id
-    
-    # Initialize new session
-    initialize_app_state(new_session_id)
-
-def get_chat_sessions_for_sidebar():
-    """Get chat sessions for sidebar display - placeholder function"""
-    # This would typically fetch from database
-    # Following the pattern from the fancy chat example
-    return [
-        {
-            "session_id": "1", 
-            "patient_name": "John Doe", 
-            "last_message": "Thank you for your help!", 
-            "timestamp": "10:30 AM", 
-            "unread_count": 0
-        },
-        {
-            "session_id": "2", 
-            "patient_name": "Jane Smith", 
-            "last_message": "I'm feeling better now.", 
-            "timestamp": "Yesterday", 
-            "unread_count": 2
-        }
-    ]

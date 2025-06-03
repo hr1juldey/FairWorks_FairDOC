@@ -1,6 +1,6 @@
 import asyncio
 import logging
-import utils.path_setup # Ensures paths are set up
+import utils.path_setup  # Ensures paths are set up
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -15,10 +15,10 @@ except ImportError:
 
 async def get_ollama_response(prompt: str, history: list = None) -> str:
     if not OLLAMA_AVAILABLE:
-        await asyncio.sleep(1) # Simulate network delay
+        await asyncio.sleep(1)  # Simulate network delay
         return "I am a mock assistant. Ollama is not available. How else can I pretend to help?"
 
-    client = AsyncClient() # Consider making this a global or passed-in client
+    client = AsyncClient()  # Consider making this a global or passed-in client
     messages = []
     if history:
         for msg in history:
@@ -29,9 +29,9 @@ async def get_ollama_response(prompt: str, history: list = None) -> str:
     try:
         logger.info(f"Sending to Ollama (gemma:4b): {prompt}")
         response = await client.chat(
-            model='gemma:4b', # Or your specific model name
+            model='gemma:4b',  # Or your specific model name
             messages=messages,
-            stream=False # For simpler handling initially
+            stream=False  # For simpler handling initially
         )
         assistant_response = response['message']['content']
         logger.info(f"Received from Ollama: {assistant_response}")
