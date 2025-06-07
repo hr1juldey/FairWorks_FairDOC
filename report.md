@@ -353,7 +353,7 @@ flowchart LR
 |---|---|---|---|
 | 💬 **Text Chat** | Secure messaging with doctors |  180
     bar [12.8, 18.9, 35, 65, 120, 159]
-```
+
 
 #### 🌍 Market Statistics
 
