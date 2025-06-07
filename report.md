@@ -347,14 +347,61 @@ flowchart LR
 
 ### 2.4 💬 Integrated Teleconsultation Platform
 
-#### 📊 Teleconsultation Features
-Here’s how you can represent your data as a clear markdown table and then as a Mermaid.js bar chart.
+#### 📊 Fairdoc DPI Teleconsultation Infrastructure
 
----
+Fairdoc's Digital Public Infrastructure (DPI) for teleconsultation creates a unified, scalable platform that connects patients, healthcare providers, and healthcare institutions across multiple touchpoints, enabling seamless virtual care delivery at population scale.
 
-| 🌟 Feature      | 📝 Description                | ⏱️ Response Time | 👥 Coverage (data points)        |
-|-----------------|------------------------------|------------------|----------------------------------|
-| 💬 **Text Chat** | Secure messaging with doctors | 180 seconds              | 12.8, 18.9, 35, 65, 120, 159     |
+
+| 🌟 **Service Tier** | 📝 **Description** | ⏱️ **Response Time** | 👥 **Daily Capacity** | 🎯 **Use Case** |
+| :-- | :-- | :-- | :-- | :-- |
+| 🚨 **Emergency Triage** | AI-powered urgent care assessment | < 30 seconds | 50,000+ consultations | Critical symptoms, chest pain, breathing issues |
+| 💬 **Text Chat** | Secure messaging with doctors | 180 seconds | 25,000+ consultations | Routine health queries, medication questions |
+| 📹 **Video Consultation** | Face-to-face specialist consultations | 300 seconds | 10,000+ consultations | Diagnostic reviews, follow-ups, mental health |
+| 🩺 **Remote Monitoring** | Continuous health tracking integration | Real-time | 100,000+ patients | Chronic disease management, post-op care |
+
+#### 📈 Geographic Coverage Analytics
+
+The coverage data represents teleconsultation density across different UK regions, measured as consultations per 1,000 population per day:
+
+```mermaid
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "primaryColor": "#2563eb",
+    "primaryTextColor": "#1e293b",
+    "primaryBorderColor": "#1d4ed8",
+    "lineColor": "#64748b",
+    "secondaryColor": "#0891b2",
+    "tertiaryColor": "#06b6d4",
+    "background": "#f8fafc",
+    "mainBkg": "#ffffff",
+    "secondBkg": "#f1f5f9"
+  }
+}}%%
+xychart-beta
+    title "Teleconsultation Coverage Density by Region"
+    x-axis ["Rural Areas", "Small Towns", "Suburban", "Urban Centers", "Metro Areas", "London"]
+    y-axis "Consultations per 1K Population/Day" 0 --> 180
+    bar [12.8, 18.9, 35, 65, 120, 159]
+```
+
+
+#### 🔗 Multi-Channel Access Framework
+
+**Digital Access Points:**
+
+- 📱 **Mobile Apps**: Patient-facing iOS/Android applications
+- 🌐 **Web Platform**: Browser-based access for all devices
+- ☎️ **Voice Integration**: Integration with NHS 111, helplines
+- 💻 **Provider Portals**: Clinical dashboard for healthcare professionals
+- 🏥 **EMR Integration**: Direct connection to hospital information systems
+
+**Interoperability Standards:**
+
+- 🔗 **FHIR R4**: Healthcare data exchange protocol
+- 📋 **SNOMED CT**: Clinical terminology integration
+- 🏥 **HL7**: Health information system connectivity
+- 🔒 **OAuth 2.0**: Secure authentication framework
 
 ---
 
