@@ -358,18 +358,7 @@ Here’s how you can represent your data as a clear markdown table and then as a
 
 ---
 
-```mermaid
-bar
-    title Coverage Data Points
-    x-axis Data Point
-    y-axis Value
-    "Point 1" : 12.8
-    "Point 2" : 18.9
-    "Point 3" : 35
-    "Point 4" : 65
-    "Point 5" : 120
-    "Point 6" : 159
-```
+
 
 ---
 
