@@ -451,7 +451,7 @@ config:
   flowchart:
     curve: basis
 ---
-graph TB
+graph LR
   subgraph CORE["🤖 AI Technology Stack"]
     LLM[🧠 Large Language Models]
     NLP[💬 Natural Language Processing]
@@ -508,7 +508,7 @@ config:
   layout: elk
   theme: neo-dark
 ---
-flowchart TD
+flowchart LR
   subgraph subGraph0["🔐 Security Layers"]
     E2E["🔒 End-to-End Encryption"]
     IAM["👤 Identity & Access Management"]
@@ -612,7 +612,7 @@ config:
     nodeBorder: '#94a3b8'
   layout: elk
 ---
-flowchart TD
+flowchart LR
  subgraph subGraph0["🇬🇧 UK Regulations"]
         GDPR["📋 GDPR / DPA 2018"]
         MHRA["🏥 MHRA for AI / SaMD"]
