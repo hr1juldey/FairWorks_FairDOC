@@ -365,17 +365,17 @@ The coverage data represents teleconsultation density across different UK region
 
 ```mermaid
 %%{init: {
-  "theme": "base",
+  "theme": "dark",
   "themeVariables": {
-    "primaryColor": "#2563eb",
-    "primaryTextColor": "#1e293b",
-    "primaryBorderColor": "#1d4ed8",
-    "lineColor": "#64748b",
-    "secondaryColor": "#0891b2",
-    "tertiaryColor": "#06b6d4",
-    "background": "#f8fafc",
-    "mainBkg": "#ffffff",
-    "secondBkg": "#f1f5f9"
+    "primaryColor": "#3b82f6",
+    "primaryTextColor": "#e2e8f0",
+    "primaryBorderColor": "#2563eb",
+    "lineColor": "#94a3b8",
+    "secondaryColor": "#0ea5e9",
+    "tertiaryColor": "#38bdf8",
+    "background": "#0f172a",
+    "mainBkg": "#1e293b",
+    "secondBkg": "#334155"
   }
 }}%%
 xychart-beta
