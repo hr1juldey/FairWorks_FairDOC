@@ -602,7 +602,7 @@ graph LR
 ```mermaid
 ---
 config:
-  theme: base
+  theme: dark
   themeVariables:
     primaryColor: '#2563eb'
     primaryTextColor: '#f3f4f6'
@@ -689,14 +689,14 @@ mindmap
 ```mermaid
 ---
 config:
-  theme: default
+  theme: dark
   themeVariables:
-    background: "#ffffff"
-    primaryColor: "#4f46e5"       # Indigo
-    secondaryColor: "#10b981"     # Emerald
-    primaryTextColor: "#1f2937"   # Gray-800
-    noteBkgColor: "#fef3c7"       # Amber-100
-    noteTextColor: "#92400e"      # Amber-900
+    background: '#ffffff'
+    primaryColor: '#4f46e5'
+    secondaryColor: '#10b981'
+    primaryTextColor: '#1f2937'
+    noteBkgColor: '#fef3c7'
+    noteTextColor: '#92400e'
 ---
 sequenceDiagram
     participant D as 🔬 Development
@@ -704,7 +704,6 @@ sequenceDiagram
     participant R as 📋 Regulatory
     participant M as 📊 Market
     participant S as 🔍 Surveillance
-
     D->>V: Submit AI model
     V->>V: Clinical testing
     V->>R: Compliance review
@@ -713,7 +712,6 @@ sequenceDiagram
     M->>S: Deploy with monitoring
     S->>S: Continuous validation
     S->>D: Feedback for improvement
-
     Note over D,S: 🔁 Continuous improvement cycle
     Note over S: 🧪 Real-world performance monitoring
 
@@ -869,7 +867,7 @@ config:
   layout: elk
   theme: neo-dark
 ---
-flowchart TB
+flowchart LR
  subgraph subGraph0["🚨 Current Healthcare Crisis"]
         P1["⏰ Long Wait Times<br>📊 4+ hours A&amp;E average<br>📉 58% miss 4-hour target"]
         P2["💸 Escalating Costs<br>💷 £200B+ NHS annual budget<br>📈 Unsustainable growth"]
@@ -923,7 +921,7 @@ config:
   theme: neo-dark
   layout: elk
 ---
-flowchart TB
+flowchart LR
  subgraph subGraph0["🎯 Fairdoc AI Strategic Implementation Framework"]
         STRATEGY["🚀 Strategic Actions Hub<br>📅 June 2025 - March 2028<br>🎯 Healthcare AI Transformation"]
   end
