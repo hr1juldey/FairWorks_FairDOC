@@ -418,7 +418,7 @@ xychart-beta
 ```mermaid
 ---
 config:
-  theme: default
+  theme: dark
 ---
 pie title 💰 Cost Savings Distribution
     "⚙️ Operational Efficiency" : 40
