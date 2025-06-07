@@ -737,7 +737,7 @@ gantt
     title 🚀 Fairdoc AI Implementation Roadmap (Light Mode)
     dateFormat YYYY-MM-DD
     axisFormat %b %Y
-    section 🏗️ Phase 1: Foundation
+    section 🏗️ Phase 1: Start
     Architecture Design       :active, arch1, 2025-06-06, 2025-08-15
     Core AI Development       :ai1, 2025-07-01, 2025-11-30
     Regulatory Framework      :reg1, 2025-06-15, 2025-10-15
