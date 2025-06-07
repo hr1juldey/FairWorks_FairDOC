@@ -358,38 +358,9 @@ Here’s how you can represent your data as a clear markdown table and then as a
 
 ---
 
-```mermaid
-%%{init: {
-  "theme": "dark",
-  "themeVariables": {
-    "primaryColor": "#3b82f6",
-    "primaryTextColor": "#e2e8f0",
-    "primaryBorderColor": "#2563eb",
-    "lineColor": "#94a3b8",
-    "secondaryColor": "#0ea5e9",
-    "tertiaryColor": "#38bdf8",
-    "background": "#0f172a",
-    "mainBkg": "#1e293b",
-    "secondBkg": "#334155"
-  }
-}}%%
-xychart-beta
-    title "Medical Coverage Data Points"
-    x-axis ["Point 1", "Point 2", "Point 3", "Point 4", "Point 5", "Point 6"]
-    y-axis "Value" 0 --> 180
-    bar [12.8, 18.9, 35, 65, 120, 159]
-
-```
-
----
-
-This structure links your table to the bar chart visually, making it clear that the bar chart is a graphical representation of the coverage data from the table. If you are building user-friendly dashboards or need to visualize data, this approach is effective[1].
-
-[1] programming.frontend_development
-
 #### 🌍 Market Statistics
 
-| 🌎 Region | 💰 2024 Value | 📈 2033/2035 Projection | 📊 CAGR |
+| 🌎 Region | 💰 2025 Value | 📈 2033/2035 Projection | 📊 CAGR |
 |---|---|---|---|
 | 🇬🇧 **UK Market** | $12.8B | $37.6B (2033) | 12.11% |
 | 🇬🇧 **UK (Alt. Projection)** | $18.93B | $159.0B (2035) | 21.48% |
