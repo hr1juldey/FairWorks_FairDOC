@@ -1,3 +1,4 @@
+<!-- @import "mermaid" -->
 # 🏥 Fairdoc AI: A Strategic Product Requirements Document for Global Healthcare Transformation
 
 ## 📋 Executive Summary
