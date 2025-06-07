@@ -358,7 +358,28 @@ Here’s how you can represent your data as a clear markdown table and then as a
 
 ---
 
+```mermaid
+%%{init: {
+  "theme": "dark",
+  "themeVariables": {
+    "primaryColor": "#3b82f6",
+    "primaryTextColor": "#e2e8f0",
+    "primaryBorderColor": "#2563eb",
+    "lineColor": "#94a3b8",
+    "secondaryColor": "#0ea5e9",
+    "tertiaryColor": "#38bdf8",
+    "background": "#0f172a",
+    "mainBkg": "#1e293b",
+    "secondBkg": "#334155"
+  }
+}}%%
+xychart-beta
+    title "Medical Coverage Data Points"
+    x-axis ["Point 1", "Point 2", "Point 3", "Point 4", "Point 5", "Point 6"]
+    y-axis "Value" 0 --> 180
+    bar [12.8, 18.9, 35, 65, 120, 159]
 
+```
 
 ---
 
