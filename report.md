@@ -861,7 +861,6 @@ quadrantChart
 ## 🚀 Value Proposition Summary
 
 ```mermaid
-
 ---
 config:
   layout: elk
