@@ -348,12 +348,34 @@ flowchart LR
 ### 2.4 💬 Integrated Teleconsultation Platform
 
 #### 📊 Teleconsultation Features
+Here’s how you can represent your data as a clear markdown table and then as a Mermaid.js bar chart.
 
-| 🌟 Feature | 📝 Description | ⏱️ Response Time | 👥 Coverage |
-|---|---|---|---|
-| 💬 **Text Chat** | Secure messaging with doctors |  180
-    bar [12.8, 18.9, 35, 65, 120, 159]
+---
 
+| 🌟 Feature      | 📝 Description                | ⏱️ Response Time | 👥 Coverage (data points)        |
+|-----------------|------------------------------|------------------|----------------------------------|
+| 💬 **Text Chat** | Secure messaging with doctors | 180 seconds              | 12.8, 18.9, 35, 65, 120, 159     |
+
+---
+
+```mermaid
+bar
+    title Coverage Data Points
+    x-axis Data Point
+    y-axis Value
+    "Point 1" : 12.8
+    "Point 2" : 18.9
+    "Point 3" : 35
+    "Point 4" : 65
+    "Point 5" : 120
+    "Point 6" : 159
+```
+
+---
+
+This structure links your table to the bar chart visually, making it clear that the bar chart is a graphical representation of the coverage data from the table. If you are building user-friendly dashboards or need to visualize data, this approach is effective[1].
+
+[1] programming.frontend_development
 
 #### 🌍 Market Statistics
 
