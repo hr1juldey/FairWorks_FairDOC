@@ -1,0 +1,144 @@
+#version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: fairdoc-postgres
+    environment:
+      POSTGRES_DB: fairdoc_ai
+      POSTGRES_USER: fairdoc_user
+      POSTGRES_PASSWORD: fairdoc_secure_pass
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fairdoc_user -d fairdoc_ai"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - fairdoc-network
+
+  # Redis for caching and sessions
+  redis:
+    image: redis:7-alpine
+    container_name: fairdoc-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --requirepass redis_fairdoc_pass
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - fairdoc-network
+
+  # MinIO Object Storage
+  minio:
+    image: minio/minio:latest
+    container_name: fairdoc-minio
+    environment:
+      MINIO_ROOT_USER: fairdoc_minio
+      MINIO_ROOT_PASSWORD: fairdoc_minio_secure_key
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - fairdoc-network
+
+  # Ollama LLM Server
+  ollama:
+    image: ollama/ollama:latest
+    container_name: fairdoc-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+    environment:
+      - OLLAMA_ORIGINS=*
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      - fairdoc-network
+
+  # FastAPI Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fairdoc-app
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://fairdoc_user:fairdoc_secure_pass@postgres:5432/fairdoc_ai
+      - REDIS_URL=redis://:redis_fairdoc_pass@redis:6379/0
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=fairdoc_minio
+      - MINIO_SECRET_KEY=fairdoc_minio_secure_key
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - ENVIRONMENT=development
+    volumes:
+      - ./src:/app/src
+      - ./logs:/app/logs
+      - ./data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - fairdoc-network
+
+  # Celery Worker for Background Tasks
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fairdoc-celery
+    command: celery -A src.app.core.celery worker --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql://fairdoc_user:fairdoc_secure_pass@postgres:5432/fairdoc_ai
+      - REDIS_URL=redis://:redis_fairdoc_pass@redis:6379/0
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=fairdoc_minio
+      - MINIO_SECRET_KEY=fairdoc_minio_secure_key
+    volumes:
+      - ./src:/app/src
+      - ./logs:/app/logs
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - fairdoc-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  ollama_models:
+
+networks:
+  fairdoc-network:
+    driver: bridge
