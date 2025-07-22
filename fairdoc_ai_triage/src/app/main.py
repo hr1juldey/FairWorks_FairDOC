@@ -1,5 +1,5 @@
 """
-Medical AI Triage System - Main Application Entry Point
+Fairdoc AI Triage System - Main Application Entry Point
 """
 
 from contextlib import asynccontextmanager
@@ -13,7 +13,7 @@ from fastapi.responses import JSONResponse
 
 from src.app.api.v1.router import api_router
 from src.app.core.config import settings
-from src.app.core.context.manager import MedicalContextManager
+from src.app.core.context.manager import FairdocContextManager
 from src.app.core.database import init_db
 from src.app.core.logging import configure_logging
 from src.app.services.ai.ollama_service import OllamaService
@@ -26,11 +26,10 @@ logger = structlog.get_logger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """
-    Application lifespan manager for startup and shutdown events
-    """
+    """Application lifespan manager for startup and shutdown events"""
+    
     # Startup
-    logger.info("🏥 Starting Medical AI Triage System...")
+    logger.info("🏥 Starting Fairdoc AI Triage System...")
     
     # Initialize database
     await init_db()
@@ -43,34 +42,36 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("✅ Ollama service initialized")
     
     # Initialize context manager
-    context_manager = MedicalContextManager()
+    context_manager = FairdocContextManager()
     await context_manager.initialize()
     app.state.context_manager = context_manager
     logger.info("✅ Context manager initialized")
     
     # Initialize Raven Chat integration
     raven_service = RavenChatService()
+    await raven_service.initialize()
     app.state.raven_chat = raven_service
     logger.info("✅ Raven Chat service initialized")
     
-    logger.info("🚀 Medical AI Triage System started successfully!")
+    logger.info("🚀 Fairdoc AI Triage System started successfully!")
     
     yield
     
     # Shutdown
-    logger.info("🔄 Shutting down Medical AI Triage System...")
+    logger.info("🔄 Shutting down Fairdoc AI Triage System...")
     
     # Cleanup resources
     await context_manager.cleanup()
     await ollama_service.cleanup()
+    await raven_service.cleanup()
     
-    logger.info("👋 Medical AI Triage System shutdown complete")
+    logger.info("👋 Fairdoc AI Triage System shutdown complete")
 
 
 # Create FastAPI application
 app = FastAPI(
-    title="Medical AI Triage System",
-    description="AI-powered emergency medical triage and healthcare assistance platform",
+    title="Fairdoc AI Triage System",
+    description="AI-powered emergency healthcare triage and assistance platform",
     version="0.1.0",
     lifespan=lifespan,
     docs_url="/docs" if settings.ENVIRONMENT == "development" else None,
@@ -100,7 +101,7 @@ async def health_check():
     """Health check endpoint for container monitoring"""
     return {
         "status": "healthy",
-        "service": "Medical AI Triage System",
+        "service": "Fairdoc AI Triage System",
         "version": "0.1.0"
     }
 
