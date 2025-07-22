@@ -5,13 +5,15 @@ Fairdoc AI Chat API Endpoints
 import asyncio
 import time
 from uuid import uuid4
+from typing import Optional
 
 import structlog
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.core.context.manager import FairdocContextManager
 from src.app.core.database import get_db_session
+from src.app.core.dependencies import get_context_manager, get_ollama_service
 from src.app.models.schemas.chat import ChatMessageRequest, ChatMessageResponse
 from src.app.services.ai.ollama_service import OllamaService
 from src.app.services.chat.raven_integration import RavenChatService
@@ -20,12 +22,19 @@ logger = structlog.get_logger(__name__)
 router = APIRouter()
 
 
+def confidence_to_int(confidence: Optional[float]) -> Optional[int]:
+    """Convert float confidence (0-1) to integer (0-100)"""
+    if confidence is None:
+        return None
+    return int(confidence * 100)
+
+
 @router.post("/message", response_model=ChatMessageResponse)
 async def process_chat_message(
     request: ChatMessageRequest,
     db: AsyncSession = Depends(get_db_session),
-    context_manager: FairdocContextManager = Depends(lambda: None),  # Will be injected via app state
-    ollama_service: OllamaService = Depends(lambda: None),  # Will be injected via app state
+    context_manager: FairdocContextManager = Depends(get_context_manager),
+    ollama_service: OllamaService = Depends(get_ollama_service),
 ):
     """
     Process incoming chat message and return AI response
@@ -58,7 +67,7 @@ async def process_chat_message(
             context=context
         )
         
-        # Update conversation context
+        # Update conversation context with converted confidence values
         await context_manager.update_conversation(
             conversation_id=context.conversation_id,
             message={
@@ -67,19 +76,22 @@ async def process_chat_message(
                 "timestamp": request.timestamp.isoformat(),
                 "metadata": request.metadata
             },
-            ai_response=ai_response,
-            extracted_entities={}  # Will be enhanced later
+            ai_response={
+                **ai_response,
+                "intent_confidence": confidence_to_int(ai_response.get("intent_confidence"))
+            },
+            extracted_entities={}
         )
         
         # Calculate response time
         response_time_ms = int((time.time() - start_time) * 1000)
         
-        # Build response
+        # Build response (keeping float for API response)
         response = ChatMessageResponse(
             message_id=message_id,
             response=ai_response.get("text", "I'm here to help with your healthcare needs."),
             intent=ai_response.get("intent"),
-            intent_confidence=ai_response.get("intent_confidence"),
+            intent_confidence=ai_response.get("intent_confidence"),  # Keep original float
             stakeholder_route=routing.stakeholder_type,
             urgency_level=routing.urgency_level,
             estimated_wait_time=routing.estimated_response_time,
@@ -110,13 +122,12 @@ async def process_chat_message(
 @router.get("/session/{session_id}")
 async def get_conversation_history(
     session_id: str,
-    context_manager: FairdocContextManager = Depends(lambda: None)
+    context_manager: FairdocContextManager = Depends(get_context_manager)
 ):
     """
     Retrieve conversation history for a session
     """
     try:
-        # This will be implemented when context manager is enhanced
         return {"message": "Conversation history endpoint - coming soon"}
         
     except Exception as e:

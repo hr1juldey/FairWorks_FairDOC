@@ -8,14 +8,12 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-
 class ConversationMessage(BaseModel):
     """Single conversation message"""
     timestamp: datetime
     user_message: Dict[str, Any]
     ai_response: Dict[str, Any]
     extracted_entities: Dict[str, Any] = {}
-
 
 class ConversationContext(BaseModel):
     """Complete conversation context"""
@@ -24,35 +22,25 @@ class ConversationContext(BaseModel):
     session_id: Optional[str] = None
     
     messages: List[ConversationMessage] = []
-    healthcare_context: Dict[str, Any] = {}
+    healthcare_context: Dict[str, Any] = {}  # Changed from medical_context
     intent_history: List[Dict[str, Any]] = []
     stakeholder_interactions: List[Dict[str, Any]] = []
     
     created_at: datetime
     updated_at: Optional[datetime] = None
 
-
-class UserProfile(BaseModel):
+class UserProfile(BaseModel):  # Changed from UserMedicalProfile
     """User profile information"""
     user_id: str
-    
-    # Basic demographics (anonymized)
-    age_group: Optional[str] = None
-    gender: Optional[str] = None
-    location_region: Optional[str] = None
-    
-    # Healthcare preferences
     preferred_language: str = "english"
     communication_style: str = "standard"
     privacy_level: str = "standard"
     
-    # Historical context
     interaction_history: List[Dict[str, Any]] = []
     preferences: Dict[str, Any] = {}
     
     created_at: datetime
     updated_at: Optional[datetime] = None
-
 
 class SessionState(BaseModel):
     """Current session state"""
@@ -63,13 +51,10 @@ class SessionState(BaseModel):
     current_context: Dict[str, Any] = {}
     conversation_flow: List[str] = []
     
-    # Session metadata
     start_time: datetime
     last_activity: datetime
     interaction_count: int = 0
-    
     is_active: bool = True
-
 
 class StakeholderRoute(BaseModel):
     """Stakeholder routing decision"""

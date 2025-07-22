@@ -1,0 +1,13 @@
+{
+    "python.defaultInterpreterPath": "./fairdoc_ai_triage/.venv/bin/python",
+    "python.analysis.extraPaths": [
+        "./fairdoc_ai_triage/src",
+        "./fairdoc_ai_triage"
+    ],
+    "python.analysis.autoSearchPaths": true,
+    "python.analysis.autoImportCompletions": true,
+    "python.terminal.activateEnvironment": true,
+    "pylance.inlayHints.variableTypes": true,
+    "pylance.inlayHints.functionReturnTypes": true
+}
+

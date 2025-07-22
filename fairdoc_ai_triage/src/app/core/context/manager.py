@@ -17,7 +17,7 @@ from src.app.core.config import settings
 from src.app.models.database.conversation import ConversationModel
 from src.app.models.schemas.context import (
     ConversationContext,
-    UserMedicalProfile,
+    UserProfile,  # Changed from UserMedicalProfile
     SessionState,
     StakeholderRoute
 )
@@ -25,7 +25,7 @@ from src.app.models.schemas.context import (
 logger = structlog.get_logger(__name__)
 
 
-class MedicalContextManager:
+class FairdocContextManager:
     """
     Medical Context Manager - The AI brain's memory system
     
@@ -40,7 +40,7 @@ class MedicalContextManager:
     def __init__(self):
         self.redis_client: Optional[Redis] = None
         self.conversation_memory: Dict[str, ConversationContext] = {}
-        self.user_profiles: Dict[str, UserMedicalProfile] = {}
+        self.user_profiles: Dict[str, UserProfile] = {}
         self.session_states: Dict[str, SessionState] = {}
         self.routing_decisions: Dict[str, StakeholderRoute] = {}
         
@@ -176,7 +176,7 @@ class MedicalContextManager:
         
         return routing_decision
     
-    async def get_user_profile(self, user_id: str) -> UserMedicalProfile:
+    async def get_user_profile(self, user_id: str) -> UserProfile:
         """
         Get or create user medical profile
         """
@@ -189,12 +189,12 @@ class MedicalContextManager:
         # Check Redis
         profile_data = await self.redis_client.get(profile_key)
         if profile_data:
-            profile = UserMedicalProfile.model_validate_json(profile_data)
+            profile = UserProfile.model_validate_json(profile_data)
             self.user_profiles[profile_key] = profile
             return profile
         
         # Create new profile
-        profile = UserMedicalProfile(
+        profile = UserProfile(
             user_id=user_id,
             created_at=datetime.utcnow(),
             medical_history={},
@@ -275,7 +275,7 @@ class MedicalContextManager:
             context.model_dump_json()
         )
     
-    async def _save_user_profile(self, key: str, profile: UserMedicalProfile):
+    async def _save_user_profile(self, key: str, profile: UserProfile):
         """Save user profile to Redis"""
         await self.redis_client.set(key, profile.model_dump_json())
     

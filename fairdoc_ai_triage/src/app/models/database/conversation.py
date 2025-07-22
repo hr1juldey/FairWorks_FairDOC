@@ -33,11 +33,11 @@ class ConversationModel(Base):
     # Routing and stakeholder info
     stakeholder_type = Column(String(50), nullable=True)
     urgency_level = Column(String(20), nullable=True)
-    routing_confidence = Column(Integer, nullable=True)
+    routing_confidence = Column(Integer, nullable=True)  # Will store 0-100 scale
     
     # Intent and analysis
     detected_intent = Column(String(100), nullable=True)
-    intent_confidence = Column(Integer, nullable=True)
+    intent_confidence = Column(Integer, nullable=True) # Will store 0-100 scale
     extracted_entities = Column(JSON, nullable=True)
     
     # Timestamps

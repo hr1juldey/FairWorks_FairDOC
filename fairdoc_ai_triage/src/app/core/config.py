@@ -63,6 +63,7 @@ class Settings(BaseSettings):
     # Logging
     LOG_LEVEL: str = "INFO"
     SENTRY_DSN: Optional[str] = None
+    PROMETHEUS_ENDPOINT: Optional[str] = None
     
     # Celery
     CELERY_BROKER_URL: str
