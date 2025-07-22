@@ -5,7 +5,7 @@ Fairdoc AI Triage System - Application Configuration
 from functools import lru_cache
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -19,6 +19,14 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ALLOWED_HOSTS: List[str] = ["localhost", "127.0.0.1", "0.0.0.0"]
     ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
+    
+    @field_validator('ALLOWED_HOSTS', 'ALLOWED_ORIGINS', mode='before')
+    @classmethod
+    def parse_comma_separated_list(cls, v):
+        """Parse comma-separated strings into lists"""
+        if isinstance(v, str):
+            return [item.strip() for item in v.split(',')]
+        return v
     
     # Database
     DATABASE_URL: str
