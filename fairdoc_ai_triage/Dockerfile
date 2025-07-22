@@ -1,5 +1,5 @@
 # Fairdoc AI Triage System Dockerfile
-FROM docker/hardened-python:3.11-slim
+FROM python:3.11-slim
 
 # Set working directory
 WORKDIR /app
@@ -11,13 +11,14 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     curl \
     git \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
-# Copy project files
-COPY pyproject.toml uv.lock* ./
+# Copy project files INCLUDING README.md
+COPY pyproject.toml uv.lock* README.md ./
 
 # Install dependencies
 RUN uv sync --frozen --no-cache

@@ -1,4 +1,4 @@
-#version: '3.8'
+# version: '3.8'
 
 services:
   # PostgreSQL Database
@@ -19,11 +19,12 @@ services:
       test: ["CMD-SHELL", "pg_isready -U fairdoc_user -d fairdoc_ai"]
       interval: 30s
       timeout: 10s
-      retries: 3
+      retries: 6
     networks:
       - fairdoc-network
+    restart: unless-stopped
 
-  # Redis for caching and sessions
+  # Redis for caching and sessions  
   redis:
     image: redis:7-alpine
     container_name: fairdoc-redis
@@ -33,12 +34,13 @@ services:
       - redis_data:/data
     command: redis-server --appendonly yes --requirepass redis_fairdoc_pass
     healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      test: ["CMD", "redis-cli", "auth", "redis_fairdoc_pass", "ping"]
       interval: 30s
       timeout: 10s
       retries: 3
     networks:
       - fairdoc-network
+    restart: unless-stopped
 
   # MinIO Object Storage
   minio:
@@ -60,26 +62,7 @@ services:
       retries: 3
     networks:
       - fairdoc-network
-
-  # Ollama LLM Server
-  ollama:
-    image: ollama/ollama:latest
-    container_name: fairdoc-ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_models:/root/.ollama
-    environment:
-      - OLLAMA_ORIGINS=*
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-    networks:
-      - fairdoc-network
+    restart: unless-stopped
 
   # FastAPI Application
   app:
@@ -95,7 +78,7 @@ services:
       - MINIO_ENDPOINT=minio:9000
       - MINIO_ACCESS_KEY=fairdoc_minio
       - MINIO_SECRET_KEY=fairdoc_minio_secure_key
-      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434  # Connect to host Ollama
       - ENVIRONMENT=development
     volumes:
       - ./src:/app/src
@@ -110,6 +93,9 @@ services:
         condition: service_healthy
     networks:
       - fairdoc-network
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # Enable host access
 
   # Celery Worker for Background Tasks
   celery:
@@ -124,6 +110,7 @@ services:
       - MINIO_ENDPOINT=minio:9000
       - MINIO_ACCESS_KEY=fairdoc_minio
       - MINIO_SECRET_KEY=fairdoc_minio_secure_key
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434  # Connect to host Ollama
     volumes:
       - ./src:/app/src
       - ./logs:/app/logs
@@ -132,12 +119,14 @@ services:
       - redis
     networks:
       - fairdoc-network
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
 volumes:
   postgres_data:
   redis_data:
   minio_data:
-  ollama_models:
 
 networks:
   fairdoc-network:
