@@ -2,11 +2,14 @@
 Fairdoc AI Context Management Schemas
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
+
+def utcnow():
+    return datetime.now(timezone.utc)
 
 class ConversationMessage(BaseModel):
     """Single conversation message"""
@@ -60,9 +63,9 @@ class StakeholderRoute(BaseModel):
     """Stakeholder routing decision"""
     stakeholder_type: str  # doctor, lab, admin, ai
     urgency_level: str     # low, medium, high, critical
-    confidence: float = Field(ge=0.0, le=1.0)
+    confidence: int = Field(ge=0, le=100)  # ← CHANGED: From float(0-1) to int(0-100)
     reasoning: str
     estimated_response_time: int  # seconds
     
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utcnow)
     metadata: Dict[str, Any] = {}

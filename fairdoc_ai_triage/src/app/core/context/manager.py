@@ -5,7 +5,7 @@ Priority implementation for Phase 1
 
 import asyncio
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Any
 from uuid import UUID, uuid4
 
@@ -23,6 +23,19 @@ from src.app.models.schemas.context import (
 )
 
 logger = structlog.get_logger(__name__)
+
+
+def utcnow():
+    """
+    Return timezone-aware UTC datetime
+    
+    This function replaces the deprecated datetime.utcnow() method
+    with the recommended timezone-aware approach using UTC timezone.
+    
+    Returns:
+        datetime: Current UTC time with timezone information
+    """
+    return datetime.now(timezone.utc)
 
 
 class FairdocContextManager:
@@ -86,9 +99,9 @@ class FairdocContextManager:
         context = ConversationContext(
             conversation_id=conversation_id,
             user_id=user_id,
-            created_at=datetime.utcnow(),
+            created_at=utcnow(),
             messages=[],
-            medical_context={},
+            healthcare_context={},  # ← Correct field name
             intent_history=[],
             stakeholder_interactions=[]
         )
@@ -112,37 +125,67 @@ class FairdocContextManager:
         """
         Update conversation context with new message and AI response
         """
-        context = await self.get_conversation_context(conversation_id, message.get("user_id"))
-        
-        # Add message to context
-        context.messages.append({
-            "timestamp": datetime.utcnow().isoformat(),
-            "user_message": message,
-            "ai_response": ai_response,
-            "medical_extraction": extracted_medical_info
-        })
-        
-        # Update medical context with extracted information
-        context.medical_context.update(extracted_medical_info)
-        
-        # Update intent if detected
-        if "intent" in ai_response:
-            context.intent_history.append({
-                "intent": ai_response["intent"],
-                "confidence": ai_response.get("intent_confidence", 0.0),
-                "timestamp": datetime.utcnow().isoformat()
+        try:
+            logger.info("🔍 Starting conversation update", 
+                    conversation_id=conversation_id,
+                    ai_response_keys=list(ai_response.keys()))
+            
+            context = await self.get_conversation_context(conversation_id, message.get("user_id"))
+            
+            # Add message to context
+            context.messages.append({
+                "timestamp": utcnow().isoformat(),
+                "user_message": message,
+                "ai_response": ai_response,
+                "medical_extraction": extracted_medical_info
             })
-        
-        # Save updated context
-        context_key = f"conversation:{conversation_id}"
-        self.conversation_memory[context_key] = context
-        await self._save_context(context_key, context)
-        
-        logger.info("🔄 Updated conversation context", 
-                   conversation_id=conversation_id, 
-                   messages_count=len(context.messages))
-        
-        return context
+            
+            # Update healthcare context with extracted information
+            context.healthcare_context.update(extracted_medical_info)
+            
+            # Update intent if detected - WITH INTEGER CONVERSION
+            if "intent" in ai_response:
+                confidence_val = ai_response.get("intent_confidence", 0)
+                logger.info("🔍 Processing intent confidence", 
+                        original_confidence=confidence_val,
+                        confidence_type=type(confidence_val))
+                
+                if isinstance(confidence_val, float):
+                    confidence_int = int(confidence_val * 100) if confidence_val <= 1.0 else int(confidence_val)
+                else:
+                    confidence_int = confidence_val or 0
+                    
+                logger.info("🔍 Converted confidence", 
+                        confidence_int=confidence_int,
+                        confidence_int_type=type(confidence_int))
+                
+                context.intent_history.append({
+                    "intent": ai_response["intent"],
+                    "confidence": confidence_int,
+                    "timestamp": utcnow().isoformat()
+                })
+            
+            # Save updated context
+            context_key = f"conversation:{conversation_id}"
+            self.conversation_memory[context_key] = context
+            
+            logger.info("🔍 About to save context to Redis")
+            await self._save_context(context_key, context)
+            logger.info("🔍 Context saved to Redis successfully")
+            
+            logger.info("🔄 Updated conversation context",
+                    conversation_id=conversation_id,
+                    messages_count=len(context.messages))
+            
+            return context
+            
+        except Exception as e:
+            logger.error("❌ Error in update_conversation", 
+                        error=str(e),
+                        error_type=type(e),
+                        conversation_id=conversation_id)
+            raise
+
     
     async def route_stakeholder(
         self,
@@ -159,13 +202,13 @@ class FairdocContextManager:
         )
         
         # Store routing decision
-        route_key = f"route:{conversation_id}:{datetime.utcnow().timestamp()}"
+        route_key = f"route:{conversation_id}:{utcnow().timestamp()}"
         self.routing_decisions[route_key] = routing_decision
         
         # Save to Redis with expiration
         await self.redis_client.setex(
             route_key,
-            timedelta(hours=24).total_seconds(),
+            int(timedelta(hours=24).total_seconds()),
             routing_decision.model_dump_json()
         )
         
@@ -196,7 +239,7 @@ class FairdocContextManager:
         # Create new profile
         profile = UserProfile(
             user_id=user_id,
-            created_at=datetime.utcnow(),
+            created_at=utcnow(),
             medical_history={},
             preferences={},
             risk_factors=[],
@@ -217,9 +260,6 @@ class FairdocContextManager:
         """
         Analyze query to determine appropriate stakeholder routing
         """
-        # Simple rule-based routing (Phase 1)
-        # Will be enhanced with ML models in later phases
-        
         query_lower = query.lower()
         urgency_keywords = ["emergency", "urgent", "pain", "chest pain", "difficulty breathing"]
         doctor_keywords = ["diagnosis", "treatment", "medication", "symptoms"]
@@ -230,48 +270,49 @@ class FairdocContextManager:
             return StakeholderRoute(
                 stakeholder_type="doctor",
                 urgency_level="high",
-                confidence=0.9,
+                confidence=90,  # ← CHANGED: From 0.9 to 90 (integer scale)
                 reasoning="Emergency or urgent medical keywords detected",
-                estimated_response_time=300  # 5 minutes
+                estimated_response_time=300
             )
         elif any(keyword in query_lower for keyword in doctor_keywords):
             return StakeholderRoute(
                 stakeholder_type="doctor",
                 urgency_level="medium",
-                confidence=0.8,
+                confidence=80,  # ← CHANGED: From 0.8 to 80
                 reasoning="Medical consultation required",
-                estimated_response_time=1800  # 30 minutes
+                estimated_response_time=1800
             )
         elif any(keyword in query_lower for keyword in lab_keywords):
             return StakeholderRoute(
                 stakeholder_type="lab",
                 urgency_level="low",
-                confidence=0.7,
+                confidence=70,  # ← CHANGED: From 0.7 to 70
                 reasoning="Lab results interpretation needed",
-                estimated_response_time=3600  # 1 hour
+                estimated_response_time=3600
             )
         elif any(keyword in query_lower for keyword in admin_keywords):
             return StakeholderRoute(
                 stakeholder_type="admin",
                 urgency_level="low",
-                confidence=0.6,
+                confidence=60,  # ← CHANGED: From 0.6 to 60
                 reasoning="Administrative request",
-                estimated_response_time=7200  # 2 hours
+                estimated_response_time=7200
             )
         else:
             return StakeholderRoute(
                 stakeholder_type="ai",
                 urgency_level="low",
-                confidence=0.5,
+                confidence=50,  # ← CHANGED: From 0.5 to 50
                 reasoning="General query - AI assistance sufficient",
-                estimated_response_time=30  # 30 seconds
+                estimated_response_time=30
             )
+
     
     async def _save_context(self, key: str, context: ConversationContext):
         """Save context to Redis with expiration"""
         await self.redis_client.setex(
             key,
-            timedelta(days=30).total_seconds(),  # Keep for 30 days
+            int(timedelta(days=30).total_seconds()),  # Keep for 30 days
             context.model_dump_json()
         )
     

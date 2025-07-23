@@ -43,31 +43,50 @@ async def process_chat_message(
     message_id = str(uuid4())
     
     try:
-        logger.info("Processing chat message", 
+        logger.info("🔍 Starting chat message processing", 
                    user_id=request.user_id, 
                    message_id=message_id)
         
         # Get or create conversation context
+        logger.info("🔍 Getting conversation context")
         context = await context_manager.get_conversation_context(
             conversation_id=request.session_id or f"conv_{request.user_id}_{int(time.time())}",
             user_id=request.user_id
         )
+        logger.info("🔍 Got conversation context successfully")
         
         # Process message with AI service
+        logger.info("🔍 Processing message with AI service")
         ai_response = await ollama_service.process_message(
             message=request.message,
             context=context,
             user_id=request.user_id
         )
+        logger.info("🔍 AI processing completed", 
+                   ai_response_keys=list(ai_response.keys()))
         
         # Route to appropriate stakeholder
+        logger.info("🔍 Routing to stakeholder")
         routing = await context_manager.route_stakeholder(
             conversation_id=context.conversation_id,
             query=request.message,
             context=context
         )
+        logger.info("🔍 Stakeholder routing completed", 
+                   stakeholder=routing.stakeholder_type,
+                   confidence=routing.confidence,
+                   confidence_type=type(routing.confidence))
         
         # Update conversation context with converted confidence values
+        logger.info("🔍 About to update conversation context")
+        ai_response_for_update = {
+            **ai_response,
+            "intent_confidence": confidence_to_int(ai_response.get("intent_confidence"))
+        }
+        logger.info("🔍 AI response for update", 
+                   original_confidence=ai_response.get("intent_confidence"),
+                   converted_confidence=ai_response_for_update.get("intent_confidence"))
+        
         await context_manager.update_conversation(
             conversation_id=context.conversation_id,
             message={
@@ -76,17 +95,16 @@ async def process_chat_message(
                 "timestamp": request.timestamp.isoformat(),
                 "metadata": request.metadata
             },
-            ai_response={
-                **ai_response,
-                "intent_confidence": confidence_to_int(ai_response.get("intent_confidence"))
-            },
+            ai_response=ai_response_for_update,
             extracted_entities={}
         )
+        logger.info("🔍 Conversation context updated successfully")
         
         # Calculate response time
         response_time_ms = int((time.time() - start_time) * 1000)
         
-        # Build response (keeping float for API response)
+        # Build response 
+        logger.info("🔍 Building response")
         response = ChatMessageResponse(
             message_id=message_id,
             response=ai_response.get("text", "I'm here to help with your healthcare needs."),
@@ -110,13 +128,19 @@ async def process_chat_message(
     except Exception as e:
         logger.error("Error processing chat message", 
                     error=str(e), 
+                    error_type=type(e),
                     message_id=message_id,
                     user_id=request.user_id)
+        
+        # Log the full traceback
+        import traceback
+        logger.error("Full traceback", traceback=traceback.format_exc())
         
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to process message. Please try again."
         )
+
 
 
 @router.get("/session/{session_id}")

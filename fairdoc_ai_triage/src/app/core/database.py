@@ -33,6 +33,7 @@ class Base(DeclarativeBase):
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.DEBUG,
+    echo_pool=True,  # Add this
     pool_pre_ping=True,
     pool_recycle=300,
 )

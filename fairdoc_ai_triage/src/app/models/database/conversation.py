@@ -2,7 +2,7 @@
 Fairdoc AI Conversation Database Models
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from uuid import uuid4
 
@@ -11,6 +11,9 @@ from sqlalchemy.dialects.postgresql import UUID
 
 from src.app.core.database import Base
 
+def utcnow():
+    """Return timezone-aware UTC now"""
+    return datetime.now(timezone.utc)
 
 class ConversationModel(Base):
     """Database model for storing conversations"""
@@ -33,17 +36,17 @@ class ConversationModel(Base):
     # Routing and stakeholder info
     stakeholder_type = Column(String(50), nullable=True)
     urgency_level = Column(String(20), nullable=True)
-    routing_confidence = Column(Integer, nullable=True)  # Will store 0-100 scale
+    routing_confidence = Column(Integer, nullable=True)
     
     # Intent and analysis
     detected_intent = Column(String(100), nullable=True)
-    intent_confidence = Column(Integer, nullable=True) # Will store 0-100 scale
+    intent_confidence = Column(Integer, nullable=True)
     extracted_entities = Column(JSON, nullable=True)
     
     # Timestamps
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+    created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
     # Response metrics
     response_time_ms = Column(Integer, nullable=True)
     model_used = Column(String(100), nullable=True)
@@ -64,13 +67,13 @@ class UserSessionModel(Base):
     preferences = Column(JSON, nullable=True)
     
     # Session tracking
-    first_interaction = Column(DateTime, default=datetime.utcnow)
-    last_interaction = Column(DateTime, default=datetime.utcnow)
+    first_interaction = Column(DateTime(timezone=True), default=utcnow)
+    last_interaction = Column(DateTime(timezone=True), default=utcnow)
     interaction_count = Column(Integer, default=0)
     
     # Session state
-    is_active = Column(String(10), default="active")  # active, inactive, expired
-    expires_at = Column(DateTime, nullable=True)
+    is_active = Column(String(10), default="active")
+    expires_at = Column(DateTime(timezone=True), nullable=True)
     
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)

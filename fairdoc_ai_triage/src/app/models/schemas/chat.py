@@ -2,10 +2,14 @@
 Fairdoc AI Chat API Schemas
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any
 
 from pydantic import BaseModel, Field
+
+
+def utcnow():
+    return datetime.now(timezone.utc)
 
 
 class ChatMessageRequest(BaseModel):
@@ -16,7 +20,7 @@ class ChatMessageRequest(BaseModel):
     
     # Optional metadata
     metadata: Dict[str, Any] = Field(default_factory=dict)
-    timestamp: Optional[datetime] = Field(default_factory=datetime.utcnow)
+    timestamp: Optional[datetime] = Field(default_factory=utcnow)
     
     # Message context
     message_type: str = Field(default="text", description="Message type: text, voice, image")
@@ -42,7 +46,7 @@ class ChatMessageResponse(BaseModel):
     
     # Response metadata
     intent: Optional[str] = Field(None, description="Detected user intent")
-    intent_confidence: Optional[float] = Field(None, ge=0.0, le=1.0)
+    intent_confidence: Optional[float] = Field(None, ge=0.0, le=1.0)  # Keep as float for API
     
     # Routing information
     stakeholder_route: Optional[str] = Field(None, description="Recommended stakeholder")
@@ -56,7 +60,7 @@ class ChatMessageResponse(BaseModel):
     # Technical metadata
     model_used: Optional[str] = None
     response_time_ms: Optional[int] = None
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=utcnow)
     
     class Config:
         json_schema_extra = {
@@ -80,7 +84,7 @@ class HealthCheckResponse(BaseModel):
     status: str = "healthy"
     service: str = "Fairdoc AI Triage System"
     version: str = "0.1.0"
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=utcnow)
     
     # Component health
     database: str = "connected"
