@@ -88,7 +88,7 @@ async def process_chat_message(
                    converted_confidence=ai_response_for_update.get("intent_confidence"))
         
         await context_manager.update_conversation(
-            conversation_id=context.conversation_id,
+        conversation_id=context.conversation_id,
             message={
                 "text": request.message,
                 "user_id": request.user_id,
@@ -96,7 +96,7 @@ async def process_chat_message(
                 "metadata": request.metadata
             },
             ai_response=ai_response_for_update,
-            extracted_entities={}
+            extracted_medical_info={}  # ← CORRECT parameter name
         )
         logger.info("🔍 Conversation context updated successfully")
         
@@ -113,6 +113,8 @@ async def process_chat_message(
             stakeholder_route=routing.stakeholder_type,
             urgency_level=routing.urgency_level,
             estimated_wait_time=routing.estimated_response_time,
+            thinking_process=ai_response.get("thinking_process"),      # ← ADD THIS LINE
+            safety_summary=ai_response.get("safety_summary"),         # ← ADD THIS LINE
             context_used={"conversation_length": len(context.messages)},
             model_used=ai_response.get("model", "default"),
             response_time_ms=response_time_ms

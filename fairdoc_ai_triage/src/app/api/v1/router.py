@@ -4,7 +4,7 @@ Fairdoc AI API Router Configuration
 
 from fastapi import APIRouter
 
-from src.app.api.v1.endpoints import chat, health
+from src.app.api.v1.endpoints import chat, health, thinking
 
 api_router = APIRouter()
 
@@ -17,6 +17,12 @@ api_router.include_router(
 
 api_router.include_router(
     health.router,
-    prefix="/health",
+    prefix="/health", 
     tags=["health"]
+)
+
+api_router.include_router(
+    thinking.router,
+    prefix="/thinking",
+    tags=["thinking", "observability"]
 )

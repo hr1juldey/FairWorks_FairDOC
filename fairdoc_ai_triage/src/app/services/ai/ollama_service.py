@@ -1,5 +1,5 @@
 """
-Fairdoc AI Ollama Integration Service
+Fairdoc AI Ollama Integration Service with Thinking Process Support
 """
 
 import asyncio
@@ -11,21 +11,23 @@ import structlog
 
 from src.app.core.config import settings
 from src.app.models.schemas.context import ConversationContext
+from src.app.services.ai.thinking_processor import ThinkingProcessor
 
 logger = structlog.get_logger(__name__)
 
 
 class OllamaService:
-    """Service for integrating with Ollama LLM"""
+    """Service for integrating with Ollama LLM with thinking process extraction"""
     
     def __init__(self):
         self.base_url = settings.OLLAMA_BASE_URL
         self.model_name = settings.OLLAMA_MODEL
         self.client: Optional[httpx.AsyncClient] = None
+        self.thinking_processor = ThinkingProcessor()
         
     async def initialize(self):
         """Initialize Ollama service"""
-        self.client = httpx.AsyncClient(timeout=30.0)
+        self.client = httpx.AsyncClient(timeout=60.0)  # Increased timeout for thinking models
         
         # Test connection
         try:
@@ -43,7 +45,7 @@ class OllamaService:
         context: ConversationContext,
         user_id: str
     ) -> Dict[str, Any]:
-        """Process user message and generate AI response"""
+        """Process user message and generate AI response with thinking extraction"""
         
         try:
             # Build context-aware prompt
@@ -51,24 +53,34 @@ class OllamaService:
             user_prompt = self._build_user_prompt(message, context)
             
             # Call Ollama API
-            response = await self._call_ollama(
+            raw_response = await self._call_ollama(
                 system_prompt=system_prompt,
                 user_prompt=user_prompt
             )
             
-            # Extract intent and build response
+            # Extract thinking process and clean response
+            clean_response, thinking_data = self.thinking_processor.extract_thinking_process(
+                raw_response.get("response", "")
+            )
+            
+            # Build enhanced AI response
             ai_response = {
-                "text": response.get("response", "I'm here to help with your healthcare questions."),
+                "text": clean_response or "I'm here to help with your healthcare questions.",
+                "raw_response": raw_response.get("response", ""),  # Keep raw for debugging
                 "intent": self._extract_intent(message),
-                "intent_confidence": 0.7,  # Basic confidence scoring
+                "intent_confidence": 0.7,
                 "model": self.model_name,
-                "context_used": len(context.messages)
+                "context_used": len(context.messages),
+                "thinking_process": thinking_data,
+                "safety_summary": self.thinking_processor.generate_safety_summary(thinking_data)
             }
             
             logger.info("AI response generated", 
                        user_id=user_id,
-                       response_length=len(ai_response["text"]),
-                       intent=ai_response["intent"])
+                       response_length=len(clean_response) if clean_response else 0,
+                       intent=ai_response["intent"],
+                       has_thinking=thinking_data is not None,
+                       safety_level=ai_response["safety_summary"].get("overall_safety_level"))
             
             return ai_response
             
@@ -82,7 +94,9 @@ class OllamaService:
                 "intent": "error",
                 "intent_confidence": 0.0,
                 "model": "fallback",
-                "error": str(e)
+                "error": str(e),
+                "thinking_process": None,
+                "safety_summary": {"status": "error"}
             }
     
     async def _call_ollama(self, system_prompt: str, user_prompt: str) -> Dict[str, Any]:
@@ -95,7 +109,7 @@ class OllamaService:
             "options": {
                 "temperature": 0.7,
                 "top_p": 0.9,
-                "max_tokens": 500
+                "num_predict": 2000  # Allow longer responses for thinking
             }
         }
         
@@ -110,28 +124,30 @@ class OllamaService:
     def _build_system_prompt(self, context: ConversationContext) -> str:
         """Build system prompt with context"""
         
-        base_prompt = """You are a helpful healthcare AI assistant for Fairdoc AI Triage System. 
-        
-Your role is to:
-- Provide helpful, accurate healthcare information
-- Assess symptoms and guide users appropriately  
-- Route urgent cases to healthcare professionals
-- Never provide specific medical diagnoses
-- Always recommend consulting healthcare providers for serious concerns
+        base_prompt = """You are a helpful healthcare AI assistant for Fairdoc AI Triage System.
 
-Guidelines:
-- Be empathetic and professional
-- Ask clarifying questions when needed
-- Prioritize patient safety
-- Keep responses concise and helpful"""
-        
+    Your role is to:
+    - Provide helpful, accurate healthcare information
+    - Assess symptoms and guide users appropriately  
+    - Route urgent cases to healthcare professionals
+    - Never provide specific medical diagnoses
+    - Always recommend consulting healthcare providers for serious concerns
+
+    Guidelines:
+    - Be empathetic and professional
+    - Ask clarifying questions when needed
+    - Prioritize patient safety
+    - Keep responses concise and helpful
+    - Think through your reasoning before responding"""
+
         # Add conversation history if available
         if context.messages:
             recent_context = context.messages[-3:]  # Last 3 interactions
             context_str = "\n\nRecent conversation context:\n"
             for msg in recent_context:
-                user_text = msg.user_message.get("text", "")
-                ai_text = msg.ai_response.get("text", "")
+                # FIX: Access dictionary keys, not object attributes
+                user_text = msg["user_message"].get("text", "") if isinstance(msg, dict) else ""
+                ai_text = msg["ai_response"].get("text", "") if isinstance(msg, dict) else ""
                 context_str += f"User: {user_text}\nAssistant: {ai_text}\n"
             
             base_prompt += context_str

@@ -1,5 +1,5 @@
 """
-Fairdoc AI Chat API Schemas
+Fairdoc AI Chat API Schemas with Thinking Process Support
 """
 
 from datetime import datetime, timezone
@@ -7,9 +7,29 @@ from typing import Dict, List, Optional, Any
 
 from pydantic import BaseModel, Field
 
-
 def utcnow():
     return datetime.now(timezone.utc)
+
+
+class ThinkingProcessData(BaseModel):
+    """Thinking process analysis data"""
+    content: str = Field(..., description="Raw thinking process content")
+    word_count: int = Field(ge=0, description="Word count of thinking process")
+    safety_flags: List[Dict[str, Any]] = Field(default_factory=list)
+    reasoning_steps: List[str] = Field(default_factory=list)
+    confidence_indicators: Dict[str, Any] = Field(default_factory=dict)
+    medical_considerations: List[str] = Field(default_factory=list)
+    timestamp: str = Field(..., description="When thinking was processed")
+
+
+class SafetySummary(BaseModel):
+    """Safety assessment summary"""
+    overall_safety_level: str = Field(..., description="Overall safety assessment")
+    total_flags: int = Field(ge=0, description="Total safety flags detected")
+    high_severity_count: int = Field(ge=0, description="High severity flags")
+    reasoning_quality: str = Field(..., description="Quality of reasoning process")
+    requires_review: bool = Field(..., description="Whether human review is needed")
+    generated_at: str = Field(..., description="When summary was generated")
 
 
 class ChatMessageRequest(BaseModel):
@@ -40,18 +60,22 @@ class ChatMessageRequest(BaseModel):
 
 
 class ChatMessageResponse(BaseModel):
-    """Chat message response"""
+    """Chat message response with thinking process support"""
     message_id: str = Field(..., description="Unique message identifier")
-    response: str = Field(..., description="AI response text")
+    response: str = Field(..., description="Clean AI response text (thinking removed)")
     
     # Response metadata
     intent: Optional[str] = Field(None, description="Detected user intent")
-    intent_confidence: Optional[float] = Field(None, ge=0.0, le=1.0)  # Keep as float for API
+    intent_confidence: Optional[float] = Field(None, ge=0.0, le=1.0)
     
     # Routing information
     stakeholder_route: Optional[str] = Field(None, description="Recommended stakeholder")
     urgency_level: Optional[str] = Field(None, description="Assessed urgency level")
     estimated_wait_time: Optional[int] = Field(None, description="Estimated response time in seconds")
+    
+    # Enhanced AI metadata
+    thinking_process: Optional[ThinkingProcessData] = Field(None, description="AI thinking process data")
+    safety_summary: Optional[SafetySummary] = Field(None, description="Safety assessment summary")
     
     # Response context
     context_used: Dict[str, Any] = Field(default_factory=dict)
@@ -66,14 +90,23 @@ class ChatMessageResponse(BaseModel):
         json_schema_extra = {
             "example": {
                 "message_id": "msg_789xyz",
-                "response": "I understand you've been experiencing headaches. Can you describe the pain - is it throbbing, sharp, or dull?",
+                "response": "I understand you've been experiencing headaches. Can you describe the pain?",
                 "intent": "symptom_assessment",
                 "intent_confidence": 0.85,
                 "stakeholder_route": "doctor",
                 "urgency_level": "medium",
                 "estimated_wait_time": 1800,
-                "suggestions": ["Describe pain type", "Mention duration", "List any triggers"],
-                "model_used": "healthcare_llm",
+                "thinking_process": {
+                    "content": "The user mentions headaches lasting several days...",
+                    "word_count": 45,
+                    "safety_flags": [],
+                    "reasoning_quality": "high"
+                },
+                "safety_summary": {
+                    "overall_safety_level": "safe",
+                    "requires_review": False
+                },
+                "model_used": "deepseek-r1:8b",
                 "response_time_ms": 245
             }
         }
@@ -83,7 +116,7 @@ class HealthCheckResponse(BaseModel):
     """Health check response"""
     status: str = "healthy"
     service: str = "Fairdoc AI Triage System"
-    version: str = "0.1.0"
+    version: str = "0.1.0" 
     timestamp: datetime = Field(default_factory=utcnow)
     
     # Component health

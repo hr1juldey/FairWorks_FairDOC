@@ -13,10 +13,15 @@ def utcnow():
 
 class ConversationMessage(BaseModel):
     """Single conversation message"""
-    timestamp: datetime
+    timestamp: str  # Changed from datetime to string (ISO format)
     user_message: Dict[str, Any]
     ai_response: Dict[str, Any]
-    extracted_entities: Dict[str, Any] = {}
+    medical_extraction: Dict[str, Any] = {}  # Renamed from extracted_entities
+    
+    class Config:
+        # Allow extra fields for backward compatibility
+        extra = "allow"
+
 
 class ConversationContext(BaseModel):
     """Complete conversation context"""
@@ -24,13 +29,17 @@ class ConversationContext(BaseModel):
     user_id: str
     session_id: Optional[str] = None
     
-    messages: List[ConversationMessage] = []
-    healthcare_context: Dict[str, Any] = {}  # Changed from medical_context
+    messages: List[Dict[str, Any]] = []  # Changed to Dict for now, can be ConversationMessage later
+    healthcare_context: Dict[str, Any] = {}
     intent_history: List[Dict[str, Any]] = []
     stakeholder_interactions: List[Dict[str, Any]] = []
     
     created_at: datetime
     updated_at: Optional[datetime] = None
+    
+    class Config:
+        # Allow extra fields for backward compatibility
+        extra = "allow"
 
 class UserProfile(BaseModel):  # Changed from UserMedicalProfile
     """User profile information"""
