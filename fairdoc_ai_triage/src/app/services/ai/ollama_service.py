@@ -15,7 +15,7 @@ from src.app.services.ai.thinking_processor import ThinkingProcessor
 
 logger = structlog.get_logger(__name__)
 
-
+thinking_processor = ThinkingProcessor()
 class OllamaService:
     """Service for integrating with Ollama LLM with thinking process extraction"""
     
@@ -27,7 +27,7 @@ class OllamaService:
         
     async def initialize(self):
         """Initialize Ollama service"""
-        self.client = httpx.AsyncClient(timeout=60.0)  # Increased timeout for thinking models
+        self.client = httpx.AsyncClient(timeout=120.0)  # Increased timeout for thinking models
         
         # Test connection
         try:
@@ -88,6 +88,9 @@ class OllamaService:
             logger.error("Error processing message with Ollama", 
                         error=str(e), user_id=user_id)
             
+            
+            
+            error_safety_summary = thinking_processor.generate_safety_summary(None)
             # Return fallback response
             return {
                 "text": "I apologize, but I'm experiencing technical difficulties. Please try again shortly.",
@@ -96,7 +99,7 @@ class OllamaService:
                 "model": "fallback",
                 "error": str(e),
                 "thinking_process": None,
-                "safety_summary": {"status": "error"}
+                "safety_summary":  error_safety_summary     # {"status": "error"}
             }
     
     async def _call_ollama(self, system_prompt: str, user_prompt: str) -> Dict[str, Any]:

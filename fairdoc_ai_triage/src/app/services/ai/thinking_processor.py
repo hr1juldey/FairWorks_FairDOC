@@ -161,7 +161,15 @@ class ThinkingProcessor:
         """Generate safety summary for monitoring dashboard"""
         
         if not thinking_data:
-            return {'status': 'no_thinking_data'}
+            return {
+            'status': 'no_thinking_data',
+            'overall_safety_level': 'unknown',
+            'total_flags': 0,
+            'high_severity_count': 0,
+            'reasoning_quality': 'unavailable',
+            'requires_review': False,
+            'generated_at': utcnow().isoformat()
+        }
         
         safety_flags = thinking_data.get('safety_flags', [])
         high_severity_flags = [f for f in safety_flags if f.get('severity') == 'high']
