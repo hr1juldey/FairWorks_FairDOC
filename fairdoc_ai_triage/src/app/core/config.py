@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     # Redis
     REDIS_URL: str
     
+    # Next gen features flag
+    NEXT_GEN: Optional[str] = True
+
     # MinIO
     MINIO_ENDPOINT: str
     MINIO_ACCESS_KEY: str
