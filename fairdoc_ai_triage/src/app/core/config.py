@@ -1,18 +1,23 @@
 """
-Fairdoc AI Triage System - Application Configuration
+Fairdoc AI Triage System - V1 Application Configuration
+Isolated from V2 dependencies to maintain stability
 """
 
 from functools import lru_cache
 from typing import List, Optional
-
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, ConfigDict
 from pydantic_settings import BaseSettings
 
-
 class Settings(BaseSettings):
-    """Application settings"""
+    """V1 Application settings - ignores V2-specific environment variables"""
     
-    # Application
+    model_config = ConfigDict(
+        env_file=".env",
+        case_sensitive=True,
+        extra="ignore"  # Critical: ignore V2 environment variables
+    )
+    
+    # Core Application Settings (V1 only)
     APP_NAME: str = "Fairdoc AI Triage System"
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
@@ -25,35 +30,37 @@ class Settings(BaseSettings):
     def parse_comma_separated_list(cls, v):
         """Parse comma-separated strings into lists"""
         if isinstance(v, str):
-            return [item.strip() for item in v.split(',')]
+            # Handle both bracketed and comma-separated formats
+            v = v.strip('[]"\'')
+            return [item.strip(' "\'') for item in v.split(',') if item.strip()]
         return v
     
-    # Database
+    # Database Configuration
     DATABASE_URL: str
     TEST_DATABASE_URL: Optional[str] = None
     
-    # Redis
+    # Redis Configuration
     REDIS_URL: str
     
-    # Next gen features flag
-    NEXT_GEN: Optional[bool] = True
-
-    # MinIO
+    # Feature Flag (V1 safe)
+    NEXT_GEN: Optional[bool] = False
+    
+    # MinIO Object Storage
     MINIO_ENDPOINT: str
     MINIO_ACCESS_KEY: str
     MINIO_SECRET_KEY: str
     MINIO_BUCKET_NAME: str = "fairdoc-ai-storage"
     
-    # Ollama
+    # Ollama Configuration (V1 compatible)
     OLLAMA_BASE_URL: str
-    OLLAMA_MODEL: str  # Keep as variable for flexibility
+    OLLAMA_MODEL: str = "deepseek-r1:8b"
     
-    # AI Services
+    # AI Services (V1 minimal)
     OPENAI_API_KEY: Optional[str] = None
     DSPY_LM_TYPE: str = "ollama"
-    DSPY_MODEL_NAME: str  # Variable model name
+    DSPY_MODEL_NAME: str = "deepseek-r1:8b"
     
-    # Raven Chat
+    # Raven Chat Integration
     RAVEN_WEBHOOK_URL: str
     RAVEN_API_KEY: str
     RAVEN_SECRET: str
@@ -63,22 +70,17 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRATION_HOURS: int = 24
     
-    # Logging
+    # Logging (V1 basic)
     LOG_LEVEL: str = "INFO"
     SENTRY_DSN: Optional[str] = None
     PROMETHEUS_ENDPOINT: Optional[str] = None
     
-    # Celery
+    # Celery Configuration
     CELERY_BROKER_URL: str
     CELERY_RESULT_BACKEND: str
-    
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
-
 
 class TestSettings(Settings):
-    """Test-specific settings"""
+    """Test-specific settings for V1"""
     
     ENVIRONMENT: str = "testing"
     DEBUG: bool = True
@@ -87,18 +89,15 @@ class TestSettings(Settings):
     def database_url(self) -> str:
         return self.TEST_DATABASE_URL or self.DATABASE_URL.replace("fairdoc_ai", "fairdoc_ai_test")
 
-
 @lru_cache()
 def get_settings() -> Settings:
-    """Get cached application settings"""
+    """Get cached V1 application settings"""
     return Settings()
-
 
 @lru_cache()
 def get_test_settings() -> TestSettings:
-    """Get cached test settings"""
+    """Get cached V1 test settings"""
     return TestSettings()
 
-
-# Global settings instance
+# Global V1 settings instance
 settings = get_settings()
