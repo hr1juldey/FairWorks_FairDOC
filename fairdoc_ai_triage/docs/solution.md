@@ -23,7 +23,7 @@ The lack of input streaming forces a **batch processing model** where complete c
 
 Instead of input streaming, the solution aligns with Cognition AI's context engineering principles:
 
-```
+```markdown
 Context Assembly → Full Context Packaging → LLM Processing → Streamed Output
      ↓                    ↓                      ↓              ↓
 Redis Version Control → Smart Chunking → Any LLM API → Response Processing

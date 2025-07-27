@@ -54,9 +54,9 @@ graph TD
     I --> J[Context Commit]
     J --> K[User Response]
     
-    L[Redis Context Store]  C
-    M[FHIR Compliance Layer]  D
-    N[Audit & Metrics]  J
+    L[Redis Context Store] --> C
+    M[FHIR Compliance Layer] --> D
+    N[Audit & Metrics] --> J
 ```
 
 ## Component Architecture
