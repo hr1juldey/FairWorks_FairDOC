@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     REDIS_URL: str
     
     # Next gen features flag
-    NEXT_GEN: Optional[str] = True
+    NEXT_GEN: Optional[bool] = True
 
     # MinIO
     MINIO_ENDPOINT: str
