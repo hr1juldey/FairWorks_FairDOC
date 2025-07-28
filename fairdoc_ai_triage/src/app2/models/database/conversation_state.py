@@ -1,191 +1,279 @@
 """
-Conversation State Database Model for Fairdoc AI V2
-
-SQLAlchemy model mirroring Redis ConversationQueue JSON structure
-with ORM-friendly columns and helper methods (≤200 LOC)
+V2 Conversation State Database Model
+SQLAlchemy ORM model for persisting conversation state
+Mirrors Redis ConversationQueue for long-term storage
+File: src/app2/models/database/conversation_state.py
 """
 
-from __future__ import annotations
-from datetime import datetime, timezone
-from typing import Dict, List, Optional, Any
+from datetime import datetime
+from typing import Optional, List, Dict, Any
 from uuid import UUID, uuid4
 
-from sqlalchemy import Column, String, Text, JSON, Integer, DateTime, Boolean, Index
-from sqlalchemy.dialects.postgresql import UUID as PGUUID
-from sqlalchemy.orm import relationship
-from pydantic import BaseModel
-
-from src.app.core.database import Base
-from src.app2.models.schemas.multiturn_chat import (
-    ConversationStatus, 
-    MedicalOutcome, 
-    StakeholderType,
-    ConversationState as ConversationStateSchema,
-    ConversationTurn as ConversationTurnSchema
+from sqlalchemy import (
+    Column, String, DateTime, Integer, Float, Boolean, 
+    Text, JSON, ForeignKey, Index, CheckConstraint, Enum as SQLEnum
 )
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID, JSONB
+from sqlalchemy.orm import relationship, declarative_base
+from sqlalchemy.sql import func
 
-class ConversationStateDB(Base):
+from ..schemas.medical_triage import MedicalOutcome, RedFlagIndicator
+from ..schemas.multiturn_chat import ConversationStatus, StakeholderRole, ChatProvider
+
+# Base class for all V2 database models
+Base = declarative_base()
+
+
+class ConversationStateV2(Base):
     """
-    PostgreSQL model for multi-turn medical conversation persistence
-    Mirrors Redis ConversationQueue structure with ORM optimizations
+    Main conversation state table for V2 system
+    Mirrors Redis queue structure for PostgreSQL persistence
+    Optimized for emergency retrieval and analytics
     """
-    __tablename__ = "conversation_state_v2"
+    __tablename__ = "conversation_states_v2"
     
-    # Primary identification
-    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
-    conversation_id = Column(String(100), nullable=False, unique=True, index=True)
-    user_id = Column(String(100), nullable=False, index=True)
-    
-    # Conversation status and metadata
-    status = Column(String(20), nullable=False, default="active", index=True)
-    initial_symptoms = Column(Text, nullable=False)
-    current_outcome = Column(String(30), nullable=False, default="inconclusive")
-    turn_count = Column(Integer, nullable=False, default=0)
-    
-    # JSON fields for complex data (Redis-style storage)
-    conversation_history = Column(JSON, nullable=False, default=list)
-    nice_protocols_used = Column(JSON, nullable=False, default=list)
-    red_flags_detected = Column(JSON, nullable=False, default=list)
-    active_stakeholders = Column(JSON, nullable=False, default=list)
-    
-    # Flags and booleans
-    requires_human_review = Column(Boolean, nullable=False, default=False)
-    is_emergency = Column(Boolean, nullable=False, default=False)
-    
-    # Timestamps
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-    last_activity = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-    completed_at = Column(DateTime(timezone=True), nullable=True)
-    
-    # Database indexes for optimized queries
-    __table_args__ = (
-        Index('idx_conv_user_status', 'user_id', 'status'),
-        Index('idx_conv_outcome', 'current_outcome'),
-        Index('idx_conv_activity', 'last_activity'),
-        Index('idx_conv_emergency', 'is_emergency'),
+    # Primary identifiers
+    conversation_id = Column(
+        PG_UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid4,
+        nullable=False,
+        doc="Unique conversation identifier matching Redis queue"
     )
     
-    @classmethod
-    def from_redis_state(cls, redis_data: Dict[str, Any]) -> ConversationStateDB:
-        """Create DB instance from Redis conversation state"""
-        return cls(
-            conversation_id=redis_data["conversation_id"],
-            user_id=redis_data["user_id"],
-            status=redis_data.get("status", "active"),
-            initial_symptoms=redis_data["initial_symptoms"],
-            current_outcome=redis_data.get("current_outcome", "inconclusive"),
-            turn_count=redis_data.get("turn_count", 0),
-            conversation_history=redis_data.get("conversation_history", []),
-            nice_protocols_used=redis_data.get("nice_protocols_used", []),
-            red_flags_detected=redis_data.get("red_flags_detected", []),
-            active_stakeholders=redis_data.get("active_stakeholders", ["patient", "fairdoc_agent"]),
-            requires_human_review=redis_data.get("requires_human_review", False),
-            is_emergency=redis_data.get("current_outcome") == "emergency",
-            created_at=datetime.fromisoformat(redis_data["created_at"].replace('Z', '+00:00')),
-            last_activity=datetime.fromisoformat(redis_data["last_activity"].replace('Z', '+00:00')),
-            completed_at=(
-                datetime.fromisoformat(redis_data["completed_at"].replace('Z', '+00:00'))
-                if redis_data.get("completed_at") else None
-            )
-        )
+    # Stakeholder information
+    stakeholder_role = Column(
+        SQLEnum(StakeholderRole, name="stakeholder_role_enum"),
+        nullable=False,
+        default=StakeholderRole.PATIENT,
+        doc="Primary stakeholder for this conversation"
+    )
+    stakeholder_id = Column(
+        String(100),
+        nullable=True,
+        index=True,
+        doc="External stakeholder ID (phone, user_id, etc.)"
+    )
     
-    @classmethod
-    def from_pydantic(cls, pydantic_state: ConversationStateSchema) -> ConversationStateDB:
-        """Create DB instance from Pydantic schema"""
-        return cls(
-            conversation_id=pydantic_state.conversation_id,
-            user_id=pydantic_state.user_id,
-            status=pydantic_state.status.value,
-            initial_symptoms=pydantic_state.initial_symptoms,
-            current_outcome=pydantic_state.current_outcome.value,
-            turn_count=pydantic_state.turn_count,
-            conversation_history=[turn.model_dump() for turn in pydantic_state.turns],
-            nice_protocols_used=pydantic_state.nice_protocols_used,
-            red_flags_detected=pydantic_state.red_flags_detected,
-            active_stakeholders=[s.value for s in pydantic_state.active_stakeholders],
-            requires_human_review=pydantic_state.requires_human_review,
-            is_emergency=pydantic_state.current_outcome == MedicalOutcome.EMERGENCY,
-            created_at=pydantic_state.created_at,
-            last_activity=pydantic_state.last_activity,
-            completed_at=pydantic_state.completed_at
-        )
+    # Chat platform context
+    chat_provider = Column(
+        SQLEnum(ChatProvider, name="chat_provider_enum"),
+        nullable=False,
+        default=ChatProvider.API_DIRECT,
+        doc="Which chat platform originated this conversation"
+    )
+    provider_metadata = Column(
+        JSONB,
+        nullable=False,
+        default={},
+        doc="Provider-specific context (phone numbers, chat IDs)"
+    )
     
-    def to_pydantic(self) -> ConversationStateSchema:
-        """Convert DB instance to Pydantic schema"""
-        turns = [
-            ConversationTurnSchema(**turn_data) 
-            for turn_data in self.conversation_history
-        ]
+    # Conversation lifecycle
+    status = Column(
+        SQLEnum(ConversationStatus, name="conversation_status_enum"),
+        nullable=False,
+        default=ConversationStatus.NEW,
+        index=True,
+        doc="Current conversation state"
+    )
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=func.now(),
+        index=True,
+        doc="When conversation was initiated"
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=func.now(),
+        onupdate=func.now(),
+        index=True,
+        doc="Last modification timestamp"
+    )
+    completed_at = Column(
+        DateTime(timezone=True),
+        nullable=True,
+        index=True,
+        doc="When conversation reached final state"
+    )
+    
+    # Patient demographics
+    patient_age = Column(
+        Integer,
+        nullable=True,
+        doc="Patient age for clinical context"
+    )
+    patient_gender = Column(
+        String(20),
+        nullable=True,
+        doc="Patient gender"
+    )
+    
+    # Triage assessment results
+    final_outcome = Column(
+        SQLEnum(MedicalOutcome, name="medical_outcome_enum"),
+        nullable=True,
+        index=True,
+        doc="Final triage decision if conversation completed"
+    )
+    confidence_score = Column(
+        Float,
+        nullable=False,
+        default=0.0,
+        doc="Final confidence in triage assessment (0-100)"
+    )
+    
+    # Safety indicators
+    red_flags_detected = Column(
+        JSONB,
+        nullable=False,
+        default=[],
+        doc="JSON array of RedFlagIndicator values"
+    )
+    requires_human_review = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+        index=True,
+        doc="Flag for human clinician review needed"
+    )
+    is_emergency = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+        index=True,
+        doc="Emergency escalation flag"
+    )
+    emergency_notified_at = Column(
+        DateTime(timezone=True),
+        nullable=True,
+        doc="When emergency alerts were sent"
+    )
+    
+    # Conversation metrics
+    turn_count = Column(
+        Integer,
+        nullable=False,
+        default=1,
+        doc="Total number of conversational turns"
+    )
+    total_processing_time_ms = Column(
+        Integer,
+        nullable=True,
+        doc="Cumulative processing time across all turns"
+    )
+    
+    # NICE protocol context
+    relevant_protocols = Column(
+        JSONB,
+        nullable=False,
+        default=[],
+        doc="JSON array of matching NICE protocol IDs"
+    )
+    
+    # Conversation history (denormalized for performance)
+    conversation_turns = Column(
+        JSONB,
+        nullable=False,
+        default=[],
+        doc="Complete conversation history as JSON array"
+    )
+    
+    # Model versioning
+    model_version = Column(
+        String(20),
+        nullable=False,
+        default="v2.6-stable",
+        doc="Version of triage system used"
+    )
+    
+    # Table constraints
+    __table_args__ = (
+        CheckConstraint('confidence_score >= 0 AND confidence_score <= 100', 
+                       name='valid_confidence_score'),
+        CheckConstraint('patient_age IS NULL OR (patient_age >= 0 AND patient_age <= 120)', 
+                       name='valid_patient_age'),
+        CheckConstraint('turn_count >= 1', 
+                       name='valid_turn_count'),
         
-        return ConversationStateSchema(
-            conversation_id=self.conversation_id,
-            user_id=self.user_id,
-            status=ConversationStatus(self.status),
-            initial_symptoms=self.initial_symptoms,
-            current_outcome=MedicalOutcome(self.current_outcome),
-            turn_count=self.turn_count,
-            turns=turns,
-            nice_protocols_used=self.nice_protocols_used,
-            red_flags_detected=self.red_flags_detected,
-            active_stakeholders=[StakeholderType(s) for s in self.active_stakeholders],
-            requires_human_review=self.requires_human_review,
-            created_at=self.created_at,
-            last_activity=self.last_activity,
-            completed_at=self.completed_at
-        )
-    
-    def to_redis_format(self) -> Dict[str, Any]:
-        """Convert DB instance to Redis-compatible format"""
+        # Indexes for common queries
+        Index('idx_conversations_emergency', 'is_emergency', 'created_at'),
+        Index('idx_conversations_status_updated', 'status', 'updated_at'),
+        Index('idx_conversations_stakeholder', 'stakeholder_id', 'chat_provider'),
+        Index('idx_conversations_review_pending', 'requires_human_review', 'created_at'),
+        Index('idx_conversations_outcome', 'final_outcome', 'completed_at'),
+    )
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for API responses"""
         return {
-            "conversation_id": self.conversation_id,
-            "user_id": self.user_id,
-            "status": self.status,
-            "turn_count": self.turn_count,
-            "initial_symptoms": self.initial_symptoms,
-            "current_outcome": self.current_outcome,
-            "conversation_history": self.conversation_history,
-            "nice_protocols_used": self.nice_protocols_used,
-            "red_flags_detected": self.red_flags_detected,
-            "active_stakeholders": self.active_stakeholders,
-            "requires_human_review": self.requires_human_review,
-            "created_at": self.created_at.isoformat(),
-            "last_activity": self.last_activity.isoformat(),
-            "completed_at": self.completed_at.isoformat() if self.completed_at else None
+            'conversation_id': str(self.conversation_id),
+            'stakeholder_role': self.stakeholder_role.value if self.stakeholder_role else None,
+            'stakeholder_id': self.stakeholder_id,
+            'chat_provider': self.chat_provider.value if self.chat_provider else None,
+            'status': self.status.value if self.status else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'completed_at': self.completed_at.isoformat() if self.completed_at else None,
+            'final_outcome': self.final_outcome.value if self.final_outcome else None,
+            'confidence_score': self.confidence_score,
+            'turn_count': self.turn_count,
+            'is_emergency': self.is_emergency,
+            'requires_human_review': self.requires_human_review,
+            'relevant_protocols': self.relevant_protocols or []
         }
-    
-    def update_from_turn(self, turn_data: Dict[str, Any]) -> None:
-        """Update conversation state with new turn data"""
-        # Add turn to history
-        self.conversation_history.append(turn_data)
-        self.turn_count = len(self.conversation_history)
-        self.current_outcome = turn_data.get("outcome", "inconclusive")
-        self.last_activity = datetime.now(timezone.utc)
-        
-        # Update emergency flag
-        self.is_emergency = self.current_outcome == "emergency"
-        
-        # Mark for human review if needed
-        if self.current_outcome in ["emergency", "routine_doctor"]:
-            self.requires_human_review = True
-        
-        # Mark completion
-        if self.current_outcome in ["emergency", "routine_doctor", "self_care", "spam_detected"]:
-            self.status = "completed"
-            self.completed_at = datetime.now(timezone.utc)
-    
-    def get_latest_turn(self) -> Optional[Dict[str, Any]]:
-        """Get the most recent conversation turn"""
-        return self.conversation_history[-1] if self.conversation_history else None
-    
-    def is_complete(self) -> bool:
-        """Check if conversation has reached completion"""
-        return self.status == "completed"
-    
+
+    def add_conversation_turn(self, turn_data: Dict[str, Any]) -> None:
+        """Add a new turn to the conversation history"""
+        turns = list(self.conversation_turns or [])
+        turns.append(turn_data)
+        self.conversation_turns = turns
+        self.turn_count = len(turns)
+        self.updated_at = func.now()
+
+    def mark_emergency(self) -> None:
+        """Mark conversation as emergency and update flags"""
+        self.is_emergency = True
+        self.requires_human_review = True
+        self.emergency_notified_at = func.now()
+        self.updated_at = func.now()
+
+    def complete_conversation(self, final_outcome: MedicalOutcome, confidence: float) -> None:
+        """Mark conversation as completed with final assessment"""
+        self.status = ConversationStatus.COMPLETED
+        self.final_outcome = final_outcome
+        self.confidence_score = confidence
+        self.completed_at = func.now()
+        self.updated_at = func.now()
+
+    @classmethod
+    def get_active_conversations(cls, session) -> List['ConversationStateV2']:
+        """Get all active (non-completed) conversations"""
+        return session.query(cls).filter(
+            cls.status.in_([
+                ConversationStatus.NEW,
+                ConversationStatus.IN_PROGRESS,
+                ConversationStatus.AWAITING_RESPONSE
+            ])
+        ).order_by(cls.updated_at.desc()).all()
+
+    @classmethod
+    def get_emergency_conversations(cls, session, hours_back: int = 24) -> List['ConversationStateV2']:
+        """Get recent emergency conversations for review"""
+        cutoff = func.now() - func.interval(f'{hours_back} hours')
+        return session.query(cls).filter(
+            cls.is_emergency,
+            cls.created_at >= cutoff
+        ).order_by(cls.created_at.desc()).all()
+
+    @classmethod
+    def get_pending_review(cls, session) -> List['ConversationStateV2']:
+        """Get conversations awaiting human review"""
+        return session.query(cls).filter(
+            cls.requires_human_review,
+            cls.status != ConversationStatus.COMPLETED
+        ).order_by(cls.created_at.asc()).all()
+
     def __repr__(self) -> str:
-        return (
-            f"<ConversationStateDB("
-            f"id={self.conversation_id}, "
-            f"user={self.user_id}, "
-            f"status={self.status}, "
-            f"turns={self.turn_count})>"
-        )
+        return f"<ConversationStateV2(id={self.conversation_id}, status={self.status}, turns={self.turn_count})>"

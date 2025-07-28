@@ -1,23 +1,38 @@
 """
-Multi-turn Chat Schema Models for Fairdoc AI V2
-Pydantic v2 models for conversation management and API contracts
+V2 Multi-turn Chat API Request/Response DTOs
+Pydantic v2 models for FastAPI endpoints
+File: src/app2/models/schemas/multiturn_chat.py
 """
 
-from __future__ import annotations
-
-from datetime import datetime, timezone
-from typing import Dict, List, Optional, Literal, Any
+from datetime import datetime
+from typing import Optional, List
+from enum import Enum
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator, ConfigDict
-from enum import Enum
+from pydantic import BaseModel, Field, ConfigDict
+from .medical_triage import (
+    MedicalOutcome, 
+    RedFlagIndicator, 
+    TriageDecision, 
+    ConversationTurn
+)
 
-class StakeholderType(str, Enum):
-    """Types of stakeholders in medical conversations"""
+
+class ChatProvider(str, Enum):
+    """Supported chat providers for V2 system"""
+    RAVEN = "raven"
+    TELEGRAM = "telegram" 
+    WHATSAPP = "whatsapp"
+    API_DIRECT = "api_direct"
+
+
+class StakeholderRole(str, Enum):
+    """Who is participating in the conversation"""
     PATIENT = "patient"
-    DOCTOR = "doctor" 
+    FAMILY_MEMBER = "family_member"
+    DOCTOR = "doctor"
     ADMIN = "admin"
-    FAIRDOC_AGENT = "fairdoc_agent"
+    TRIAGE_AGENT = "triage_agent"
 
 class MessagePriority(str, Enum):
     """Message routing priority levels"""
@@ -27,252 +42,225 @@ class MessagePriority(str, Enum):
     EMERGENCY = "emergency"
 
 class ConversationStatus(str, Enum):
-    """Conversation lifecycle status"""
-    ACTIVE = "active"
+    """Current state of the conversation"""
+    NEW = "new"
+    IN_PROGRESS = "in_progress"
+    AWAITING_RESPONSE = "awaiting_response"
     COMPLETED = "completed"
     ESCALATED = "escalated"
     ABANDONED = "abandoned"
 
-class MedicalOutcome(str, Enum):
-    """Medical triage outcome classifications"""
-    EMERGENCY = "emergency"
-    ROUTINE_DOCTOR = "routine_doctor"
-    SELF_CARE = "self_care"
-    INCONCLUSIVE = "inconclusive"
-    SPAM_DETECTED = "spam_detected"
-
-# === Request/Response Models for API ===
 
 class MultiTurnChatRequest(BaseModel):
-    """Request model for multi-turn chat API"""
-    
+    """
+    Incoming request for V2 chat endpoint
+    Maps to medical triage flow
+    """
     model_config = ConfigDict(
         str_strip_whitespace=True,
         validate_assignment=True,
-        extra="forbid"
+        frozen=False
     )
     
-    user_id: str = Field(
-        ..., 
-        min_length=1, 
+    # Core identifiers
+    conversation_id: Optional[UUID] = Field(
+        default_factory=uuid4,
+        description="Unique conversation identifier for session continuity"
+    )
+    user_message: str = Field(
+        min_length=1,
+        max_length=1000,
+        description="Patient's current message or symptom description"
+    )
+    
+    # Stakeholder context
+    stakeholder_role: StakeholderRole = Field(
+        default=StakeholderRole.PATIENT,
+        description="Role of the person sending the message"
+    )
+    stakeholder_id: Optional[str] = Field(
+        default=None,
         max_length=100,
-        description="Unique identifier for the patient/user"
-    )
-    message: str = Field(
-        ..., 
-        min_length=1, 
-        max_length=2000,
-        description="User's message or symptom description"
-    )
-    conversation_id: Optional[str] = Field(
-        None,
-        description="Existing conversation ID for follow-up messages"
-    )
-    stakeholder_type: StakeholderType = Field(
-        default=StakeholderType.PATIENT,
-        description="Type of stakeholder sending the message"
+        description="External ID for the person (phone number, user_id, etc.)"
     )
     
-    @field_validator('message')
-    @classmethod
-    def validate_message_content(cls, v: str) -> str:
-        """Ensure message has meaningful content"""
-        if not v.strip():
-            raise ValueError("Message cannot be empty or only whitespace")
-        return v.strip()
+    # Chat provider metadata
+    chat_provider: ChatProvider = Field(
+        default=ChatProvider.API_DIRECT,
+        description="Which chat platform this message came from"
+    )
+    provider_metadata: Optional[dict] = Field(
+        default_factory=dict,
+        description="Provider-specific context (phone numbers, chat IDs, etc.)"
+    )
+    
+    # Optional context
+    patient_age: Optional[int] = Field(
+        default=None,
+        ge=0,
+        le=120,
+        description="Patient age for better triage assessment"
+    )
+    patient_gender: Optional[str] = Field(
+        default=None,
+        max_length=20,
+        description="Patient gender for clinical context"
+    )
+    is_emergency_override: bool = Field(
+        default=False,
+        description="Force emergency escalation bypass normal triage"
+    )
+
 
 class MultiTurnChatResponse(BaseModel):
-    """Response model for multi-turn chat API"""
-    
+    """
+    Response from V2 chat system
+    Contains agent decision + next steps
+    """
     model_config = ConfigDict(
+        str_strip_whitespace=True,
         validate_assignment=True,
-        extra="forbid"
+        frozen=True
     )
     
-    conversation_id: str = Field(
-        ...,
-        description="Unique conversation identifier"
+    # Response identifiers
+    conversation_id: UUID = Field(
+        description="Session identifier matching the request"
     )
-    agent_response: Optional[str] = Field(
-        None,
-        description="Agent's response message to the user"
-    )
-    next_question: Optional[str] = Field(
-        None,
-        description="Next question to ask patient, null if conversation complete"
-    )
-    medical_outcome: MedicalOutcome = Field(
-        ...,
-        description="Current medical triage classification"
-    )
-    confidence_score: int = Field(
-        ...,
-        ge=0,
-        le=100,
-        description="Confidence level in the medical outcome (0-100)"
-    )
-    is_conversation_complete: bool = Field(
-        ...,
-        description="Whether the conversation has reached a conclusion"
-    )
-    turn_number: int = Field(
-        ...,
-        ge=1,
-        description="Current turn number in the conversation"
-    )
-    red_flags: List[str] = Field(
-        default_factory=list,
-        description="List of concerning symptoms detected"
-    )
-    reasoning: str = Field(
-        default="",
-        description="Medical reasoning behind the outcome classification"
-    )
-    estimated_completion_turns: Optional[int] = Field(
-        None,
-        ge=0,
-        description="Estimated number of turns remaining"
+    response_id: UUID = Field(
+        default_factory=uuid4,
+        description="Unique ID for this specific response"
     )
     timestamp: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
-        description="Response timestamp"
-    )
-
-# === Internal Conversation Models ===
-
-class ConversationTurn(BaseModel):
-    """Individual turn in a multi-turn conversation"""
-    
-    model_config = ConfigDict(
-        validate_assignment=True,
-        extra="forbid"
+        default_factory=datetime.now,
+        description="When this response was generated"
     )
     
-    turn_number: int = Field(..., ge=1)
-    user_message: str = Field(..., min_length=1)
-    agent_response: Optional[str] = None
-    agent_question: Optional[str] = None
-    medical_outcome: MedicalOutcome
-    confidence_score: int = Field(..., ge=0, le=100)
-    red_flags: List[str] = Field(default_factory=list)
-    reasoning: str = Field(default="")
-    nice_protocol_used: Optional[str] = None
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class ConversationState(BaseModel):
-    """Complete state of a multi-turn medical conversation"""
-    
-    model_config = ConfigDict(
-        validate_assignment=True,
-        extra="forbid"
+    # Agent response content
+    agent_message: Optional[str] = Field(
+        default=None,
+        description="Triage agent's response or follow-up question"
+    )
+    next_question: Optional[str] = Field(
+        default=None,
+        description="Specific follow-up question if conversation continues"
     )
     
-    conversation_id: str = Field(
-        default_factory=lambda: f"conv_{uuid4().hex[:12]}",
-        description="Unique conversation identifier"
+    # Triage assessment
+    current_assessment: Optional[TriageDecision] = Field(
+        default=None,
+        description="Current medical assessment from DSPy agent"
     )
-    user_id: str = Field(..., min_length=1)
-    status: ConversationStatus = Field(default=ConversationStatus.ACTIVE)
-    
-    # Conversation metadata
-    initial_symptoms: str = Field(..., min_length=1)
-    current_outcome: MedicalOutcome = Field(default=MedicalOutcome.INCONCLUSIVE)
-    turn_count: int = Field(default=0, ge=0)
-    
-    # Conversation history
-    turns: List[ConversationTurn] = Field(default_factory=list)
-    nice_protocols_used: List[str] = Field(default_factory=list)
-    red_flags_detected: List[str] = Field(default_factory=list)
-    
-    # Stakeholder tracking
-    active_stakeholders: List[StakeholderType] = Field(
-        default_factory=lambda: [StakeholderType.PATIENT, StakeholderType.FAIRDOC_AGENT]
+    medical_outcome: Optional[MedicalOutcome] = Field(
+        default=None,
+        description="Final outcome if triage is complete"
     )
-    requires_human_review: bool = Field(default=False)
-    
-    # Timestamps
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    last_activity: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    completed_at: Optional[datetime] = None
-    
-    def add_turn(self, turn: ConversationTurn) -> None:
-        """Add a new turn to the conversation"""
-        self.turns.append(turn)
-        self.turn_count = len(self.turns)
-        self.current_outcome = turn.medical_outcome
-        self.last_activity = datetime.now(timezone.utc)
-        
-        # Update red flags
-        self.red_flags_detected.extend(turn.red_flags)
-        
-        # Mark completion if needed
-        if turn.medical_outcome in [MedicalOutcome.EMERGENCY, MedicalOutcome.ROUTINE_DOCTOR, MedicalOutcome.SELF_CARE]:
-            self.status = ConversationStatus.COMPLETED
-            self.completed_at = datetime.now(timezone.utc)
-    
-    def get_latest_turn(self) -> Optional[ConversationTurn]:
-        """Get the most recent conversation turn"""
-        return self.turns[-1] if self.turns else None
-    
-    def is_complete(self) -> bool:
-        """Check if conversation has reached completion"""
-        return self.status == ConversationStatus.COMPLETED
-
-# === Message Routing Models ===
-
-class MessageRoute(BaseModel):
-    """Model for routing messages between stakeholders"""
-    
-    model_config = ConfigDict(
-        validate_assignment=True,
-        extra="forbid"
+    confidence_score: float = Field(
+        ge=0.0,
+        le=100.0,
+        default=0.0,
+        description="Confidence in current assessment (0-100)"
     )
     
-    from_stakeholder: StakeholderType
-    to_stakeholder: StakeholderType
-    message_content: str = Field(..., min_length=1)
-    conversation_id: str
-    priority: MessagePriority = Field(default=MessagePriority.MEDIUM)
-    requires_human_review: bool = Field(default=False)
-    medical_outcome: Optional[MedicalOutcome] = None
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-# === Conversation Analytics Models ===
-
-class ConversationMetrics(BaseModel):
-    """Analytics model for conversation performance tracking"""
-    
-    model_config = ConfigDict(
-        validate_assignment=True,
-        extra="forbid"
+    # Safety flags
+    red_flags_detected: List[RedFlagIndicator] = Field(
+        default_factory=list,
+        description="Any red flag symptoms identified"
+    )
+    requires_human_review: bool = Field(
+        default=False,
+        description="Whether human clinician review is needed"
+    )
+    is_emergency: bool = Field(
+        default=False,
+        description="Emergency flag for immediate escalation"
     )
     
-    conversation_id: str
-    total_turns: int = Field(..., ge=0)
-    completion_time_seconds: Optional[int] = Field(None, ge=0)
-    final_outcome: Optional[MedicalOutcome] = None
-    confidence_scores: List[int] = Field(default_factory=list)
-    red_flags_count: int = Field(default=0, ge=0)
-    nice_protocols_used: List[str] = Field(default_factory=list)
-    stakeholders_involved: List[StakeholderType] = Field(default_factory=list)
-    average_confidence: Optional[float] = Field(None, ge=0.0, le=100.0)
+    # Conversation state
+    conversation_status: ConversationStatus = Field(
+        default=ConversationStatus.IN_PROGRESS,
+        description="Current state of the conversation"
+    )
+    turn_count: int = Field(
+        ge=1,
+        description="Number of conversational turns so far"
+    )
     
-    def calculate_metrics(self, conversation: ConversationState) -> None:
-        """Calculate metrics from conversation state"""
-        self.total_turns = conversation.turn_count
-        self.final_outcome = conversation.current_outcome
-        self.red_flags_count = len(conversation.red_flags_detected)
-        self.nice_protocols_used = conversation.nice_protocols_used
-        self.stakeholders_involved = conversation.active_stakeholders
-        
-        # Calculate completion time
-        if conversation.completed_at and conversation.created_at:
-            self.completion_time_seconds = int(
-                (conversation.completed_at - conversation.created_at).total_seconds()
-            )
-        
-        # Calculate average confidence
-        confidence_scores = [turn.confidence_score for turn in conversation.turns]
-        if confidence_scores:
-            self.confidence_scores = confidence_scores
-            self.average_confidence = sum(confidence_scores) / len(confidence_scores)
+    # NICE protocol context
+    relevant_protocols: List[str] = Field(
+        default_factory=list,
+        description="NICE protocol IDs that match current symptoms"
+    )
+    
+    # Routing information
+    notify_stakeholders: List[StakeholderRole] = Field(
+        default_factory=list,
+        description="Which stakeholders should be notified of this response"
+    )
+    
+    # Metadata for client
+    processing_time_ms: Optional[int] = Field(
+        default=None,
+        ge=0,
+        description="How long the triage agent took to respond"
+    )
+    model_version: str = Field(
+        default="v2.6-stable",
+        description="Version of the triage system that generated this response"
+    )
+
+
+class ConversationHistoryRequest(BaseModel):
+    """Request to fetch conversation history"""
+    model_config = ConfigDict(frozen=True)
+    
+    conversation_id: UUID = Field(
+        description="Conversation to retrieve"
+    )
+    include_metadata: bool = Field(
+        default=False,
+        description="Whether to include processing metadata"
+    )
+
+
+class ConversationHistoryResponse(BaseModel):
+    """Response containing full conversation history"""
+    model_config = ConfigDict(frozen=True)
+    
+    conversation_id: UUID
+    conversation_turns: List[ConversationTurn] = Field(
+        description="Complete history of conversation turns"
+    )
+    final_outcome: Optional[MedicalOutcome] = Field(
+        default=None,
+        description="Final triage outcome if conversation completed"
+    )
+    total_turns: int = Field(
+        ge=1,
+        description="Total number of turns in conversation"
+    )
+    created_at: datetime
+    completed_at: Optional[datetime] = Field(default=None)
+
+
+class EmergencyAlertPayload(BaseModel):
+    """
+    Payload sent to external webhooks when emergency detected
+    Used for SMS/email notifications
+    """
+    model_config = ConfigDict(frozen=True)
+    
+    alert_id: UUID = Field(default_factory=uuid4)
+    conversation_id: UUID
+    patient_context: dict = Field(
+        description="Safe patient context (no PHI details)"
+    )
+    red_flags: List[RedFlagIndicator]
+    alert_timestamp: datetime = Field(default_factory=datetime.now)
+    severity_level: str = Field(
+        regex="^(HIGH|CRITICAL)$",
+        description="Alert severity for escalation routing"
+    )
+    recommended_action: str = Field(
+        description="Human-readable next steps"
+    )

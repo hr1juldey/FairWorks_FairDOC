@@ -1,15 +1,16 @@
 """
 Unit tests for NICELookupService (V2)
 Keeps <200 LOC while exercising positive & negative paths.
+File: src/tests/unit/test_nice_lookup.py
 """
-from pytest import mark
+import pytest 
 
 from src.app2.services.context.nice_lookup import NICELookupService
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
-@mark.fixture(scope="module")
+@pytest.fixture(scope="module")
 def nice_lookup():
     """Return a NICELookupService loaded with default seed data."""
     return NICELookupService()
@@ -18,7 +19,7 @@ def nice_lookup():
 # Tests: matching keywords
 # ---------------------------------------------------------------------------
 
-@mark.parametrize(
+@pytest.parametrize(
     ("query", "expected_code"),
     [
         ("My head has been hurting – maybe a headache?", "NG127_HEADACHE"),
@@ -33,9 +34,17 @@ async def test_find_relevant_protocols_positive(nice_lookup, query, expected_cod
     assert result["protocol_text"].startswith("Condition:")
 
 # ---------------------------------------------------------------------------
+# Tests: case-insensitivity & punctuation handling
+# ---------------------------------------------------------------------------
+async def test_protocol_lookup_case_punctuation(nice_lookup):
+    """Lookup should ignore case and punctuation characters."""
+    text = "  HEADACHE!!!   "
+    result = nice_lookup.find_relevant_protocols(text)
+    assert result["protocol_code"] == "NG127_HEADACHE"
+
+# ---------------------------------------------------------------------------
 # Tests: no match returns NONE
 # ---------------------------------------------------------------------------
-
 async def test_find_relevant_protocols_no_match(nice_lookup):
     """Unknown symptom strings should yield protocol_code == 'NONE'."""
     result = nice_lookup.find_relevant_protocols("I have an itchy elbow")

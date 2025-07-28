@@ -1,154 +1,262 @@
 """
-Gold Standards Database Model for Fairdoc AI V2
-
-Simple table + JSON blob for gold-standard medical dialogues
-Used for DSPy optimization and training (≤150 LOC)
+V2 Gold Standards Database Model  
+SQLAlchemy model for storing evaluation/training data
+Seed data for DSPy optimization and model evaluation
+File: src/app2/models/database/gold_standards.py
 """
 
-from __future__ import annotations
-from datetime import datetime, timezone
-from typing import Dict, List, Optional, Any
+from datetime import datetime
+from typing import Optional, List, Dict, Any
 from uuid import UUID, uuid4
 
-from sqlalchemy import Column, String, Text, JSON, Integer, DateTime, Boolean, Index
-from sqlalchemy.dialects.postgresql import UUID as PGUUID
-from pydantic import BaseModel
+from sqlalchemy import (
+    Column, String, DateTime, Integer, Float, Boolean,
+    Text, Index, CheckConstraint, Enum as SQLEnum
+)
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID, JSONB
+from sqlalchemy.orm import declarative_base
+from sqlalchemy.sql import func
 
-from src.app.core.database import Base
-from src.app2.models.schemas.medical_triage import MedicalOutcome
-from src.app2.models.schemas.multiturn_chat import ConversationState
+from ..schemas.medical_triage import MedicalOutcome, RedFlagIndicator
+from ..schemas.multiturn_chat import StakeholderRole
 
-class GoldStandardDB(Base):
+# Base class for all V2 database models
+Base = declarative_base()
+
+
+class GoldStandardDialogue(Base):
     """
-    Gold standard medical conversation for DSPy training
-    Contains expert-validated multi-turn medical triage dialogues
+    Gold standard conversation examples for DSPy training/evaluation
+    Contains expert-labeled triage conversations for model optimization
     """
-    __tablename__ = "gold_standards_v2"
+    __tablename__ = "gold_standard_dialogues_v2"
     
-    # Primary identification
-    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
-    case_id = Column(String(50), nullable=False, unique=True, index=True)
-    
-    # Case metadata
-    condition_name = Column(String(200), nullable=False, index=True)
-    initial_symptoms = Column(Text, nullable=False)
-    expected_outcome = Column(String(30), nullable=False, index=True)
-    difficulty_level = Column(String(20), nullable=False, default="medium")  # easy|medium|hard
-    nice_protocol_code = Column(String(50), nullable=True, index=True)
-    
-    # Gold standard dialogue (JSON format)
-    conversation_turns = Column(JSON, nullable=False)  # List of turn objects
-    expert_reasoning = Column(Text, nullable=False)  # Medical reasoning
-    red_flags_expected = Column(JSON, nullable=False, default=list)
-    
-    # Quality metrics
-    turn_count = Column(Integer, nullable=False)
-    expert_confidence = Column(Integer, nullable=False)  # 0-100
-    
-    # Training metadata
-    is_validated = Column(Boolean, nullable=False, default=True)
-    validation_date = Column(DateTime(timezone=True), nullable=True)
-    created_by = Column(String(100), nullable=False, default="system")
-    
-    # Timestamps
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-    
-    # Database indexes for DSPy optimization
-    __table_args__ = (
-        Index('idx_gold_condition_outcome', 'condition_name', 'expected_outcome'),
-        Index('idx_gold_difficulty', 'difficulty_level'),
-        Index('idx_gold_validated', 'is_validated'),
+    # Primary identifiers
+    standard_id = Column(
+        PG_UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid4,
+        nullable=False,
+        doc="Unique identifier for this gold standard example"
     )
     
-    @classmethod
-    def from_conversation_state(cls, conversation: ConversationState, expert_data: Dict[str, Any]) -> GoldStandardDB:
-        """Create gold standard from completed conversation with expert validation"""
-        return cls(
-            case_id=f"gold_{conversation.conversation_id}",
-            condition_name=expert_data.get("condition_name", "Unknown"),
-            initial_symptoms=conversation.initial_symptoms,
-            expected_outcome=conversation.current_outcome.value,
-            difficulty_level=expert_data.get("difficulty", "medium"),
-            nice_protocol_code=expert_data.get("nice_protocol"),
-            conversation_turns=[turn.model_dump() for turn in conversation.turns],
-            expert_reasoning=expert_data.get("reasoning", ""),
-            red_flags_expected=conversation.red_flags_detected,
-            turn_count=conversation.turn_count,
-            expert_confidence=expert_data.get("confidence", 95),
-            created_by=expert_data.get("expert_id", "system")
-        )
+    # Metadata
+    title = Column(
+        String(200),
+        nullable=False,
+        doc="Human-readable title (e.g., 'Chest Pain Emergency Case')"
+    )
+    description = Column(
+        Text,
+        nullable=False,
+        doc="Detailed description of the clinical scenario"
+    )
     
-    def to_dspy_example(self) -> Dict[str, Any]:
+    # Classification
+    primary_symptom = Column(
+        String(100),
+        nullable=False,
+        index=True,
+        doc="Main presenting symptom category"
+    )
+    expected_outcome = Column(
+        SQLEnum(MedicalOutcome, name="medical_outcome_enum"),
+        nullable=False,
+        index=True,
+        doc="Expert-labeled correct triage outcome"
+    )
+    
+    # Patient demographics for this scenario
+    patient_age = Column(
+        Integer,
+        nullable=False,
+        doc="Patient age in this scenario"
+    )
+    patient_gender = Column(
+        String(20),
+        nullable=False,
+        doc="Patient gender in this scenario"
+    )
+    
+    # Red flag expectations
+    expected_red_flags = Column(
+        JSONB,
+        nullable=False,
+        default=[],
+        doc="JSON array of RedFlagIndicator values that should be detected"
+    )
+    should_escalate = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+        index=True,
+        doc="Whether this case should trigger human review"
+    )
+    
+    # The actual conversation dialogue
+    conversation_dialogue = Column(
+        JSONB,
+        nullable=False,
+        doc="Complete conversation as JSON array of turns with expected agent responses"
+    )
+    
+    # NICE protocol relevance
+    relevant_protocols = Column(
+        JSONB,
+        nullable=False,
+        default=[],
+        doc="JSON array of NICE protocol IDs relevant to this case"
+    )
+    
+    # Evaluation metrics
+    minimum_confidence_threshold = Column(
+        Float,
+        nullable=False,
+        default=70.0,
+        doc="Minimum confidence score expected for this case"
+    )
+    expected_turn_count = Column(
+        Integer,
+        nullable=False,
+        default=3,
+        doc="Expected number of turns to reach correct diagnosis"
+    )
+    max_acceptable_turns = Column(
+        Integer,
+        nullable=False,
+        default=8,
+        doc="Maximum turns before considering evaluation failed"
+    )
+    
+    # Data provenance
+    created_by = Column(
+        String(100),
+        nullable=False,
+        doc="Who created this gold standard (clinician ID, system, etc.)"
+    )
+    reviewed_by = Column(
+        String(100),
+        nullable=True,
+        doc="Clinical expert who reviewed/approved this case"
+    )
+    clinical_notes = Column(
+        Text,
+        nullable=True,
+        doc="Additional clinical context or reasoning notes"
+    )
+    
+    # Version control
+    version = Column(
+        String(10),
+        nullable=False,
+        default="1.0",
+        doc="Version of this gold standard case"
+    )
+    is_active = Column(
+        Boolean,
+        nullable=False,
+        default=True,
+        index=True,
+        doc="Whether to include in current training/evaluation sets"
+    )
+    
+    # Timestamps
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=func.now(),
+        doc="When this standard was created"
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=func.now(),
+        onupdate=func.now(),
+        doc="Last modification timestamp"
+    )
+    
+    # Table constraints
+    __table_args__ = (
+        CheckConstraint('minimum_confidence_threshold >= 0 AND minimum_confidence_threshold <= 100', 
+                       name='valid_confidence_threshold'),
+        CheckConstraint('patient_age >= 0 AND patient_age <= 120', 
+                       name='valid_patient_age'),
+        CheckConstraint('expected_turn_count >= 1 AND expected_turn_count <= max_acceptable_turns', 
+                       name='valid_turn_counts'),
+        
+        # Indexes for training queries
+        Index('idx_gold_standards_active', 'is_active', 'primary_symptom'),
+        Index('idx_gold_standards_outcome', 'expected_outcome', 'is_active'),
+        Index('idx_gold_standards_escalation', 'should_escalate', 'expected_outcome'),
+        Index('idx_gold_standards_symptom', 'primary_symptom', 'patient_age'),
+    )
+
+    def to_training_example(self) -> Dict[str, Any]:
         """Convert to DSPy training example format"""
         return {
-            "case_id": self.case_id,
-            "initial_symptoms": self.initial_symptoms,
-            "conversation_turns": self.conversation_turns,
-            "expected_outcome": self.expected_outcome,
-            "expert_reasoning": self.expert_reasoning,
-            "nice_protocol": self.nice_protocol_code,
-            "red_flags": self.red_flags_expected,
-            "difficulty": self.difficulty_level
+            'standard_id': str(self.standard_id),
+            'input': {
+                'patient_age': self.patient_age,
+                'patient_gender': self.patient_gender,
+                'conversation_turns': self.conversation_dialogue,
+                'relevant_protocols': self.relevant_protocols or []
+            },
+            'expected_output': {
+                'medical_outcome': self.expected_outcome.value,
+                'red_flags': self.expected_red_flags or [],
+                'should_escalate': self.should_escalate,
+                'min_confidence': self.minimum_confidence_threshold
+            },
+            'metadata': {
+                'primary_symptom': self.primary_symptom,
+                'max_turns': self.max_acceptable_turns,
+                'version': self.version
+            }
         }
 
-# Seed data for essential medical conditions
-GOLD_STANDARD_SEED_DATA = [
-    {
-        "case_id": "gold_headache_001",
-        "condition_name": "Tension Headache",
-        "initial_symptoms": "I have a headache that feels like a tight band around my head",
-        "expected_outcome": "self_care",
-        "difficulty_level": "easy",
-        "nice_protocol_code": "NG127_HEADACHE",
-        "conversation_turns": [
-            {
-                "turn_number": 1,
-                "user_message": "I have a headache that feels like a tight band around my head",
-                "agent_question": "How long have you had this headache, and is this a new type of headache for you?",
-                "medical_outcome": "inconclusive",
-                "confidence_score": 60
-            },
-            {
-                "turn_number": 2,
-                "user_message": "I've had it for about 2 hours. I get these sometimes when I'm stressed at work",
-                "agent_question": "Have you experienced any nausea, vision changes, or neck stiffness with this headache?",
-                "medical_outcome": "inconclusive", 
-                "confidence_score": 75
-            },
-            {
-                "turn_number": 3,
-                "user_message": "No, none of those symptoms. Just the tight feeling",
-                "agent_response": "Based on your symptoms, this appears to be a tension headache. You can manage this with rest, hydration, and over-the-counter pain relief.",
-                "medical_outcome": "self_care",
-                "confidence_score": 90
-            }
-        ],
-        "expert_reasoning": "Classic tension headache presentation with no red flags. Stress trigger, bilateral pressure sensation, no neurological symptoms. Appropriate for self-care management.",
-        "red_flags_expected": [],
-        "turn_count": 3,
-        "expert_confidence": 95
-    },
-    {
-        "case_id": "gold_chest_pain_001", 
-        "condition_name": "Cardiac Chest Pain",
-        "initial_symptoms": "I'm having crushing chest pain that goes down my left arm",
-        "expected_outcome": "emergency",
-        "difficulty_level": "easy",
-        "nice_protocol_code": "CG95_CHEST_PAIN",
-        "conversation_turns": [
-            {
-                "turn_number": 1,
-                "user_message": "I'm having crushing chest pain that goes down my left arm",
-                "agent_response": "This sounds like a potential heart attack. You need immediate medical attention. Please call 999 or go to the nearest emergency department now.",
-                "medical_outcome": "emergency",
-                "confidence_score": 95,
-                "red_flags": ["crushing_pain", "left_arm_radiation"]
-            }
-        ],
-        "expert_reasoning": "Classic presentation of acute myocardial infarction with crushing pain and left arm radiation. Immediate emergency care required.",
-        "red_flags_expected": ["crushing_pain", "left_arm_radiation"],
-        "turn_count": 1,
-        "expert_confidence": 98
-    }
-]
+    def validate_against_prediction(self, prediction: Dict[str, Any]) -> Dict[str, bool]:
+        """Validate a model prediction against this gold standard"""
+        results = {
+            'correct_outcome': prediction.get('medical_outcome') == self.expected_outcome.value,
+            'sufficient_confidence': prediction.get('confidence_score', 0) >= self.minimum_confidence_threshold,
+            'correct_escalation': prediction.get('requires_human_review', False) == self.should_escalate,
+            'within_turn_limit': prediction.get('turn_count', 0) <= self.max_acceptable_turns
+        }
+        
+        # Check red flag detection
+        predicted_flags = set(prediction.get('red_flags_detected', []))
+        expected_flags = set(self.expected_red_flags or [])
+        results['red_flags_detected'] = len(expected_flags.intersection(predicted_flags)) >= len(expected_flags) * 0.8
+        
+        return results
+
+    @classmethod 
+    def get_training_set(cls, session, symptom_filter: Optional[str] = None, limit: int = 50) -> List['GoldStandardDialogue']:
+        """Get active gold standards for training"""
+        query = session.query(cls).filter(cls.is_active)
+        
+        if symptom_filter:
+            query = query.filter(cls.primary_symptom == symptom_filter)
+            
+        return query.order_by(cls.created_at.desc()).limit(limit).all()
+
+    @classmethod
+    def get_evaluation_set(cls, session, outcome_filter: Optional[MedicalOutcome] = None) -> List['GoldStandardDialogue']:
+        """Get gold standards for model evaluation"""
+        query = session.query(cls).filter(cls.is_active)
+        
+        if outcome_filter:
+            query = query.filter(cls.expected_outcome == outcome_filter)
+            
+        return query.order_by(cls.primary_symptom, cls.patient_age).all()
+
+    @classmethod
+    def get_emergency_examples(cls, session) -> List['GoldStandardDialogue']:
+        """Get gold standards specifically for emergency scenarios"""
+        return session.query(cls).filter(
+            cls.is_active,
+            cls.expected_outcome == MedicalOutcome.EMERGENCY
+        ).order_by(cls.created_at.desc()).all()
+
+    def __repr__(self) -> str:
+        return f"<GoldStandardDialogue(id={self.standard_id}, symptom={self.primary_symptom}, outcome={self.expected_outcome})>"
