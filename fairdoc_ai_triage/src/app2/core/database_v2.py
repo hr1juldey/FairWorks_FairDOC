@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.orm import declarative_base
 from sqlalchemy import text, event
-from sqlalchemy.pool import NullPool, QueuePool
+from sqlalchemy.pool import NullPool, AsyncAdaptedQueuePool
 
 from src.app2.core.config_v2 import settings_v2
 
@@ -63,7 +63,7 @@ class DatabaseV2:
         else:
             # Production connection pool
             engine_kwargs.update({
-                "poolclass": QueuePool,
+                "poolclass": AsyncAdaptedQueuePool,
                 "pool_size": 10,
                 "max_overflow": 20,
                 "pool_timeout": 30,

@@ -8,6 +8,7 @@ File: src/app2/main_v2.py
 """
 
 import asyncio
+import time
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 import structlog
@@ -36,7 +37,6 @@ logger = structlog.get_logger(__name__)
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """
     Manage application lifecycle with proper startup/shutdown
-    
     Ensures all services are initialized before serving requests
     and cleanly shutdown when application stops
     """
@@ -47,7 +47,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         await startup_database()
         await init_redis_pool()
         await init_services()
-        
         logger.info("✅ Fairdoc AI V2 application started successfully")
         
         # Application is ready to serve requests
@@ -56,16 +55,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     except Exception as e:
         logger.error("❌ Failed to start V2 application", error=str(e))
         raise
-        
     finally:
         # Shutdown sequence
         logger.info("👋 Shutting down Fairdoc AI V2 application...")
-        
         try:
             await cleanup_connections()
             await shutdown_database()
             logger.info("✅ V2 application shutdown completed")
-            
         except Exception as e:
             logger.error("❌ Error during V2 shutdown", error=str(e))
 
@@ -80,7 +76,6 @@ def create_app() -> FastAPI:
     Returns:
         FastAPI: Configured application instance
     """
-    
     # Create FastAPI app with V2 configuration
     app = FastAPI(
         title="Fairdoc AI Triage System V2",
@@ -91,16 +86,16 @@ def create_app() -> FastAPI:
         openapi_url="/openapi.json" if settings_v2.DEBUG else None,
         lifespan=lifespan
     )
-    
+
     # Configure middleware stack
     _configure_middleware(app)
-    
+
     # Mount V2 API router
     app.include_router(api_router)
-    
+
     # Add global exception handlers
     _configure_exception_handlers(app)
-    
+
     logger.info("🏗️ FastAPI V2 application created")
     return app
 
@@ -115,10 +110,53 @@ def _configure_middleware(app: FastAPI) -> None:
         allow_methods=["GET", "POST", "PUT", "DELETE"],
         allow_headers=["*"],
     )
-    
+
     # Gzip compression for large responses
     app.add_middleware(GZipMiddleware, minimum_size=1000)
-    
+
+    # Request logging middleware with timing (ADDED FROM ROUTER)
+    @app.middleware("http")
+    async def log_requests(request: Request, call_next):
+        """Log all V2 API requests with timing and performance metrics"""
+        start_time = time.time()
+        
+        # Log incoming request
+        logger.info(
+            "📨 V2 API Request",
+            method=request.method,
+            path=request.url.path,
+            client_ip=request.client.host if request.client else "unknown"
+        )
+        
+        try:
+            response = await call_next(request)
+            process_time = time.time() - start_time
+            
+            # Log successful response
+            logger.info(
+                "✅ V2 API Response",
+                method=request.method,
+                path=request.url.path,
+                status_code=response.status_code,
+                process_time_ms=round(process_time * 1000, 2)
+            )
+            
+            # Add processing time header for client debugging
+            response.headers["X-Process-Time"] = str(process_time)
+            return response
+            
+        except Exception as e:
+            process_time = time.time() - start_time
+            
+            logger.error(
+                "❌ V2 API Error",
+                method=request.method,
+                path=request.url.path,
+                error=str(e),
+                process_time_ms=round(process_time * 1000, 2)
+            )
+            raise
+
     # Security headers middleware
     @app.middleware("http")
     async def add_security_headers(request: Request, call_next):
@@ -127,7 +165,7 @@ def _configure_middleware(app: FastAPI) -> None:
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
         return response
-    
+
     # Request ID middleware for tracing
     @app.middleware("http")
     async def add_request_id(request: Request, call_next):
@@ -139,7 +177,7 @@ def _configure_middleware(app: FastAPI) -> None:
             response = await call_next(request)
             response.headers["X-Request-ID"] = request_id
             return response
-    
+
     logger.info("🛡️ Middleware configured")
 
 def _configure_exception_handlers(app: FastAPI) -> None:
@@ -165,7 +203,7 @@ def _configure_exception_handlers(app: FastAPI) -> None:
                 }
             }
         )
-    
+
     @app.exception_handler(404)
     async def not_found_handler(request: Request, exc: Exception):
         return JSONResponse(
@@ -178,7 +216,7 @@ def _configure_exception_handlers(app: FastAPI) -> None:
                 }
             }
         )
-    
+
     logger.info("⚠️ Exception handlers configured")
 
 # ---------------------------------------------------------------------------
@@ -194,7 +232,6 @@ app = create_app()
 
 async def main():
     """Run development server with hot reload"""
-    
     if settings_v2.ENVIRONMENT == "development":
         config = uvicorn.Config(
             "src.app2.main_v2:app",
@@ -204,12 +241,9 @@ async def main():
             log_level="info",
             access_log=True
         )
-        
         server = uvicorn.Server(config)
-        
         logger.info("🚀 Starting V2 development server on http://0.0.0.0:8000")
         await server.serve()
-    
     else:
         logger.warning("⚠️ Use production WSGI server (gunicorn) for non-development environments")
 
@@ -230,6 +264,6 @@ if __name__ == "__main__":
         logger_factory=structlog.PrintLoggerFactory(),
         cache_logger_on_first_use=True,
     )
-    
+
     # Run the application
     asyncio.run(main())

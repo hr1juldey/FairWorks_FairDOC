@@ -74,4 +74,4 @@ class ConversationTurn(BaseModel):
     class Config:
         """Enable orm-mode for seamless SQLAlchemy integration."""
 
-        orm_mode = True
+        from_attributes = True

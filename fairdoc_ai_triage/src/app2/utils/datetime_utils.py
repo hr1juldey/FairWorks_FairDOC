@@ -9,7 +9,6 @@ File: src/app2/utils/datetime_utils.py
 """
 
 from datetime import datetime, timezone
-from typing import str as StrType
 
 
 def utcnow() -> datetime:
@@ -31,7 +30,7 @@ def utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def utcnow_iso() -> StrType:
+def utcnow_iso() -> str:
     """
     Return timezone-aware UTC datetime as ISO string
     
@@ -43,7 +42,7 @@ def utcnow_iso() -> StrType:
         
     Example:
         >>> utcnow_iso()
-        '2025-01-29T21:30:45.123456+00:00'
+        '2025-07-29T21:30:45.123456+00:00'
     """
     return utcnow().isoformat()
 

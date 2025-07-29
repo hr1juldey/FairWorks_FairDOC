@@ -12,11 +12,24 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field, ConfigDict
 
 from .medical_triage import (
-    MedicalOutcome,
     RedFlagIndicator, 
     TriageDecision,
     ConversationTurn
 )
+
+
+class MedicalOutcome(str, Enum):
+    """
+    API-facing medical outcome enum for chat responses
+    
+    Separate from medical_triage.MedicalOutcome to allow different
+    terminology for external vs internal representations.
+    """
+    EMERGENCY = "emergency"
+    ROUTINE_DOCTOR = "routine_doctor"
+    SELF_CARE = "self_care"
+    INCONCLUSIVE = "inconclusive"
+    SPAM_DETECTED = "spam_detected"
 
 
 class ChatProvider(str, Enum):
@@ -114,7 +127,7 @@ class ConversationState(BaseModel):
 
     # Context Engineering Metadata
     created_at: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(),
         description="When this state version was created"
     )
     
@@ -228,7 +241,7 @@ class MultiTurnChatResponse(BaseModel):
     )
     
     timestamp: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(),
         description="When this response was generated"
     )
 
@@ -364,7 +377,7 @@ class EmergencyAlertPayload(BaseModel):
     )
     
     red_flags: List[RedFlagIndicator]
-    alert_timestamp: datetime = Field(default_factory=datetime.now)
+    alert_timestamp: datetime = Field(default_factory=lambda: datetime.now())
     
     # FIXED: Changed regex -> pattern for Pydantic v2
     severity_level: str = Field(

@@ -17,8 +17,8 @@ from sqlalchemy.dialects.postgresql import UUID as PG_UUID, JSONB
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.sql import func
 
-from ..schemas.medical_triage import MedicalOutcome, RedFlagIndicator
-from ..schemas.multiturn_chat import StakeholderRole
+from src.app2.models.schemas.medical_triage import MedicalOutcome, RedFlagIndicator
+from src.app2.models.schemas.multiturn_chat import StakeholderRole
 
 # Base class for all V2 database models
 Base = declarative_base()

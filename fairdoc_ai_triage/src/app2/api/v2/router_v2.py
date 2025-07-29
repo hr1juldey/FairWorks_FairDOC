@@ -1,20 +1,16 @@
 """
 V2 API Router - FastAPI Router Configuration
 
-Mounts all V2 endpoints with proper middleware, error handling,
-and dependency injection for the Fairdoc AI medical triage system.
+Mounts all V2 endpoints with proper dependency injection
+for the Fairdoc AI medical triage system.
 
-Designed for production with comprehensive logging, rate limiting,
-and health monitoring capabilities.
+Single responsibility: API routing only (no middleware/exceptions)
+File: src/app2/api/v2/router_v2.py
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, Request
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 import structlog
-from typing import Dict, Any
-import time
-from datetime import datetime
 
 from src.app2.core.config_v2 import settings_v2
 from src.app2.core.dependencies_v2 import (
@@ -25,6 +21,7 @@ from src.app2.core.dependencies_v2 import (
     get_raven_bridge,
     check_system_health
 )
+from src.app2.utils.datetime_utils import utcnow_iso
 
 # Import V2 endpoint routers
 from src.app2.api.v2.endpoints.multiturn_chat import router as chat_router
@@ -47,102 +44,6 @@ api_router = APIRouter(
 )
 
 # ---------------------------------------------------------------------------
-# Global Error Handlers
-# ---------------------------------------------------------------------------
-
-@api_router.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException):
-    """Handle HTTP exceptions with structured logging"""
-    logger.error(
-        "❌ HTTP Exception",
-        status_code=exc.status_code,
-        detail=exc.detail,
-        path=request.url.path,
-        method=request.method
-    )
-    
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={
-            "error": {
-                "code": exc.status_code,
-                "message": exc.detail,
-                "timestamp": datetime.utcnow().isoformat(),
-                "path": str(request.url.path)
-            }
-        }
-    )
-
-@api_router.exception_handler(Exception)
-async def general_exception_handler(request: Request, exc: Exception):
-    """Handle unexpected exceptions with structured logging"""
-    logger.error(
-        "❌ Unexpected Exception",
-        error=str(exc),
-        path=request.url.path,
-        method=request.method,
-        exc_info=True
-    )
-    
-    return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={
-            "error": {
-                "code": 500,
-                "message": "Internal server error",
-                "timestamp": datetime.utcnow().isoformat(),
-                "path": str(request.url.path)
-            }
-        }
-    )
-
-# ---------------------------------------------------------------------------
-# Request Middleware
-# ---------------------------------------------------------------------------
-
-@api_router.middleware("http")
-async def log_requests(request: Request, call_next):
-    """Log all V2 API requests with timing"""
-    start_time = time.time()
-    
-    # Log incoming request
-    logger.info(
-        "📨 V2 API Request",
-        method=request.method,
-        path=request.url.path,
-        client_ip=request.client.host if request.client else "unknown"
-    )
-    
-    try:
-        response = await call_next(request)
-        process_time = time.time() - start_time
-        
-        # Log successful response
-        logger.info(
-            "✅ V2 API Response",
-            method=request.method,
-            path=request.url.path,
-            status_code=response.status_code,
-            process_time_ms=round(process_time * 1000, 2)
-        )
-        
-        # Add processing time header
-        response.headers["X-Process-Time"] = str(process_time)
-        return response
-        
-    except Exception as e:
-        process_time = time.time() - start_time
-        
-        logger.error(
-            "❌ V2 API Error",
-            method=request.method,
-            path=request.url.path,
-            error=str(e),
-            process_time_ms=round(process_time * 1000, 2)
-        )
-        raise
-
-# ---------------------------------------------------------------------------
 # Health Check Endpoints
 # ---------------------------------------------------------------------------
 
@@ -161,7 +62,7 @@ async def health_check():
         response_data = {
             "status": "healthy" if is_healthy else "degraded",
             "version": "v2.6-stable",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": utcnow_iso(),
             "services": health_status,
             "environment": settings_v2.ENVIRONMENT
         }
@@ -186,7 +87,7 @@ async def health_check():
             content={
                 "status": "unhealthy",
                 "error": str(e),
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": utcnow_iso()
             }
         )
 
@@ -204,14 +105,14 @@ async def readiness_check():
         )
         
         if ready:
-            return {"status": "ready", "timestamp": datetime.utcnow().isoformat()}
+            return {"status": "ready", "timestamp": utcnow_iso()}
         else:
             return JSONResponse(
                 status_code=503,
                 content={
                     "status": "not_ready",
                     "services": health_status,
-                    "timestamp": datetime.utcnow().isoformat()
+                    "timestamp": utcnow_iso()
                 }
             )
             
@@ -227,7 +128,7 @@ async def liveness_check():
     """Kubernetes liveness probe endpoint"""
     return {
         "status": "alive",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": utcnow_iso(),
         "version": "v2.6-stable"
     }
 
@@ -287,7 +188,7 @@ async def api_info():
             "redoc": "/redoc"
         },
         "environment": settings_v2.ENVIRONMENT,
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": utcnow_iso()
     }
 
 # ---------------------------------------------------------------------------
