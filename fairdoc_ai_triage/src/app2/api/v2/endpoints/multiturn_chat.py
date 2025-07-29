@@ -10,7 +10,7 @@ Single responsibility: HTTP API interface for medical chat
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 import structlog
 from datetime import datetime
-
+from src.app2.utils.datetime_utils import utcnow_timestamp
 from src.app2.models.schemas.multiturn_chat import (
     MultiTurnChatRequest,
     MultiTurnChatResponse
@@ -151,7 +151,7 @@ async def health_check(
         return {
             "status": "healthy",
             "services": services_health,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": utcnow_timestamp
         }
         
     except Exception as e:
