@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Death Note Terminal - Fairdoc AI Development</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Kaushan+Script&family=Roboto+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body class="dark-theme">
+    <!-- Theme Toggle -->
+    <div class="theme-toggle">
+        <button id="themeToggle" aria-label="Toggle theme">
+            <span class="material-icons">dark_mode</span>
+        </button>
+    </div>
+
+    <!-- Death Note Header -->
+    <header class="death-note-header">
+        <div class="container">
+            <h1 class="title">
+                <span class="death-note-text">Death Note</span>
+                <span class="terminal-text">Terminal</span>
+            </h1>
+            <p class="subtitle">Fairdoc AI Development Environment</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            
+            <!-- Navigation Tabs -->
+            <nav class="tab-navigation">
+                <button class="tab-button active" data-tab="servers">
+                    <span class="material-icons">dns</span>
+                    Servers
+                </button>
+                <button class="tab-button" data-tab="tests">
+                    <span class="material-icons">bug_report</span>
+                    Tests
+                </button>
+                <button class="tab-button" data-tab="terminals">
+                    <span class="material-icons">terminal</span>
+                    Terminals
+                </button>
+                <button class="tab-button" data-tab="analysis">
+                    <span class="material-icons">psychology</span>
+                    AI Analysis
+                </button>
+            </nav>
+
+            <!-- Server Management Tab -->
+            <section id="servers-tab" class="tab-content active">
+                <div class="paper-sheet">
+                    <h2>Server Management</h2>
+                    
+                    <!-- Server Status Grid -->
+                    <div class="server-grid">
+                        
+                        <!-- V1 Server -->
+                        <div class="server-card" data-server="v1_only">
+                            <div class="server-header">
+                                <h3>V1 API (Legacy)</h3>
+                                <span class="status-indicator" id="v1-status">Stopped</span>
+                            </div>
+                            <div class="server-details">
+                                <p><strong>Endpoints:</strong> /api/v1</p>
+                                <p><strong>Module:</strong> src.app.main:app</p>
+                                <div class="port-config">
+                                    <label>Port:</label>
+                                    <select id="v1-port" class="port-select">
+                                        <option value="8001">8001 (Default)</option>
+                                        <option value="8000">8000</option>
+                                        <option value="8003">8003</option>
+                                        <option value="8004">8004</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="server-actions">
+                                <button class="btn btn-primary start-btn" data-server="v1_only">
+                                    <span class="material-icons">play_arrow</span>
+                                    Start
+                                </button>
+                                <button class="btn btn-secondary stop-btn" data-server="v1_only" disabled>
+                                    <span class="material-icons">stop</span>
+                                    Stop
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- V2 Server -->
+                        <div class="server-card" data-server="v2_only">
+                            <div class="server-header">
+                                <h3>V2 API (Modern)</h3>
+                                <span class="status-indicator" id="v2-status">Stopped</span>
+                            </div>
+                            <div class="server-details">
+                                <p><strong>Endpoints:</strong> /api/v2</p>
+                                <p><strong>Module:</strong> src.app2.main_v2:app</p>
+                                <div class="port-config">
+                                    <label>Port:</label>
+                                    <select id="v2-port" class="port-select">
+                                        <option value="8002">8002 (Default)</option>
+                                        <option value="8000">8000</option>
+                                        <option value="8003">8003</option>
+                                        <option value="8004">8004</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="server-actions">
+                                <button class="btn btn-primary start-btn" data-server="v2_only">
+                                    <span class="material-icons">play_arrow</span>
+                                    Start
+                                </button>
+                                <button class="btn btn-secondary stop-btn" data-server="v2_only" disabled>
+                                    <span class="material-icons">stop</span>
+                                    Stop
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Combined Server -->
+                        <div class="server-card" data-server="combined">
+                            <div class="server-header">
+                                <h3>V1 + V2 Combined</h3>
+                                <span class="status-indicator" id="combined-status">Stopped</span>
+                            </div>
+                            <div class="server-details">
+                                <p><strong>Endpoints:</strong> /api/v1, /api/v2</p>
+                                <p><strong>Module:</strong> V2 mounted in V1</p>
+                                <div class="port-config">
+                                    <label>Port:</label>
+                                    <select id="combined-port" class="port-select">
+                                        <option value="8000">8000 (Default)</option>
+                                        <option value="8003">8003</option>
+                                        <option value="8004">8004</option>
+                                        <option value="8005">8005</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="server-actions">
+                                <button class="btn btn-primary start-btn" data-server="combined">
+                                    <span class="material-icons">play_arrow</span>
+                                    Start
+                                </button>
+                                <button class="btn btn-secondary stop-btn" data-server="combined" disabled>
+                                    <span class="material-icons">stop</span>
+                                    Stop
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Server Actions -->
+                    <div class="global-actions">
+                        <button id="stop-all-servers" class="btn btn-danger">
+                            <span class="material-icons">stop_circle</span>
+                            Stop All Servers
+                        </button>
+                        <button id="refresh-status" class="btn btn-secondary">
+                            <span class="material-icons">refresh</span>
+                            Refresh Status
+                        </button>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- Test Management Tab -->
+            <section id="tests-tab" class="tab-content">
+                <div class="paper-sheet">
+                    <h2>Test Management</h2>
+                    
+                    <!-- Test Categories -->
+                    <div class="test-categories">
+                        
+                        <div class="test-category">
+                            <h3>
+                                <span class="material-icons">science</span>
+                                Unit Tests
+                            </h3>
+                            <div id="unit-tests" class="test-list">
+                                <div class="loading">Discovering tests...</div>
+                            </div>
+                        </div>
+
+                        <div class="test-category">
+                            <h3>
+                                <span class="material-icons">integration_instructions</span>
+                                Integration Tests
+                            </h3>
+                            <div id="integration-tests" class="test-list">
+                                <div class="loading">Discovering tests...</div>
+                            </div>
+                        </div>
+
+                        <div class="test-category">
+                            <h3>
+                                <span class="material-icons">web</span>
+                                E2E Tests
+                            </h3>
+                            <div id="e2e-tests" class="test-list">
+                                <div class="loading">Discovering tests...</div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Test Execution Controls -->
+                    <div class="test-controls">
+                        <div class="pytest-args">
+                            <label for="pytest-arguments">Pytest Arguments:</label>
+                            <input type="text" id="pytest-arguments" 
+                                   placeholder="-v --tb=short --no-header" 
+                                   class="args-input">
+                        </div>
+                        
+                        <div class="test-actions">
+                            <button id="run-selected-tests" class="btn btn-primary" disabled>
+                                <span class="material-icons">play_arrow</span>
+                                Run Selected Tests
+                            </button>
+                            <button id="run-all-tests" class="btn btn-secondary">
+                                <span class="material-icons">playlist_play</span>
+                                Run All Tests
+                            </button>
+                            <button id="clear-selection" class="btn btn-tertiary">
+                                <span class="material-icons">clear</span>
+                                Clear Selection
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- Terminal Tab -->
+            <section id="terminals-tab" class="tab-content">
+                <div class="paper-sheet">
+                    <h2>Terminal Sessions</h2>
+                    
+                    <!-- Terminal Selector -->
+                    <div class="terminal-controls">
+                        <div class="session-tabs" id="session-tabs">
+                            <!-- Dynamically populated -->
+                        </div>
+                        <button id="new-terminal" class="btn btn-primary">
+                            <span class="material-icons">add</span>
+                            New Terminal
+                        </button>
+                    </div>
+
+                    <!-- Terminal Display -->
+                    <div class="terminal-container">
+                        <div id="terminal-output" class="terminal-output">
+                            <div class="welcome-message">
+                                Death Note Terminal Ready...<br>
+                                Select a server or test to view output.
+                            </div>
+                        </div>
+                        
+                        <!-- Terminal Input -->
+                        <div class="terminal-input-area">
+                            <div class="input-wrapper">
+                                <span class="prompt">$</span>
+                                <input type="text" id="terminal-input" class="terminal-input" 
+                                       placeholder="Enter command or select output to analyze...">
+                                <button id="send-command" class="btn btn-small">
+                                    <span class="material-icons">send</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- AI Analysis Tab -->
+            <section id="analysis-tab" class="tab-content">
+                <div class="paper-sheet">
+                    <h2>AI Analysis (DeepSeek-R1)</h2>
+                    
+                    <!-- Ollama Status -->
+                    <div class="ollama-status">
+                        <div id="ollama-indicator" class="status-indicator checking">Checking...</div>
+                        <span id="ollama-message">Connecting to Ollama...</span>
+                    </div>
+
+                    <!-- Analysis Controls -->
+                    <div class="analysis-controls">
+                        <div class="analysis-type">
+                            <label for="analysis-type-select">Analysis Type:</label>
+                            <select id="analysis-type-select" class="type-select">
+                                <option value="general_summary">General Summary</option>
+                                <option value="error_detection">Error Detection</option>
+                                <option value="test_summary">Test Analysis</option>
+                                <option value="server_health">Server Health</option>
+                            </select>
+                        </div>
+                        
+                        <div class="analysis-actions">
+                            <button id="analyze-terminal" class="btn btn-primary">
+                                <span class="material-icons">psychology</span>
+                                Analyze Current Terminal
+                            </button>
+                            <button id="l-mode-toggle" class="btn btn-secondary">
+                                <span class="material-icons">detective</span>
+                                L Mode
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Analysis Results -->
+                    <div class="analysis-results">
+                        <div class="analysis-header">
+                            <h3>Analysis Results</h3>
+                            <span id="analysis-timestamp" class="timestamp"></span>
+                        </div>
+                        <div id="analysis-output" class="analysis-content">
+                            Select terminal content and click "Analyze" to get AI insights...
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Status Bar -->
+    <footer class="status-bar">
+        <div class="container">
+            <div class="status-left">
+                <span id="connection-status" class="status-item">
+                    <span class="material-icons">wifi</span>
+                    Connected
+                </span>
+                <span id="active-sessions" class="status-item">0 sessions</span>
+            </div>
+            <div class="status-right">
+                <span id="current-time" class="status-item"></span>
+                <span class="status-item">Death Note Terminal v1.0</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="app.js"></script>
+</body>
+</html>

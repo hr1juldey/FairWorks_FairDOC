@@ -1,150 +1,242 @@
+#!/usr/bin/env python3
 """
-Fairdoc AI Control Panel - FastAPI Server
+Fairdoc AI Control Panel - Modern FastAPI Server
 
-Web-based interface for managing V1/V2 servers and running tests
-Serves HTML5 UI and provides REST API endpoints
+Web-based interface for managing V1/V2 servers and running tests.
+Uses modern FastAPI lifespan API (no deprecated @app.on_event).
 
+Single responsibility: Development server control and test execution interface
 File: ./runserver.py
 """
 
-import asyncio
+from __future__ import annotations
+
 import time
+import asyncio
+from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, List, Optional
 
 import uvicorn
-from fastapi import FastAPI, BackgroundTasks
+from fastapi import FastAPI, BackgroundTasks, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from run_ctrl import (
-    ProcessManager,
-    TestDiscovery,
-    TestRunner,
-    ServerConfig
-)
+from run_ctrl import ProcessManager, TestDiscovery, TestRunner, ServerConfig
 
-# Initialize FastAPI app
-app = FastAPI(
-    title="Fairdoc AI Control Panel",
-    description="Web interface for Fairdoc AI development and testing",
-    version="1.0.0"
-)
-
-# Global state
+# ─────────────────────────── Global State ────────────────────────────
 ROOT = Path(__file__).parent
 process_manager = ProcessManager()
 test_discovery = TestDiscovery(ROOT)
 test_runner = TestRunner(ROOT)
 
-# Server configurations
-SERVER_CONFIGS = {
-    "v1": ServerConfig("src.app.main:app", 8000, "V1 API"),
-    "v2": ServerConfig("src.app2.main_v2:app", 8000, "V2 API"),
-    "both": ServerConfig("src.app.main:app", 8000, "V1+V2 Combined")
+SERVER_CONFIGS: Dict[str, ServerConfig] = {
+    "v1": ServerConfig("src.app.main:app", 8000, "V1 API - Legacy System"),
+    "v2": ServerConfig("src.app2.main_v2:app", 8000, "V2 API - Modern Architecture"),
+    "both": ServerConfig("src.app.main:app", 8000, "V1 + V2 Mounted Combined"),
 }
 
-# ---------------------------------------------------------------------------
-# API Models
-# ---------------------------------------------------------------------------
+# ─────────────────────── Modern FastAPI Lifespan ─────────────────────
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Modern FastAPI lifespan management
+    Replaces deprecated @app.on_event decorators
+    """
+    # Enhanced startup sequence
+    print("🚀 Fairdoc Control Panel starting...")
+    print(f"📁 Project root: {ROOT}")
+    print(f"🔧 Available servers: {list(SERVER_CONFIGS.keys())}")
+    
+    # Test discovery with detailed breakdown
+    try:
+        all_tests = test_discovery.discover_all_tests()
+        total_tests = len(all_tests.get('all', []))
+        print(f"🔍 Test discovery complete: {total_tests} tests found")
+        print(f"📊 Breakdown: Unit={len(all_tests.get('unit', []))}, "
+              f"Integration={len(all_tests.get('integration', []))}, "
+              f"E2E={len(all_tests.get('e2e', []))}")
+    except Exception as e:
+        print(f"⚠️ Test discovery warning: {e}")
+    
+    print("✅ Control Panel ready - http://localhost:8999")
+    
+    try:
+        yield  # ── Application is now running ──
+    finally:
+        # Enhanced shutdown sequence
+        print("🧹 Shutting down Fairdoc Control Panel...")
+        
+        # Stop all running servers
+        stopped_servers = process_manager.stop_all_servers()
+        if stopped_servers:
+            print(f"🛑 Stopped {len(stopped_servers)} server(s): {', '.join(stopped_servers)}")
+        
+        # Clean up test runners
+        active_runs = test_runner.list_runs()
+        if active_runs:
+            print(f"🧪 Cleaned up {len(active_runs)} test run(s)")
+        
+        print("👋 Control Panel shutdown complete")
+
+# ─────────────────────── FastAPI Application ─────────────────────
+
+app = FastAPI(
+    title="Fairdoc AI Control Panel",
+    description="Modern web interface for Fairdoc AI development, testing, and server management",
+    version="2.0.0",
+    lifespan=lifespan,
+    docs_url="/docs" if __name__ == "__main__" else None,  # Only in dev mode
+    redoc_url="/redoc" if __name__ == "__main__" else None,
+)
+
+# ────────────────────────── Middleware Stack ───────────────────────────
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Permissive for development
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+)
+
+# ───────────────────────── Request/Response Models ───────────────────────
 
 class ServerRequest(BaseModel):
-    server: str  # v1, v2, both, stop_all
+    """Server management request model"""
+    server: str = Field(..., description="Server to manage: v1, v2, both, or stop_all")
 
 class TestRunRequest(BaseModel):
-    test_files: list[str]
-    live_mode: bool = False
+    """Test execution request model"""
+    test_files: List[str] = Field(..., description="List of test files to execute")
+    live_mode: bool = Field(False, description="Run against live server")
 
-# ---------------------------------------------------------------------------
-# HTML UI Endpoint
-# ---------------------------------------------------------------------------
+class ServerStatus(BaseModel):
+    """Server status response model"""
+    running: bool
+    port: int
+    description: str
+    pid: Optional[int] = None
 
-@app.get("/", response_class=HTMLResponse)
-async def serve_ui():
+class ApiResponse(BaseModel):
+    """Standard API response wrapper"""
+    success: bool
+    message: str
+    data: Any = None
+    timestamp: float = Field(default_factory=time.time)
+
+# ────────────────────────── HTML Frontend ────────────────────────
+
+@app.get("/", response_class=HTMLResponse, tags=["frontend"])
+async def serve_control_panel() -> str:
     """Serve the main HTML5 control panel interface"""
     ui_file = ROOT / "controller_ui.html"
-    if ui_file.exists():
-        return ui_file.read_text()
-    return "<h1>UI file not found. Please create controller_ui.html</h1>"
+    
+    if not ui_file.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Control panel UI not found. Ensure controller_ui.html exists."
+        )
+    
+    return ui_file.read_text(encoding="utf-8")
 
-# ---------------------------------------------------------------------------
-# Server Management Endpoints
-# ---------------------------------------------------------------------------
+# ──────────────────── Server Management Endpoints ────────────────────
 
-@app.get("/api/status")
-async def get_status():
-    """Get current status of all servers with port/description"""
-    server_status = {}
+@app.get("/api/status", response_model=Dict[str, Dict[str, Any]], tags=["server"])
+async def get_server_status():
+    """Get status of all configured servers"""
+    servers_status = {}
+    
     for name, config in SERVER_CONFIGS.items():
-        if name == "both":
-            continue
-        server_status[name] = {
-            "running": process_manager.is_running(name),
-            "port": config.port,
-            "description": config.description
-        }
+        if name != "both":  # Skip composite server in status
+            servers_status[name] = {
+                "running": process_manager.is_running(name),
+                "port": config.port,
+                "description": config.description,
+                "pid": process_manager.get_pid(name) if process_manager.is_running(name) else None
+            }
+    
     return {
-        "servers": server_status,
-        "timestamp": time.time()
+        "servers": servers_status,
+        "timestamp": time.time(),
+        "control_panel_version": "2.0.0"
     }
 
-@app.post("/api/server")
+@app.post("/api/server", response_model=ApiResponse, tags=["server"])
 async def manage_server(request: ServerRequest):
     """Start, stop, or restart servers"""
     server_name = request.server
     
+    # Handle stop all servers
     if server_name == "stop_all":
         stopped = process_manager.stop_all_servers()
-        return {
-            "action": "stop_all",
-            "stopped_servers": stopped,
-            "message": f"Stopped {len(stopped)} servers"
-        }
-    
-    if server_name not in SERVER_CONFIGS:
-        return JSONResponse(
-            status_code=400,
-            content={"error": f"Unknown server: {server_name}"}
+        return ApiResponse(
+            success=True,
+            message=f"Stopped {len(stopped)} server(s)",
+            data={"stopped_servers": stopped}
         )
     
-    config = SERVER_CONFIGS[server_name]
+    # Validate server name
+    if server_name not in SERVER_CONFIGS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unknown server '{server_name}'. Available: {list(SERVER_CONFIGS.keys())}"
+        )
     
-    # Stop any running servers first
+    # Stop all servers before starting new one
     process_manager.stop_all_servers()
     
-    # Start the requested server
+    # Start requested server
+    config = SERVER_CONFIGS[server_name]
     success = process_manager.start_server(server_name, config)
     
-    if success:
-        return {
-            "action": "start",
-            "server": server_name,
-            "message": f"{config.description} started on port {config.port}"
-        }
-    else:
-        return JSONResponse(
-            status_code=500,
-            content={"error": f"Failed to start {server_name}"}
-        )
-
-# ---------------------------------------------------------------------------
-# Test Management Endpoints
-# ---------------------------------------------------------------------------
-
-@app.get("/api/tests")
-async def list_tests():
-    """List all available test files organized by type"""
-    return test_discovery.discover_all_tests()
-
-@app.post("/api/run_tests")
-async def run_tests(request: TestRunRequest, background_tasks: BackgroundTasks):
-    """Execute selected tests in background"""
-    if not request.test_files:
-        return JSONResponse(
-            status_code=400,
-            content={"error": "No test files specified"}
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to start server '{server_name}'"
         )
     
+    return ApiResponse(
+        success=True,
+        message=f"Server '{server_name}' started successfully",
+        data={"server": server_name, "port": config.port}
+    )
+
+# ────────────────────── Test Management Endpoints ─────────────────────
+
+@app.get("/api/tests", tags=["testing"])
+async def discover_tests():
+    """Discover and categorize all available tests"""
+    try:
+        tests = test_discovery.discover_all_tests()
+        return {
+            "tests": tests,
+            "summary": {
+                "total": len(tests.get('all', [])),
+                "unit": len(tests.get('unit', [])),
+                "integration": len(tests.get('integration', [])),
+                "e2e": len(tests.get('e2e', []))
+            },
+            "timestamp": time.time()
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Test discovery failed: {str(e)}"
+        )
+
+@app.post("/api/run_tests", response_model=ApiResponse, tags=["testing"])
+async def execute_tests(request: TestRunRequest, background_tasks: BackgroundTasks):
+    """Execute selected tests in background"""
+    if not request.test_files:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No test files specified"
+        )
+    
+    # Create unique run ID
     run_id = test_runner.create_run_id()
     
     # Start test execution in background
@@ -155,103 +247,83 @@ async def run_tests(request: TestRunRequest, background_tasks: BackgroundTasks):
         request.live_mode
     )
     
-    return {
-        "run_id": run_id,
-        "test_count": len(request.test_files),
-        "live_mode": request.live_mode,
-        "message": "Tests started"
-    }
+    return ApiResponse(
+        success=True,
+        message=f"Test execution started with {len(request.test_files)} test(s)",
+        data={
+            "run_id": run_id,
+            "test_count": len(request.test_files),
+            "live_mode": request.live_mode
+        }
+    )
 
-@app.get("/api/test_output/{run_id}")
+@app.get("/api/test_output/{run_id}", tags=["testing"])
 async def get_test_output(run_id: str):
-    """Get test execution output and status"""
-    output = test_runner.get_output(run_id)
-    status = test_runner.get_status(run_id)
-    
+    """Get real-time test execution output"""
     return {
         "run_id": run_id,
-        "status": status,
-        "output": output,
+        "status": test_runner.get_status(run_id),
+        "output": test_runner.get_output(run_id),
         "timestamp": time.time()
     }
 
-@app.get("/api/test_runs")
+@app.get("/api/test_runs", tags=["testing"])
 async def list_test_runs():
-    """List all recent test runs"""
+    """List all test runs (active and completed)"""
     return {
         "runs": test_runner.list_runs(),
         "timestamp": time.time()
     }
 
-# ---------------------------------------------------------------------------
-# Health and Info Endpoints
-# ---------------------------------------------------------------------------
+# ─────────────────────── Health & System Info ──────────────────────
 
-@app.get("/api/health")
+@app.get("/api/health", tags=["system"])
 async def health_check():
-    """Health check endpoint"""
+    """System health check endpoint"""
     return {
         "status": "healthy",
-        "service": "Fairdoc Control Panel",
-        "version": "1.0.0",
-        "uptime": time.time()
+        "version": "2.0.0",
+        "uptime": time.time(),
+        "servers_available": list(SERVER_CONFIGS.keys()),
+        "timestamp": time.time()
     }
 
-@app.get("/api/info")
-async def get_info():
-    """Get system information"""
+@app.get("/api/info", tags=["system"])
+async def system_info():
+    """Get system information and capabilities"""
     return {
-        "available_servers": list(SERVER_CONFIGS.keys()),
-        "test_types": ["unit", "integration", "e2e"],
-        "project_root": str(ROOT),
-        "python_version": f"{sys.version_info.major}.{sys.version_info.minor}",
-        "features": {
-            "server_management": True,
-            "test_execution": True,
-            "live_mode": True,
-            "background_tasks": True
+        "name": "Fairdoc AI Control Panel",
+        "version": "2.0.0",
+        "root_directory": str(ROOT),
+        "servers": {name: config.description for name, config in SERVER_CONFIGS.items()},
+        "test_categories": ["unit", "integration", "e2e"],
+        "features": [
+            "Server Management",
+            "Test Execution",
+            "Real-time Output",
+            "Background Processing"
+        ],
+        "endpoints": {
+            "frontend": "/",
+            "server_status": "/api/status",
+            "test_discovery": "/api/tests",
+            "health": "/api/health"
         }
     }
 
-# ---------------------------------------------------------------------------
-# Application Lifecycle
-# ---------------------------------------------------------------------------
-
-@app.on_event("startup")
-async def startup_event():
-    """Initialize services on startup"""
-    print("🚀 Starting Fairdoc Control Panel...")
-    print(f"📁 Project root: {ROOT}")
-    print(f"🔍 Available tests: {len(test_discovery.discover_all_tests().get('all', []))}")
-    print("✅ Control panel ready!")
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Clean up on shutdown"""
-    print("🧹 Shutting down control panel...")
-    stopped = process_manager.stop_all_servers()
-    if stopped:
-        print(f"🛑 Stopped {len(stopped)} running servers")
-    print("👋 Control panel shutdown complete")
-
-# ---------------------------------------------------------------------------
-# Development Server
-# ---------------------------------------------------------------------------
+# ────────────────────────── Development Server ─────────────────────────
 
 if __name__ == "__main__":
-    import sys
-    print("=" * 60)
-    print("  Fairdoc AI Control Panel - Web Interface")
-    print("=" * 60)
-    print("  🌐 http://localhost:8999")
-    print("  📖 API docs: http://localhost:8999/docs")
-    print("  ⚡ Press Ctrl+C to stop")
-    print("=" * 60)
+    print("\n🌐 Fairdoc Control Panel")
+    print("🔗 Web Interface: http://localhost:8999")
+    print("📚 API Docs: http://localhost:8999/docs")
+    print("🔧 Starting development server...\n")
     
     uvicorn.run(
         "runserver:app",
         host="0.0.0.0",
         port=8999,
         reload=True,
-        log_level="info"
+        log_level="info",
+        access_log=True
     )
