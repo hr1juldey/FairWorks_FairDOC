@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Death Note Terminal - One-Click Launcher
+Death Note Terminal - One-Click Launcher (FIXED)
 
 Launches the Death Note Terminal control panel with automatic:
 - Dependency installation
@@ -21,12 +21,12 @@ import webbrowser
 from pathlib import Path
 from typing import Optional, List
 
-# Configuration
-DEATH_NOTE_DIR = Path(__file__).parent / "death_note_terminal"
-PROJECT_ROOT = Path(__file__).parent
+# CORRECTED PATH CALCULATIONS
+DEATH_NOTE_DIR = Path(__file__).parent                    # death_note_terminal/
+PROJECT_ROOT = Path(__file__).parent.parent               # fairdoc_ai_triage/
 CONTROL_PANEL_URL = "http://localhost:8999"
 BACKEND_HEALTH_URL = "http://localhost:8000/api/v2/health"
-MAIN_BACKEND = "http://localhost:8000/"
+
 class DeathNoteLauncher:
     """One-click launcher for Death Note Terminal system"""
     
@@ -97,7 +97,7 @@ class DeathNoteLauncher:
                 "--host", "0.0.0.0",
                 "--port", "8000",
                 "--reload"
-            ], cwd=PROJECT_ROOT)
+            ], cwd=PROJECT_ROOT)  # FIXED: Use fairdoc_ai_triage/ as working dir
             
             self.processes.append(backend_process)
             
@@ -119,17 +119,17 @@ class DeathNoteLauncher:
     
     def start_death_note_terminal(self) -> bool:
         """Start the Death Note Terminal control panel"""
-        main_py = DEATH_NOTE_DIR / "main.py"
+        main_py = DEATH_NOTE_DIR / "main.py"  # FIXED: Correct path calculation
         
         if not main_py.exists():
-            print("❌ Death Note Terminal main.py not found")
+            print(f"❌ Death Note Terminal main.py not found at {main_py}")
             return False
         
         print("🎭 Starting Death Note Terminal...")
         try:
             self.death_note_process = subprocess.Popen([
                 sys.executable, str(main_py)
-            ], cwd=DEATH_NOTE_DIR)
+            ], cwd=DEATH_NOTE_DIR)  # FIXED: Correct working directory
             
             # Wait for terminal to start
             print("⏳ Initializing Death Note Terminal...")
@@ -154,13 +154,12 @@ class DeathNoteLauncher:
     
     def display_info(self) -> None:
         """Display running services information"""
-        
         print("\n" + "=" * 60)
         print("🎭 DEATH NOTE TERMINAL - ACTIVE SERVICES")
         print("=" * 60)
         print(f"📱 Control Panel:    {CONTROL_PANEL_URL}")
-        print(f"🏥 Main Backend:     {MAIN_BACKEND}")
-        print(f"📚 API Docs:         {MAIN_BACKEND}/docs")
+        print("🏥 Main Backend:     http://localhost:8000")
+        print("📚 API Docs:         http://localhost:8000/docs")
         print(f"🔧 Terminal Docs:    {CONTROL_PANEL_URL}/docs")
         print("=" * 60)
         print("💡 Use the web interface to:")
