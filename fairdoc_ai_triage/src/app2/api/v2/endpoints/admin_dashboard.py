@@ -7,9 +7,9 @@ Single responsibility: Admin interface endpoints
 File: src/app2/api/v2/endpoints/admin_dashboard.py
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from datetime import datetime
-from src.app2.utils.datetime_utils import utcnow, utcnow_iso, utcnow_timestamp
+from fastapi import APIRouter
+
+from src.app2.utils.datetime_utils import utcnow_timestamp
 from typing import Dict, Any
 import structlog
 
