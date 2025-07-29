@@ -24,7 +24,7 @@ import psutil
 from typing import Dict, List, Any
 
 # Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
 
 def utcnow():
