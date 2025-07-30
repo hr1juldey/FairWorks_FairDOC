@@ -214,35 +214,46 @@ class DeathNoteApp {
     }
 
     updateServerUI() {
-        console.log('🖥️ Updating server UI...');
+        console.log('🖥️ Updating server UI with data:', this.servers);
         
         Object.entries(this.servers).forEach(([serverName, info]) => {
-            // Update status indicator
+            console.log(`Updating ${serverName}:`, info);
+            
+            // Update status indicator with more robust selection
             const statusElement = document.getElementById(`${serverName}-status`);
             if (statusElement) {
-                statusElement.textContent = info.running ? '🟢 Running' : '🔴 Stopped';
-                statusElement.className = `server-status ${info.running ? 'running' : 'stopped'}`;
+                const isRunning = info.running === true;
+                statusElement.textContent = isRunning ? '🟢 Running' : '🔴 Stopped';
+                statusElement.className = `server-status ${isRunning ? 'running' : 'stopped'}`;
+                
+                // Add port info if available
+                if (isRunning && info.port) {
+                    statusElement.textContent += ` (Port: ${info.port})`;
+                }
             }
 
-            // Update port input
-            const portElement = document.getElementById(`${serverName}-port`);
-            if (portElement && info.port) {
-                portElement.value = info.port;
-            }
-
-            // Update server buttons
+            // Update server buttons with explicit state management
             const startBtn = document.querySelector(`[data-server="${serverName}"][data-action="start"]`);
             const stopBtn = document.querySelector(`[data-server="${serverName}"][data-action="stop"]`);
             
             if (startBtn) {
-                startBtn.disabled = info.running;
-                startBtn.textContent = info.running ? 'Running' : 'Start';
+                const isRunning = info.running === true;
+                startBtn.disabled = isRunning;
+                startBtn.textContent = isRunning ? 'Running...' : 'Start';
+                startBtn.className = `btn ${isRunning ? 'btn-secondary' : 'btn-primary'}`;
+                console.log(`Start button for ${serverName}: disabled=${isRunning}`);
             }
+            
             if (stopBtn) {
-                stopBtn.disabled = !info.running;
+                const isRunning = info.running === true;
+                stopBtn.disabled = !isRunning;
+                stopBtn.textContent = isRunning ? 'Stop' : 'Stopped';
+                stopBtn.className = `btn ${isRunning ? 'btn-danger' : 'btn-secondary'}`;
+                console.log(`Stop button for ${serverName}: disabled=${!isRunning}`);
             }
         });
     }
+
 
     // Test Management - FIXED
     async loadTests() {
@@ -369,7 +380,33 @@ class DeathNoteApp {
             outputElement.textContent = output;
             outputElement.scrollTop = outputElement.scrollHeight;
         }
+        
+        // Update test results if completed
+        if (data.results) {
+            const resultsDiv = document.getElementById('test-results') || this.createTestResultsDiv();
+            resultsDiv.innerHTML = `
+                <div class="test-summary">
+                    <h4>Test Results</h4>
+                    <p>Total: ${data.results.total || 0}</p>
+                    <p>Passed: ${data.results.passed || 0}</p>
+                    <p>Failed: ${data.results.failed || 0}</p>
+                    <p>Duration: ${data.results.duration || 0}s</p>
+                </div>
+            `;
+        }
     }
+
+    createTestResultsDiv() {
+        const resultsDiv = document.createElement('div');
+        resultsDiv.id = 'test-results';
+        resultsDiv.className = 'test-results';
+        const outputElement = document.getElementById('test-output');
+        if (outputElement && outputElement.parentNode) {
+            outputElement.parentNode.appendChild(resultsDiv);
+        }
+        return resultsDiv;
+    }
+
 
     showTestResults(data) {
         const results = data.results || {};
@@ -386,8 +423,8 @@ class DeathNoteApp {
         const clientId = `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         
         try {
-            this.websocket = new WebSocket(`${protocol}//${window.location.host}/ws/${clientId}`);
-            
+            // Connect to status WebSocket for real-time updates
+            this.websocket = new WebSocket(`${protocol}//${window.location.host}/ws/status/${clientId}`);
             this.websocket.onopen = () => {
                 console.log('✅ WebSocket connected');
                 this.showNotification('Terminal connection established', 'success');
@@ -419,12 +456,106 @@ class DeathNoteApp {
     handleWebSocketMessage(data) {
         console.log('📨 WebSocket message:', data);
         
-        if (data.type === 'server_started' || data.type === 'server_stopped') {
-            this.loadServerStatus();
+        if (data.type === 'status_update') {
+            // Update server status in real-time
+            this.servers = data.servers;
+            this.updateServerUI();
+            this.updateStatusBar(data);
+        } else if (data.type === 'server_logs') {
+            this.displayServerLogs(data);
         } else if (data.type === 'test_completed') {
             this.showTestResults(data.result);
+            // Send to Ollama for analysis
+            this.sendTestResultsToOllama(data.result);
+        } else if (data.type === 'ollama_analysis') {
+            this.showFormattedOllamaAnalysis(data.analysis);
         }
     }
+
+    displayServerLogs(data) {
+        const logContainer = document.getElementById('server-logs') || this.createServerLogsContainer();
+        const serverSection = logContainer.querySelector(`[data-server="${data.server}"]`) || this.createServerLogSection(data.server);
+        
+        data.logs.forEach(log => {
+            const logLine = document.createElement('div');
+            logLine.className = 'log-line';
+            logLine.innerHTML = `<span class="timestamp">${new Date(log.timestamp * 1000).toLocaleTimeString()}</span> ${log.line}`;
+            serverSection.appendChild(logLine);
+        });
+        
+        // Auto-scroll to bottom
+        logContainer.scrollTop = logContainer.scrollHeight;
+    }
+
+    updateStatusBar(data) {
+        const statusBar = document.getElementById('status-bar') || this.createStatusBar();
+        const runningServers = Object.values(data.servers).filter(s => s.running).length;
+        const totalServers = Object.keys(data.servers).length;
+        
+        statusBar.innerHTML = `
+            <div class="status-item">🖥️ Servers: ${runningServers}/${totalServers} running</div>
+            <div class="status-item">🕒 ${new Date().toLocaleTimeString()}</div>
+            <div class="status-item">🔄 Live Updates Active</div>
+        `;
+    }
+
+    showFormattedOllamaAnalysis(analysis) {
+        const analysisContainer = document.getElementById('ollama-analysis') || this.createOllamaAnalysisDiv();
+        
+        // Format analysis with sections
+        const formattedAnalysis = this.formatOllamaAnalysis(analysis);
+        analysisContainer.innerHTML = `
+            <div class="ollama-result">
+                <h4>🤖 AI Analysis Results</h4>
+                ${formattedAnalysis}
+            </div>
+        `;
+    }
+
+    formatOllamaAnalysis(analysis) {
+        // Split analysis into logical sections
+        const sections = analysis.split(/\n\s*\n/);
+        let formatted = '';
+        
+        sections.forEach((section, index) => {
+            if (section.trim()) {
+                const isHeading = section.includes(':') && section.length < 100;
+                if (isHeading) {
+                    formatted += `<h5 class="analysis-heading">${section.trim()}</h5>`;
+                } else {
+                    formatted += `<div class="analysis-content">${section.trim()}</div>`;
+                }
+            }
+        });
+        
+        return formatted || `<div class="analysis-content">${analysis}</div>`;
+    }
+
+
+    
+
+    
+    // showOllamaAnalysis(analysis) {
+    //     const analysisDiv = document.getElementById('ollama-analysis') || this.createOllamaAnalysisDiv();
+    //     analysisDiv.innerHTML = `
+    //         <div class="ollama-result">
+    //             <h4>🤖 AI Analysis</h4>
+    //             <pre>${analysis}</pre>
+    //         </div>
+    //     `;
+    // }
+
+    createOllamaAnalysisDiv() {
+        const analysisDiv = document.createElement('div');
+        analysisDiv.id = 'ollama-analysis';
+        analysisDiv.className = 'ollama-analysis';
+        const testOutput = document.getElementById('test-output');
+        if (testOutput && testOutput.parentNode) {
+            testOutput.parentNode.appendChild(analysisDiv);
+        }
+        return analysisDiv;
+    }
+
 
     // Terminal Management - SIMPLIFIED
     createNewTerminal() {

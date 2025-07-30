@@ -208,9 +208,12 @@ class DeathNoteLauncher:
                     sys.exit(1)
             
             # Step 2: Start main backend
-            if not self.start_main_backend():
-                print("⚠️ Continuing without main backend...")
+            # if not self.start_main_backend():
+            #     print("⚠️ Continuing without main backend...")
             
+            # Step 2: Skip auto-start - servers start on user input
+            print("📋 Servers will start on user request...")
+
             # Step 3: Start Death Note Terminal
             if not self.start_death_note_terminal():
                 sys.exit(1)

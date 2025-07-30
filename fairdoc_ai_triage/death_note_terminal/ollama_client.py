@@ -72,7 +72,7 @@ class OllamaClient:
             async with session.post(
                 f"{self.base_url}/api/generate",
                 json=payload,
-                timeout=aiohttp.ClientTimeout(total=60)
+                timeout=aiohttp.ClientTimeout(total=120, connect=5)
             ) as response:
                 if response.status == 200:
                     data = await response.json()
@@ -133,12 +133,24 @@ class OllamaClient:
         prompt = prompts.get(analysis_type, prompts["general"])
         
         try:
+            logger.info(f"🤖 Starting analysis: {analysis_type}")
             result = await self.generate(prompt, max_tokens=1500)
+            logger.info(f"✅ Analysis completed: {len(result)} characters")
             return result
         except Exception as e:
             logger.error(f"❌ Analysis failed: {e}")
-            return f"Analysis failed: {str(e)}"
+            # Try reconnection
+            try:
+                await self.test_connection()
+                logger.info("🔄 Ollama reconnected, retrying...")
+                result = await self.generate(prompt, max_tokens=1500)
+                return result
+            except Exception as retry_error:
+                logger.error(f"❌ Retry failed: {retry_error}")
+                return f"Analysis failed: {str(e)}. Retry failed: {str(retry_error)}"
+
     
+
     async def summarize_logs(self, logs: list) -> str:
         """Summarize multiple log entries"""
         log_text = "\n".join(logs[-50:])  # Last 50 entries
@@ -159,6 +171,7 @@ class OllamaClient:
         except Exception as e:
             logger.error(f"❌ Log summarization failed: {e}")
             return f"Summarization failed: {str(e)}"
+    
     
     async def detect_anomalies(self, metrics: Dict[str, Any]) -> str:
         """Detect anomalies in system metrics"""

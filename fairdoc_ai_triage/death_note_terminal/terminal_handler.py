@@ -219,6 +219,12 @@ class TerminalManager:
             for session_id in self.sessions.keys()
         ]
 
+    async def cleanup(self):
+        """Clean up all terminal sessions"""
+        session_ids = list(self.sessions.keys())
+        for session_id in session_ids:
+            await self.cleanup_session(session_id)
+        logger.info("All terminal sessions cleaned up")
 
 # Global terminal manager instance
 terminal_manager = TerminalManager()

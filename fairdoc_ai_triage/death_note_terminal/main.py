@@ -22,6 +22,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Dict, List, Optional
 
+import time
 import uvicorn
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, FileResponse
@@ -213,6 +214,96 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
             await manager.send_message(f"Echo: {data}", client_id)
     except WebSocketDisconnect:
         manager.disconnect(client_id)
+@app.websocket("/ws/server-logs/{server_type}")
+async def server_logs_websocket(websocket: WebSocket, server_type: str):
+    """Stream server logs via WebSocket"""
+    await websocket.accept()
+    
+    try:
+        if not server_manager or server_type not in server_manager.processes:
+            await websocket.send_text(json.dumps({
+                "type": "error",
+                "message": f"Server {server_type} not running"
+            }))
+            return
+            
+        server_process = server_manager.processes[server_type]
+        
+        # Stream existing logs and new output
+        while server_process.is_running:
+            try:
+                # Read from stdout/stderr if available
+                if server_process.process.stdout:
+                    line = await asyncio.wait_for(
+                        server_process.process.stdout.readline(), 
+                        timeout=1.0
+                    )
+                    if line:
+                        await websocket.send_text(json.dumps({
+                            "type": "log",
+                            "data": line.decode('utf-8', errors='replace').strip(),
+                            "server": server_type,
+                            "timestamp": time.time()
+                        }))
+                else:
+                    await asyncio.sleep(1)
+                    
+            except asyncio.TimeoutError:
+                # Send heartbeat
+                await websocket.send_text(json.dumps({
+                    "type": "heartbeat",
+                    "server": server_type
+                }))
+            except Exception as e:
+                logger.error(f"Log streaming error: {e}")
+                break
+                
+    except WebSocketDisconnect:
+        logger.info(f"Server logs WebSocket disconnected for {server_type}")
+    except Exception as e:
+        logger.error(f"Server logs WebSocket error: {e}")
+
+@app.websocket("/ws/status/{client_id}")
+async def status_websocket(websocket: WebSocket, client_id: str):
+    """Stream server status and logs via WebSocket"""
+    await websocket.accept()
+    logger.info(f"Status WebSocket connected: {client_id}")
+    
+    try:
+        while True:
+            # Send server status
+            if server_manager:
+                status_data = {
+                    "type": "status_update",
+                    "servers": server_manager.get_all_status(),
+                    "timestamp": time.time()
+                }
+                await websocket.send_text(json.dumps(status_data))
+                
+                # Send server logs
+                for server_type, server_process in server_manager.processes.items():
+                    if hasattr(server_process, 'log_buffer') and server_process.log_buffer:
+                        log_data = {
+                            "type": "server_logs",
+                            "server": server_type,
+                            "logs": server_process.log_buffer[-10:],  # Last 10 lines
+                            "timestamp": time.time()
+                        }
+                        await websocket.send_text(json.dumps(log_data))
+            
+            # Send test callbacks
+            if test_runner:
+                callbacks = test_runner.get_pending_callbacks()
+                for callback_data in callbacks:
+                    await websocket.send_text(json.dumps(callback_data))
+            
+            await asyncio.sleep(2)  # Update every 2 seconds
+            
+    except WebSocketDisconnect:
+        logger.info(f"Status WebSocket disconnected: {client_id}")
+    except Exception as e:
+        logger.error(f"Status WebSocket error: {e}")
+
 
 # API Routes
 @app.get("/api/servers/status")
@@ -278,15 +369,35 @@ async def run_tests(request: TestRequest):
         session_id = str(uuid.uuid4())
         
         # Start test execution in background
+        async def test_callback(msg):
+            await manager.broadcast(msg)
+            # Send test results to Ollama for analysis
+            try:
+                data = json.loads(msg)
+                if data.get("type") == "test_completed" and ollama_client:
+                    result = data.get("result", {})
+                    output = result.get("output", [])
+                    if output:
+                        log_content = "\n".join([item.get("line", "") for item in output])
+                        analysis = await ollama_client.analyze(log_content, "test")
+                        await manager.broadcast(json.dumps({
+                            "type": "ollama_analysis",
+                            "analysis": analysis,
+                            "session_id": session_id
+                        }))
+            except Exception as e:
+                logger.error(f"Ollama analysis failed: {e}")
+
         asyncio.create_task(
             test_runner.run_tests_async(
                 test_types=request.test_types,
                 specific_tests=request.specific_tests,
                 pytest_args=request.pytest_args,
                 session_id=session_id,
-                callback=lambda msg: asyncio.create_task(manager.broadcast(msg))
+                callback=test_callback
             )
         )
+
         
         return {"session_id": session_id, "status": "started"}
     except Exception as e:

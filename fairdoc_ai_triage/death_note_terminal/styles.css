@@ -1545,6 +1545,82 @@ h1, h2, h3, h4, h5, h6 {
     flex-wrap: wrap;
   }
   
+
+  /* Server Logs Display */
+#server-logs {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-16);
+    max-height: 400px;
+    overflow-y: auto;
+    font-family: var(--font-family-mono);
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--space-16);
+}
+
+.server-log-section {
+    margin-bottom: var(--space-16);
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: var(--space-8);
+}
+
+.server-log-section h6 {
+    color: var(--accent-death);
+    margin-bottom: var(--space-8);
+    font-size: var(--font-size-sm);
+}
+
+.log-line {
+    margin-bottom: var(--space-4);
+    line-height: 1.4;
+    word-break: break-all;
+}
+
+.log-line .timestamp {
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-medium);
+    margin-right: var(--space-8);
+}
+
+/* Status Bar Enhancement */
+#status-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    padding: var(--space-8) var(--space-16);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 100;
+    font-size: var(--font-size-xs);
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    color: var(--color-text-secondary);
+}
+
+/* Formatted Ollama Analysis */
+.analysis-heading {
+    color: var(--accent-death);
+    font-weight: var(--font-weight-semibold);
+    margin: var(--space-16) 0 var(--space-8) 0;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: var(--space-4);
+}
+
+.analysis-content {
+    margin-bottom: var(--space-12);
+    line-height: var(--line-height-normal);
+    padding-left: var(--space-8);
+}
+
   #themeToggle {
     width: var(--space-24);
     height: var(--space-24);

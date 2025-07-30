@@ -8,8 +8,9 @@ File: server_manager.py
 """
 
 import subprocess
+import threading
 import psutil
-import time
+import time as time_module
 import logging
 from typing import Dict, List, Optional, Tuple
 from pathlib import Path
@@ -24,7 +25,7 @@ class ServerProcess:
         self.name = name
         self.config = config_data
         self.process = process
-        self.start_time = time.time()
+        self.start_time = time_module.time()
         self.custom_port = config_data.get("custom", False)
     
     @property
@@ -42,7 +43,7 @@ class ServerProcess:
     @property
     def uptime(self) -> float:
         """Get uptime in seconds"""
-        return time.time() - self.start_time
+        return time_module.time() - self.start_time
     
     @property
     def memory_usage(self) -> float:
@@ -114,29 +115,71 @@ class ServerManager:
                 cmd,
                 cwd=str(self.root_dir),
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
                 text=True,
-                bufsize=1,
+                bufsize=4,
                 universal_newlines=True
             )
             
-            # Wait briefly to check if startup failed
-            time.sleep(2)
-            if process.poll() is not None:
-                stdout, stderr = process.communicate()
-                error_msg = stderr or stdout or "Unknown startup error"
-                return False, f"Server failed to start: {error_msg}"
+            # Wait for server startup or process failure
+            for i in range(40):  # 40 seconds total
+                time_module.sleep(2)
+                if process.poll() is not None:
+                    stdout, stderr = process.communicate()
+                    error_msg = stderr or stdout or "Unknown startup error"
+                    return False, f"Server failed to start: {error_msg}"
+                if self.is_port_in_use(port):
+                    logger.info(f"Server {server_type} started successfully in {i * 2} seconds")
+                    break
+            else:
+                return False, f"Server did not start within {40 * 2} seconds"
+
+            # Process is still running after timeout - assume success
+            logger.info(f"Server {server_type} startup completed after {i * 2} seconds")
+
+            
             
             # Store process
-            self.processes[server_type] = ServerProcess(server_type, server_config, process)
-            
-            logger.info(f"Started {server_type} server on port {port} (PID: {process.pid})")
-            return True, f"Server {server_type} started successfully on port {port}"
+            server_process = ServerProcess(server_type, server_config, process)
+            self.processes[server_type] = server_process
+            # Start log streaming in background
+
+            def stream_logs():
+                try:
+                    for line in iter(process.stdout.readline, ''):
+                        if line.strip():
+                            # Store log line for WebSocket streaming
+                            if not hasattr(server_process, 'log_buffer'):
+                                server_process.log_buffer = []
+                            server_process.log_buffer.append({
+                                "timestamp": time_module.time(),
+                                "line": line.strip(),
+                                "server": server_type
+                            })
+                            # Keep only last 100 lines
+                            if len(server_process.log_buffer) > 100:
+                                server_process.log_buffer.pop(0)
+                except Exception as e:
+                    logger.error(f"Log streaming error for {server_type}: {e}")
+
+            log_thread = threading.Thread(target=stream_logs, daemon=True)
+            log_thread.start()
+
+            # Verify server is actually responding
+            time_module.sleep(3)  # Brief startup delay
+            if server_process.is_running:
+                logger.info(f"✅ Started {server_type} server on port {port} (PID: {process.pid})")
+                return True, f"Server {server_type} started successfully on port {port}"
+            else:
+                logger.error(f"❌ Server {server_type} died immediately after startup")
+                return False, f"Server {server_type} failed to start - process died"
+
             
         except Exception as e:
             logger.error(f"Failed to start {server_type}: {e}")
             return False, f"Failed to start server: {str(e)}"
-    
+
+
     def stop_server(self, server_type: str) -> Tuple[bool, str]:
         """Stop a specific server"""
         
@@ -248,7 +291,7 @@ class ServerManager:
                 return False, f"Failed to stop for restart: {stop_msg}"
         
         # Start again
-        time.sleep(1)  # Brief pause
+        time_module.sleep(1)  # Brief pause
         return self.start_server(server_type, custom_port)
 
 # Global server manager instance

@@ -86,8 +86,19 @@ class TestRunner:
         
         if not session_id:
             session_id = self.create_session()
-        
+        elif session_id not in self.test_sessions:
+            self.test_sessions[session_id] = {
+                "id": session_id,
+                "status": "created",
+                "start_time": time.time(),
+                "end_time": None,
+                "output": [],
+                "results": {},
+                "error": None
+            }
+
         session = self.test_sessions[session_id]
+
         session["status"] = "running"
         
         try:
@@ -179,13 +190,21 @@ class TestRunner:
         def run_in_thread():
             result = self.run_tests_sync(test_types, specific_tests, pytest_args, session_id)
             if callback:
-                asyncio.create_task(callback(json.dumps({
-                    "type": "test_completed",
-                    "session_id": session_id,
-                    "result": result
-                })))
+                # Store result for polling instead of callback
+                try:
+                    # Mark session as completed with result
+                    if session_id in self.test_sessions:
+                        self.test_sessions[session_id]["callback_data"] = {
+                            "type": "test_completed",
+                            "session_id": session_id, 
+                            "result": result
+                        }
+                        logger.info(f"✅ Test callback data stored for session {session_id}")
+                except Exception as e:
+                    logger.error(f"Failed to store callback data: {e}")
             return result
-        
+
+
         # Run in thread to avoid blocking
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, run_in_thread)
@@ -243,6 +262,19 @@ class TestRunner:
         
         return self.test_sessions[session_id]
     
+    def get_pending_callbacks(self) -> List[Dict]:
+        """Get and clear pending callback data, including session_id"""
+        callbacks = []
+        for session_id, session in self.test_sessions.items():
+            if "callback_data" in session:
+                # Add session_id to the callback data
+                callback = dict(session["callback_data"])  # Make a shallow copy
+                callback["session_id"] = session_id
+                callbacks.append(callback)
+                del session["callback_data"]  # Clear after retrieving
+        return callbacks
+
+
     def get_all_sessions(self) -> List[Dict[str, Any]]:
         """Get all test sessions"""
         return list(self.test_sessions.values())
