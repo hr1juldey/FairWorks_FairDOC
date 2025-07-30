@@ -770,8 +770,8 @@ select.form-control {
 
 /* Reset & Base Styles */
 * {
-  margin: 0;
-  padding: 0;
+  margin: 5;
+  padding: 5;
   box-sizing: border-box;
 }
 
@@ -1650,4 +1650,48 @@ h1, h2, h3, h4, h5, h6 {
     background: var(--color-cream-50);
     color: var(--color-slate-900);
   }
+}
+
+/* Add this entire block to the end of styles.css */
+
+[data-theme='light'] {
+  /* Semantic Color Tokens (Light Theme) */
+  --color-background-primary: var(--color-white);
+  --color-background-secondary: var(--color-cream-50);
+  --color-background-paper: var(--color-cream-100);
+  --color-background-muted: var(--color-gray-200);
+  --color-background-interactive: var(--color-gray-200);
+  --color-background-interactive-hover: var(--color-gray-300);
+  --color-background-danger: var(--color-red-100);
+
+  --color-text-primary: var(--color-charcoal-800);
+  --color-text-secondary: var(--color-slate-500);
+  --color-text-muted: var(--color-gray-400);
+  --color-text-accent: var(--color-teal-500);
+  --color-text-on-primary: var(--color-white);
+  --color-text-on-danger: var(--color-red-600);
+  --color-text-link: var(--color-teal-600);
+  --color-text-placeholder: var(--color-gray-400);
+  --color-text-death-note: var(--color-black);
+
+  --color-border-primary: var(--color-gray-300);
+  --color-border-interactive: var(--color-gray-400);
+
+  --color-brand-primary: var(--color-teal-500);
+  --color-brand-primary-hover: var(--color-teal-600);
+  --color-brand-secondary: var(--color-slate-900);
+  --color-brand-secondary-hover: var(--color-charcoal-700);
+
+  --color-status-success: var(--color-green-500);
+  --color-status-error: var(--color-red-500);
+  --color-status-warning: var(--color-yellow-500);
+  --color-status-info: var(--color-blue-500);
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+  --terminal-bg: var(--color-gray-200);
+  --terminal-text: var(--color-charcoal-800);
+  --terminal-header-bg: var(--color-gray-300);
 }

@@ -535,15 +535,15 @@ class DeathNoteApp {
     
 
     
-    // showOllamaAnalysis(analysis) {
-    //     const analysisDiv = document.getElementById('ollama-analysis') || this.createOllamaAnalysisDiv();
-    //     analysisDiv.innerHTML = `
-    //         <div class="ollama-result">
-    //             <h4>🤖 AI Analysis</h4>
-    //             <pre>${analysis}</pre>
-    //         </div>
-    //     `;
-    // }
+    showOllamaAnalysis(analysis) {
+        const analysisDiv = document.getElementById('ollama-analysis') || this.createOllamaAnalysisDiv();
+        analysisDiv.innerHTML = `
+            <div class="ollama-result">
+                <h4>🤖 AI Analysis</h4>
+                <pre>${analysis}</pre>
+            </div>
+        `;
+    }
 
     createOllamaAnalysisDiv() {
         const analysisDiv = document.createElement('div');
