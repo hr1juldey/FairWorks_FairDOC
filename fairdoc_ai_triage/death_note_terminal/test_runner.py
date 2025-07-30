@@ -1,194 +1,125 @@
 """
-Death Note Terminal - Test Discovery & Execution
+Test Runner - Test Discovery and Execution
 
-Scans test folders and executes pytest with configurable parameters.
-Single responsibility: Test management and execution.
+Manages test discovery, execution, and result collection
+for unit, integration, and e2e tests.
 
-File: test_runner.py
+Single responsibility: Test management and execution
+File: ./test_runner.py
 """
 
-import subprocess
 import asyncio
-import time
-import logging
-from typing import Dict, List, Optional, Tuple, AsyncGenerator
-from pathlib import Path
-from config import config
+import glob
 import json
+import logging
+import subprocess
+import threading
+import time
+from pathlib import Path
+from typing import Dict, List, Optional, Callable, Any
 import uuid
+
+import config
 
 logger = logging.getLogger(__name__)
 
-class TestSession:
-    """Represents a running test session"""
-    
-    def __init__(self, session_id: str, test_files: List[str], pytest_args: List[str]):
-        self.session_id = session_id
-        self.test_files = test_files
-        self.pytest_args = pytest_args
-        self.start_time = time.time()
-        self.end_time: Optional[float] = None
-        self.status = "running"  # running, completed, failed, cancelled
-        self.output_lines: List[str] = []
-        self.process: Optional[subprocess.Popen] = None
-        self.return_code: Optional[int] = None
-    
-    @property
-    def duration(self) -> float:
-        """Get test duration in seconds"""
-        end = self.end_time or time.time()
-        return end - self.start_time
-    
-    @property
-    def is_running(self) -> bool:
-        """Check if test is still running"""
-        return self.status == "running" and self.process and self.process.poll() is None
-    
-    def add_output(self, line: str):
-        """Add output line with length limit"""
-        self.output_lines.append(line)
-        if len(self.output_lines) > config.MAX_TEST_OUTPUT_LINES:
-            self.output_lines.pop(0)  # Remove oldest line
-    
-    def get_summary(self) -> Dict:
-        """Get test session summary"""
-        return {
-            "session_id": self.session_id,
-            "test_files": self.test_files,
-            "pytest_args": self.pytest_args,
-            "status": self.status,
-            "start_time": self.start_time,
-            "end_time": self.end_time,
-            "duration": self.duration,
-            "return_code": self.return_code,
-            "output_lines": len(self.output_lines),
-            "test_count": len(self.test_files)
-        }
-
-class TestDiscovery:
-    """Test file discovery and categorization"""
-    
-    def __init__(self):
-        self.tests_dir = config.TESTS_DIR
-        self.categories = config.TEST_CATEGORIES
-    
-    def discover_all_tests(self) -> Dict[str, List[Dict]]:
-        """Discover all test files organized by category"""
-        discovered = {"all": []}
-        
-        for category in self.categories:
-            category_tests = self.discover_category_tests(category)
-            discovered[category] = category_tests
-            discovered["all"].extend(category_tests)
-        
-        return discovered
-    
-    def discover_category_tests(self, category: str) -> List[Dict]:
-        """Discover tests in specific category folder"""
-        category_path = config.get_test_path(category)
-        
-        if not category_path.exists():
-            logger.warning(f"Test category path does not exist: {category_path}")
-            return []
-        
-        tests = []
-        for test_file in sorted(category_path.glob("test_*.py")):
-            test_info = {
-                "name": test_file.name,
-                "path": str(test_file.relative_to(config.ROOT_DIR)),
-                "full_path": str(test_file),
-                "category": category,
-                "size": test_file.stat().st_size,
-                "modified": test_file.stat().st_mtime,
-                "functions": self.extract_test_functions(test_file)
-            }
-            tests.append(test_info)
-        
-        return tests
-    
-    def extract_test_functions(self, test_file: Path) -> List[str]:
-        """Extract test function names from file"""
-        functions = []
-        try:
-            with open(test_file, 'r', encoding='utf-8') as f:
-                content = f.read()
-                
-            # Simple regex to find test functions
-            import re
-            pattern = r'^def (test_\w+)\s*\('
-            matches = re.findall(pattern, content, re.MULTILINE)
-            functions = matches
-            
-        except Exception as e:
-            logger.warning(f"Could not extract functions from {test_file}: {e}")
-        
-        return functions
-    
-    def get_test_file_info(self, test_path: str) -> Optional[Dict]:
-        """Get detailed info for specific test file"""
-        full_path = config.ROOT_DIR / test_path
-        
-        if not full_path.exists():
-            return None
-        
-        # Determine category
-        category = "unknown"
-        for cat in self.categories:
-            if f"/{cat}/" in test_path:
-                category = cat
-                break
-        
-        return {
-            "name": full_path.name,
-            "path": test_path,
-            "full_path": str(full_path),
-            "category": category,
-            "size": full_path.stat().st_size,
-            "modified": full_path.stat().st_mtime,
-            "functions": self.extract_test_functions(full_path),
-            "exists": True
-        }
-
 class TestRunner:
-    """Pytest execution and management"""
+    """Manages test discovery and execution"""
     
     def __init__(self):
-        self.sessions: Dict[str, TestSession] = {}
-        self.discovery = TestDiscovery()
-        self.max_sessions = 10  # Limit concurrent test sessions
+        self.root_dir = config.ROOT_DIR
+        self.test_sessions: Dict[str, Dict[str, Any]] = {}
+        self.active_processes: Dict[str, subprocess.Popen] = {}
+        
+    def discover_tests(self) -> Dict[str, List[str]]:
+        """Discover available tests"""
+        try:
+            return {
+                "unit": self._discover_unit_tests(),
+                "integration": self._discover_integration_tests(), 
+                "e2e": self._discover_e2e_tests()
+            }
+        except Exception as e:
+            logger.error(f"❌ Test discovery failed: {e}")
+            return {"unit": [], "integration": [], "e2e": []}
+
+    def _discover_unit_tests(self) -> List[str]:
+        """Helper to find unit tests"""
+        pattern = str(self.root_dir / "src" / "tests" / "unit" / "test_*.py")
+        tests = glob.glob(pattern)
+        return [Path(test).name for test in tests]
+
+    def _discover_integration_tests(self) -> List[str]:
+        """Helper to find integration tests"""  
+        pattern = str(self.root_dir / "src" / "tests" / "integration" / "test_*.py")
+        tests = glob.glob(pattern)
+        return [Path(test).name for test in tests]
+
+    def _discover_e2e_tests(self) -> List[str]:
+        """Helper to find e2e tests"""
+        pattern = str(self.root_dir / "src" / "tests" / "e2e" / "test_*.py")
+        tests = glob.glob(pattern)
+        return [Path(test).name for test in tests]
     
-    def create_session(self, test_files: List[str], pytest_args: Optional[List[str]] = None) -> str:
-        """Create new test session"""
-        session_id = str(uuid.uuid4())[:8]
-        
-        # Use default args if none provided
-        if pytest_args is None:
-            pytest_args = config.PYTEST_DEFAULT_ARGS.copy()
-        
-        # Clean up old sessions if at limit
-        if len(self.sessions) >= self.max_sessions:
-            self.cleanup_old_sessions()
-        
-        session = TestSession(session_id, test_files, pytest_args)
-        self.sessions[session_id] = session
-        
+    def create_session(self) -> str:
+        """Create a new test session"""
+        session_id = str(uuid.uuid4())
+        self.test_sessions[session_id] = {
+            "id": session_id,
+            "status": "created",
+            "start_time": time.time(),
+            "end_time": None,
+            "output": [],
+            "results": {},
+            "error": None
+        }
         return session_id
     
-    async def run_tests(self, session_id: str) -> bool:
-        """Run tests for a session"""
-        if session_id not in self.sessions:
-            return False
+    def run_tests_sync(
+        self,
+        test_types: List[str],
+        specific_tests: Optional[List[str]] = None,
+        pytest_args: Optional[str] = None,
+        session_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Run tests synchronously"""
         
-        session = self.sessions[session_id]
+        if not session_id:
+            session_id = self.create_session()
+        
+        session = self.test_sessions[session_id]
+        session["status"] = "running"
         
         try:
             # Build pytest command
-            cmd = ["python", "-m", "pytest"] + session.pytest_args + session.test_files
+            cmd = ["python", "-m", "pytest", "-v"]
             
-            # Start process
-            session.process = subprocess.Popen(
+            # Add test paths
+            for test_type in test_types:
+                test_path = self.root_dir / "src" / "tests" / test_type
+                if test_path.exists():
+                    if specific_tests:
+                        for test in specific_tests:
+                            specific_path = test_path / test
+                            if specific_path.exists():
+                                cmd.append(str(specific_path))
+                    else:
+                        cmd.append(str(test_path))
+            
+            # Add custom pytest args
+            if pytest_args:
+                cmd.extend(pytest_args.split())
+            
+            # Add output formatting
+            cmd.extend(["--tb=short", "--no-header"])
+            
+            session["command"] = " ".join(cmd)
+            logger.info(f"🧪 Running tests: {session['command']}")
+            
+            # Execute tests
+            process = subprocess.Popen(
                 cmd,
-                cwd=str(config.ROOT_DIR),
+                cwd=str(self.root_dir),
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
@@ -196,107 +127,168 @@ class TestRunner:
                 universal_newlines=True
             )
             
-            # Stream output
-            async for line in self.stream_process_output(session.process):
-                session.add_output(line.rstrip())
+            self.active_processes[session_id] = process
+            
+            # Collect output
+            output_lines = []
+            while True:
+                line = process.stdout.readline()
+                if not line and process.poll() is not None:
+                    break
+                if line:
+                    line = line.strip()
+                    output_lines.append(line)
+                    session["output"].append({
+                        "timestamp": time.time(),
+                        "line": line
+                    })
             
             # Wait for completion
-            session.return_code = session.process.wait()
-            session.end_time = time.time()
+            return_code = process.wait()
             
-            # Update status
-            if session.return_code == 0:
-                session.status = "completed"
-            else:
-                session.status = "failed"
+            # Parse results
+            session["results"] = self._parse_pytest_output(output_lines)
+            session["status"] = "completed" if return_code == 0 else "failed"
+            session["return_code"] = return_code
+            session["end_time"] = time.time()
             
-            logger.info(f"Test session {session_id} finished with code {session.return_code}")
-            return True
+            # Clean up
+            if session_id in self.active_processes:
+                del self.active_processes[session_id]
+            
+            logger.info(f"✅ Tests completed: {session['status']}")
+            return session
             
         except Exception as e:
-            session.status = "failed"
-            session.end_time = time.time()
-            session.add_output(f"ERROR: {str(e)}")
-            logger.error(f"Test session {session_id} failed: {e}")
-            return False
+            session["status"] = "error"
+            session["error"] = str(e)
+            session["end_time"] = time.time()
+            logger.error(f"❌ Test execution failed: {e}")
+            return session
     
-    async def stream_process_output(self, process: subprocess.Popen) -> AsyncGenerator[str, None]:
-        """Stream process output line by line"""
-        while True:
-            line = process.stdout.readline()
-            if not line:
-                break
-            yield line
+    async def run_tests_async(
+        self,
+        test_types: List[str],
+        specific_tests: Optional[List[str]] = None,
+        pytest_args: Optional[str] = None,
+        session_id: Optional[str] = None,
+        callback: Optional[Callable] = None
+    ) -> Dict[str, Any]:
+        """Run tests asynchronously"""
+        
+        def run_in_thread():
+            result = self.run_tests_sync(test_types, specific_tests, pytest_args, session_id)
+            if callback:
+                asyncio.create_task(callback(json.dumps({
+                    "type": "test_completed",
+                    "session_id": session_id,
+                    "result": result
+                })))
+            return result
+        
+        # Run in thread to avoid blocking
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, run_in_thread)
     
-    def cancel_session(self, session_id: str) -> bool:
-        """Cancel running test session"""
-        if session_id not in self.sessions:
-            return False
+    def _parse_pytest_output(self, output_lines: List[str]) -> Dict[str, Any]:
+        """Parse pytest output to extract results"""
+        results = {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "skipped": 0,
+            "errors": 0,
+            "failed_tests": [],
+            "duration": 0
+        }
         
-        session = self.sessions[session_id]
-        
-        if session.is_running and session.process:
-            try:
-                session.process.terminate()
-                session.process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                session.process.kill()
+        for line in output_lines:
+            # Parse summary line (e.g., "5 passed, 2 failed in 10.23s")
+            if " passed" in line or " failed" in line:
+                parts = line.split()
+                for i, part in enumerate(parts):
+                    if part.isdigit():
+                        count = int(part)
+                        if i + 1 < len(parts):
+                            status = parts[i + 1]
+                            if "passed" in status:
+                                results["passed"] = count
+                            elif "failed" in status:
+                                results["failed"] = count
+                            elif "skipped" in status:
+                                results["skipped"] = count
+                            elif "error" in status:
+                                results["errors"] = count
             
-            session.status = "cancelled"
-            session.end_time = time.time()
-            session.add_output("Test session cancelled by user")
-            return True
+            # Parse duration
+            if " in " in line and "s" in line:
+                try:
+                    duration_str = line.split(" in ")[-1].replace("s", "")
+                    results["duration"] = float(duration_str)
+                except Exception:
+                    pass
+            
+            # Collect failed tests
+            if "FAILED" in line:
+                test_name = line.split("FAILED")[0].strip()
+                results["failed_tests"].append(test_name)
         
+        results["total"] = results["passed"] + results["failed"] + results["skipped"] + results["errors"]
+        return results
+    
+    def get_session_output(self, session_id: str) -> Dict[str, Any]:
+        """Get output for a test session"""
+        if session_id not in self.test_sessions:
+            return {"error": "Session not found"}
+        
+        return self.test_sessions[session_id]
+    
+    def get_all_sessions(self) -> List[Dict[str, Any]]:
+        """Get all test sessions"""
+        return list(self.test_sessions.values())
+    
+    def stop_session(self, session_id: str) -> bool:
+        """Stop a running test session"""
+        if session_id in self.active_processes:
+            try:
+                process = self.active_processes[session_id]
+                process.terminate()
+                process.wait(timeout=5)
+                return True
+            except Exception:
+                try:
+                    process.kill()
+                    return True
+                except Exception:
+                    return False
         return False
     
-    def get_session(self, session_id: str) -> Optional[TestSession]:
-        """Get test session by ID"""
-        return self.sessions.get(session_id)
-    
-    def get_session_output(self, session_id: str, from_line: int = 0) -> Tuple[List[str], bool]:
-        """Get session output from specific line"""
-        if session_id not in self.sessions:
-            return [], False
-        
-        session = self.sessions[session_id]
-        output_slice = session.output_lines[from_line:]
-        is_complete = not session.is_running
-        
-        return output_slice, is_complete
-    
-    def list_sessions(self) -> List[Dict]:
-        """List all test sessions"""
-        return [session.get_summary() for session in self.sessions.values()]
-    
-    def cleanup_old_sessions(self, max_age: int = 3600):
-        """Clean up old completed sessions"""
+    def cleanup_old_sessions(self, max_age_hours: int = 24):
+        """Clean up old test sessions"""
         current_time = time.time()
-        to_remove = []
+        max_age_seconds = max_age_hours * 3600
         
-        for session_id, session in self.sessions.items():
-            if (not session.is_running and 
-                session.end_time and 
-                (current_time - session.end_time) > max_age):
+        to_remove = []
+        for session_id, session in self.test_sessions.items():
+            session_age = current_time - session["start_time"]
+            if session_age > max_age_seconds and session["status"] in ["completed", "failed", "error"]:
                 to_remove.append(session_id)
         
         for session_id in to_remove:
-            del self.sessions[session_id]
-            logger.info(f"Cleaned up old session: {session_id}")
+            del self.test_sessions[session_id]
+            logger.info(f"🧹 Cleaned up old test session: {session_id}")
     
-    def get_pytest_help(self) -> List[str]:
-        """Get pytest help options"""
-        try:
-            result = subprocess.run(
-                ["python", "-m", "pytest", "--help"],
-                capture_output=True,
-                text=True,
-                timeout=10
-            )
-            return result.stdout.split('\n')
-        except Exception as e:
-            logger.error(f"Failed to get pytest help: {e}")
-            return ["Pytest help not available"]
-
-# Global instances
-test_discovery = TestDiscovery()
-test_runner = TestRunner()
+    def get_test_stats(self) -> Dict[str, Any]:
+        """Get overall test statistics"""
+        total_sessions = len(self.test_sessions)
+        completed = sum(1 for s in self.test_sessions.values() if s["status"] == "completed")
+        failed = sum(1 for s in self.test_sessions.values() if s["status"] == "failed")
+        running = sum(1 for s in self.test_sessions.values() if s["status"] == "running")
+        
+        return {
+            "total_sessions": total_sessions,
+            "completed": completed,
+            "failed": failed,
+            "running": running,
+            "success_rate": (completed / total_sessions * 100) if total_sessions > 0 else 0
+        }

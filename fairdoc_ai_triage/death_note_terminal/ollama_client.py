@@ -1,288 +1,208 @@
 """
-Death Note Terminal - Ollama Integration Client
+Ollama Client - AI Analysis Integration
 
-Integrates with DeepSeek-R1 8B for intelligent log analysis and problem identification.
-Single responsibility: AI-powered terminal output interpretation.
+Provides integration with Ollama for intelligent log analysis,
+error detection, and performance insights.
 
-File: ollama_client.py
+Single responsibility: Ollama API communication and analysis
+File: ./ollama_client.py
 """
 
-import requests
-import json
-import time
-import logging
-from typing import Dict, List, Optional, Tuple
-from config import config
-import asyncio
 import aiohttp
+import json
+import logging
+from typing import Dict, Any, Optional
+import asyncio
+
+import config
 
 logger = logging.getLogger(__name__)
 
-class OllamaResponse:
-    """Represents an Ollama model response"""
-    
-    def __init__(self, response_text: str, metadata: Dict):
-        self.text = response_text
-        self.metadata = metadata
-        self.timestamp = time.time()
-    
-    def to_dict(self) -> Dict:
-        return {
-            "text": self.text,
-            "metadata": self.metadata,
-            "timestamp": self.timestamp
-        }
-
-class LogAnalyzer:
-    """AI-powered log analysis using DeepSeek-R1"""
-    
-    ANALYSIS_PROMPTS = {
-        "error_detection": """
-        Analyze the following terminal output for errors, warnings, and issues.
-        Focus on identifying:
-        1. Critical errors that need immediate attention
-        2. Warning signs of potential problems
-        3. Performance issues or bottlenecks
-        4. Missing dependencies or configuration issues
-        
-        Provide a concise analysis with specific recommendations.
-        
-        Terminal output:
-        {log_content}
-        """,
-        
-        "test_summary": """
-        Analyze this pytest test output and provide a summary:
-        1. Overall test results (passed/failed/skipped)
-        2. Specific test failures and their causes
-        3. Recommendations for fixing failures
-        4. Performance insights if available
-        
-        Pytest output:
-        {log_content}
-        """,
-        
-        "server_health": """
-        Analyze this server log output for health and performance insights:
-        1. Server startup status and any issues
-        2. Request patterns and response times
-        3. Resource usage concerns
-        4. Security or configuration warnings
-        
-        Server logs:
-        {log_content}
-        """,
-        
-        "general_summary": """
-        Provide an intelligent summary of this terminal output.
-        Focus on the most important information and any actions needed.
-        
-        Terminal output:
-        {log_content}
-        """
-    }
-
 class OllamaClient:
-    """Death Note Terminal Ollama Integration Client"""
+    """Client for interacting with Ollama AI service"""
     
     def __init__(self):
         self.base_url = config.OLLAMA_BASE_URL
         self.model = config.OLLAMA_MODEL
-        self.timeout = config.OLLAMA_TIMEOUT
-        self.max_tokens = config.OLLAMA_MAX_TOKENS
-        self.session = None
+        self.session: Optional[aiohttp.ClientSession] = None
         
-    async def __aenter__(self):
-        """Async context manager entry"""
-        self.session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=self.timeout))
-        return self
+    async def _get_session(self) -> aiohttp.ClientSession:
+        """Get or create aiohttp session"""
+        if self.session is None or self.session.closed:
+            self.session = aiohttp.ClientSession()
+        return self.session
     
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Async context manager exit"""
-        if self.session:
-            await self.session.close()
-    
-    async def check_connection(self) -> Tuple[bool, str]:
-        """Check if Ollama server is accessible"""
+    async def test_connection(self) -> bool:
+        """Test connection to Ollama server"""
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"{self.base_url}/api/tags", timeout=5) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        models = [model["name"] for model in data.get("models", [])]
-                        
-                        if self.model in models:
-                            return True, f"Connected to Ollama with {self.model}"
-                        else:
-                            return False, f"Model {self.model} not found. Available: {models}"
-                    else:
-                        return False, f"Ollama server returned status {response.status}"
-        
-        except Exception as e:
-            return False, f"Connection failed: {str(e)}"
-    
-    async def generate_response(self, prompt: str, system_prompt: Optional[str] = None) -> Optional[OllamaResponse]:
-        """Generate response from Ollama model"""
-        
-        if not self.session:
-            return None
-        
-        try:
-            payload = {
-                "model": self.model,
-                "prompt": prompt,
-                "stream": False,
-                "options": {
-                    "num_predict": self.max_tokens,
-                    "temperature": 0.7,
-                    "top_p": 0.9,
-                    "stop": ["<|im_end|>", "<|endoftext|>"]
-                }
-            }
-            
-            if system_prompt:
-                payload["system"] = system_prompt
-            
-            async with self.session.post(f"{self.base_url}/api/generate", json=payload) as response:
+            session = await self._get_session()
+            async with session.get(f"{self.base_url}/api/tags") as response:
                 if response.status == 200:
                     data = await response.json()
-                    
-                    metadata = {
-                        "model": data.get("model", self.model),
-                        "total_duration": data.get("total_duration", 0),
-                        "load_duration": data.get("load_duration", 0),
-                        "prompt_eval_count": data.get("prompt_eval_count", 0),
-                        "eval_count": data.get("eval_count", 0),
-                        "eval_duration": data.get("eval_duration", 0)
-                    }
-                    
-                    return OllamaResponse(data.get("response", ""), metadata)
+                    # Check if our model is available
+                    models = [model.get('name', '') for model in data.get('models', [])]
+                    if any(self.model in model for model in models):
+                        logger.info(f"✅ Ollama connected - {self.model} available")
+                        return True
+                    else:
+                        logger.warning(f"⚠️ Ollama connected but {self.model} not found")
+                        return False
                 else:
-                    logger.error(f"Ollama API error: {response.status}")
-                    return None
-        
+                    logger.error(f"❌ Ollama connection failed: HTTP {response.status}")
+                    return False
         except Exception as e:
-            logger.error(f"Error generating response: {e}")
-            return None
+            logger.error(f"❌ Ollama connection error: {e}")
+            return False
     
-    async def analyze_logs(self, log_content: str, analysis_type: str = "general_summary") -> Optional[OllamaResponse]:
-        """Analyze log content with specific analysis type"""
-        
-        if analysis_type not in LogAnalyzer.ANALYSIS_PROMPTS:
-            analysis_type = "general_summary"
-        
-        # Truncate log content if too long (keep recent lines)
-        lines = log_content.split('\n')
-        if len(lines) > 500:  # Limit to recent 500 lines
-            log_content = '\n'.join(lines[-500:])
-            log_content = f"[...truncated to last 500 lines...]\n{log_content}"
-        
-        prompt = LogAnalyzer.ANALYSIS_PROMPTS[analysis_type].format(log_content=log_content)
-        
-        system_prompt = """You are an expert system administrator and developer helping analyze terminal logs. 
-        Provide concise, actionable insights focusing on problems and solutions. 
-        Use bullet points for clarity and highlight critical issues."""
-        
-        return await self.generate_response(prompt, system_prompt)
-    
-    async def analyze_test_output(self, test_output: str) -> Optional[OllamaResponse]:
-        """Specialized analysis for pytest output"""
-        return await self.analyze_logs(test_output, "test_summary")
-    
-    async def analyze_server_logs(self, server_logs: str) -> Optional[OllamaResponse]:
-        """Specialized analysis for server logs"""
-        return await self.analyze_logs(server_logs, "server_health")
-    
-    async def detect_errors(self, log_content: str) -> Optional[OllamaResponse]:
-        """Focus on error detection and troubleshooting"""
-        return await self.analyze_logs(log_content, "error_detection")
-    
-    def sync_analyze_logs(self, log_content: str, analysis_type: str = "general_summary") -> Optional[Dict]:
-        """Synchronous wrapper for log analysis"""
-        
+    async def generate(self, prompt: str, max_tokens: int = 1000) -> str:
+        """Generate text using Ollama"""
         try:
-            # Use requests for synchronous operation
-            if analysis_type not in LogAnalyzer.ANALYSIS_PROMPTS:
-                analysis_type = "general_summary"
-            
-            # Truncate content
-            lines = log_content.split('\n')
-            if len(lines) > 500:
-                log_content = '\n'.join(lines[-500:])
-                log_content = f"[...truncated to last 500 lines...]\n{log_content}"
-            
-            prompt = LogAnalyzer.ANALYSIS_PROMPTS[analysis_type].format(log_content=log_content)
+            session = await self._get_session()
             
             payload = {
                 "model": self.model,
                 "prompt": prompt,
-                "system": """You are an expert system administrator helping analyze logs. 
-                Provide concise, actionable insights focusing on problems and solutions.""",
                 "stream": False,
                 "options": {
-                    "num_predict": self.max_tokens,
+                    "num_predict": max_tokens,
                     "temperature": 0.7
                 }
             }
             
-            response = requests.post(
+            async with session.post(
                 f"{self.base_url}/api/generate",
                 json=payload,
-                timeout=self.timeout
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                return {
-                    "analysis": data.get("response", ""),
-                    "model": data.get("model", self.model),
-                    "duration_ms": data.get("total_duration", 0) // 1000000,
-                    "success": True
-                }
-            else:
-                return {
-                    "analysis": f"Ollama API error: {response.status_code}",
-                    "success": False
-                }
+                timeout=aiohttp.ClientTimeout(total=60)
+            ) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    return data.get('response', '')
+                else:
+                    error_text = await response.text()
+                    raise Exception(f"Ollama API error: {response.status} - {error_text}")
+                    
+        except Exception as e:
+            logger.error(f"❌ Generation failed: {e}")
+            raise
+    
+    async def analyze(self, content: str, analysis_type: str = "general") -> str:
+        """Analyze content with context-specific prompts"""
         
-        except Exception as e:
-            logger.error(f"Sync analysis failed: {e}")
-            return {
-                "analysis": f"Analysis failed: {str(e)}",
-                "success": False
-            }
-    
-    async def get_model_info(self) -> Optional[Dict]:
-        """Get information about the current model"""
+        prompts = {
+            "error": f"""
+            Analyze this error log and provide:
+            1. Root cause analysis
+            2. Potential fixes
+            3. Prevention strategies
+            
+            Log content:
+            {content}
+            """,
+            
+            "performance": f"""
+            Analyze this performance data and provide:
+            1. Performance bottlenecks
+            2. Optimization recommendations
+            3. Resource usage insights
+            
+            Performance data:
+            {content}
+            """,
+            
+            "test": f"""
+            Analyze this test output and provide:
+            1. Test results summary
+            2. Failed test analysis
+            3. Improvement suggestions
+            
+            Test output:
+            {content}
+            """,
+            
+            "general": f"""
+            Analyze this system log and provide:
+            1. Key insights
+            2. Potential issues
+            3. Recommendations
+            
+            Log content:
+            {content}
+            """
+        }
+        
+        prompt = prompts.get(analysis_type, prompts["general"])
+        
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.post(f"{self.base_url}/api/show", json={"name": self.model}) as response:
-                    if response.status == 200:
-                        return await response.json()
+            result = await self.generate(prompt, max_tokens=1500)
+            return result
         except Exception as e:
-            logger.error(f"Failed to get model info: {e}")
-        return None
-
-class DeathNoteAnalyzer:
-    """Death Note themed wrapper for log analysis"""
+            logger.error(f"❌ Analysis failed: {e}")
+            return f"Analysis failed: {str(e)}"
     
-    def __init__(self):
-        self.ollama = OllamaClient()
-        self.death_note_prompt = """
-        Acting as L from Death Note, analyze this log output with sharp deductive reasoning.
-        Focus on patterns, anomalies, and logical connections that reveal the truth.
-        Provide insights in L's characteristic analytical style.
+    async def summarize_logs(self, logs: list) -> str:
+        """Summarize multiple log entries"""
+        log_text = "\n".join(logs[-50:])  # Last 50 entries
+        
+        prompt = f"""
+        Summarize these system logs focusing on:
+        1. Critical events
+        2. Error patterns
+        3. System health status
+        4. Action items
+        
+        Logs:
+        {log_text}
         """
+        
+        try:
+            return await self.generate(prompt, max_tokens=800)
+        except Exception as e:
+            logger.error(f"❌ Log summarization failed: {e}")
+            return f"Summarization failed: {str(e)}"
     
-    async def l_analyze(self, log_content: str) -> Optional[str]:
-        """Analyze logs in L's detective style"""
-        async with self.ollama:
-            response = await self.ollama.generate_response(
-                f"{log_content}\n\nProvide analysis:",
-                self.death_note_prompt
-            )
-            return response.text if response else None
-
-# Global instances
-ollama_client = OllamaClient()
-death_note_analyzer = DeathNoteAnalyzer()
+    async def detect_anomalies(self, metrics: Dict[str, Any]) -> str:
+        """Detect anomalies in system metrics"""
+        metrics_text = json.dumps(metrics, indent=2)
+        
+        prompt = f"""
+        Analyze these system metrics for anomalies:
+        1. Unusual patterns
+        2. Performance degradation
+        3. Resource exhaustion risks
+        4. Trending issues
+        
+        Metrics:
+        {metrics_text}
+        """
+        
+        try:
+            return await self.generate(prompt, max_tokens=1000)
+        except Exception as e:
+            logger.error(f"❌ Anomaly detection failed: {e}")
+            return f"Anomaly detection failed: {str(e)}"
+    
+    async def suggest_fixes(self, error_details: str) -> str:
+        """Suggest fixes for specific errors"""
+        prompt = f"""
+        Provide specific, actionable fixes for this error:
+        
+        Error: {error_details}
+        
+        Format your response as:
+        1. Immediate fix
+        2. Root cause fix
+        3. Prevention measures
+        4. Related documentation
+        """
+        
+        try:
+            return await self.generate(prompt, max_tokens=1200)
+        except Exception as e:
+            logger.error(f"❌ Fix suggestions failed: {e}")
+            return f"Fix suggestion failed: {str(e)}"
+    
+    async def close(self):
+        """Close the aiohttp session"""
+        if self.session and not self.session.closed:
+            await self.session.close()
+            logger.info("🔌 Ollama client session closed")

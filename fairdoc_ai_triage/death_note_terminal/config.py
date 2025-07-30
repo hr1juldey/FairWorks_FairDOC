@@ -44,8 +44,8 @@ class Config:
         },
         "combined": {
             "name": "V1 + V2 Combined",
-            "module": "src.app.main:app",  # V2 mounted in V1
-            "port": 8000,
+            "module": "src.app.main:app",
+            "port": 8003,
             "description": "Both APIs on single port",
             "endpoints": ["/api/v1", "/api/v2"]
         }
@@ -159,5 +159,33 @@ if os.getenv("DEATH_NOTE_OLLAMA_URL"):
 if os.getenv("DEATH_NOTE_OLLAMA_MODEL"):
     Config.OLLAMA_MODEL = os.getenv("DEATH_NOTE_OLLAMA_MODEL")
 
-# Singleton configuration instance
+# FIXED: Module-level attribute exposure
+# Make all Config class attributes available at module level
+def _expose_config_attributes():
+    """Expose Config class attributes at module level"""
+    current_module = __import__(__name__)
+    
+    for attr_name in dir(Config):
+        if not attr_name.startswith('_') and not callable(getattr(Config, attr_name)):
+            setattr(current_module, attr_name, getattr(Config, attr_name))
+    
+    # Special handling for methods
+    current_module.get_server_config = Config.get_server_config
+    current_module.get_test_path = Config.get_test_path
+    current_module.is_port_available = Config.is_port_available
+    current_module.get_custom_port_config = Config.get_custom_port_config
+    current_module.validate_config = Config.validate_config
+
+# Apply the exposure
+_expose_config_attributes()
+
+# Create singleton instance for backwards compatibility
 config = Config()
+
+# Additional module-level convenience attributes
+ROOT_DIR = Config.ROOT_DIR
+OLLAMA_BASE_URL = Config.OLLAMA_BASE_URL
+OLLAMA_MODEL = Config.OLLAMA_MODEL
+SERVER_CONFIGS = Config.SERVER_CONFIGS
+TEST_CATEGORIES = Config.TEST_CATEGORIES
+CORS_ORIGINS = Config.CORS_ORIGINS

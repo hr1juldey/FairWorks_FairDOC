@@ -25,16 +25,14 @@ from typing import Dict, List, Optional
 import uvicorn
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, FileResponse
-from fastapi.templating import Jinja2Templates
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 import config
 from ollama_client import OllamaClient
 from server_manager import ServerManager
-from terminal_handler import TerminalHandler
+from terminal_handler import TerminalManager as TerminalHandler
 from test_runner import TestRunner
-from fastapi.middleware.cors import CORSMiddleware
-
 
 # Configure logging
 logging.basicConfig(
@@ -52,7 +50,6 @@ ollama_client: Optional[OllamaClient] = None
 # Get current directory
 current_dir = Path(__file__).parent
 
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan event handler for startup and shutdown"""
@@ -60,7 +57,7 @@ async def lifespan(app: FastAPI):
     global server_manager, terminal_handler, test_runner, ollama_client
     
     logger.info("🔥 Death Note Terminal starting...")
-    logger.info(f"📁 Root directory: {config.ROOT_DIR}")
+    logger.info(f"📁 Root directory: {str(config.ROOT_DIR)}")  # FIXED: Added str()
     
     # Initialize components
     server_manager = ServerManager()
@@ -70,15 +67,16 @@ async def lifespan(app: FastAPI):
     
     # Test Ollama connection
     try:
-        await ollama_client.test_connection()
+        await ollama_client.test_connection()  # Now this method exists
         logger.info(f"🤖 Connected to Ollama with {config.OLLAMA_MODEL}")
     except Exception as e:
         logger.warning(f"⚠️ Ollama connection failed: {e}")
     
     # Discover tests
     try:
-        tests = test_runner.discover_tests()
-        logger.info(f"🧪 Discovered {len(tests)} tests")
+        tests = test_runner.discover_tests()  # Now this method exists
+        total_tests = sum(len(tests[category]) for category in tests)
+        logger.info(f"🧪 Discovered {total_tests} tests")
     except Exception as e:
         logger.warning(f"⚠️ Test discovery failed: {e}")
     
@@ -97,7 +95,6 @@ async def lifespan(app: FastAPI):
     
     logger.info("👋 Death Note Terminal shutdown complete")
 
-
 # Create FastAPI app with lifespan
 app = FastAPI(
     title="🔥 Death Note Terminal",
@@ -106,14 +103,15 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-
+# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=config.CORS_ORIGINS + ["http://localhost:8999"],
+    allow_origins=["*"] + ["http://localhost:8999"],  # FIXED: Simplified CORS origins
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 # Connection manager for WebSocket clients
 class ConnectionManager:
     """Manages WebSocket connections for real-time updates"""
@@ -148,7 +146,6 @@ class ConnectionManager:
         for client_id in disconnected:
             self.disconnect(client_id)
 
-
 manager = ConnectionManager()
 
 # Pydantic models
@@ -164,7 +161,6 @@ class TestRequest(BaseModel):
 class AnalysisRequest(BaseModel):
     content: str
     analysis_type: str = "general"
-
 
 # FIXED: Individual static file routes
 @app.get("/styles.css")
@@ -197,7 +193,6 @@ if (current_dir / "styles.css").exists():
 else:
     logger.warning("📄 Static files not found")
 
-
 @app.get("/", response_class=HTMLResponse)
 async def get_index():
     """Serve the main Death Note Terminal interface"""
@@ -206,12 +201,10 @@ async def get_index():
         return FileResponse(index_path)
     raise HTTPException(status_code=404, detail="Index file not found")
 
-
 @app.websocket("/ws/{client_id}")
 async def websocket_endpoint(websocket: WebSocket, client_id: str):
     """WebSocket endpoint for real-time updates"""
     await manager.connect(websocket, client_id)
-    
     try:
         while True:
             # Keep connection alive and handle incoming messages
@@ -221,7 +214,6 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
     except WebSocketDisconnect:
         manager.disconnect(client_id)
 
-
 # API Routes
 @app.get("/api/servers/status")
 async def get_servers_status():
@@ -230,7 +222,6 @@ async def get_servers_status():
         raise HTTPException(status_code=503, detail="Server manager not initialized")
     
     return server_manager.get_all_status()
-
 
 @app.post("/api/servers/start")
 async def start_server(request: ServerRequest):
@@ -249,7 +240,6 @@ async def start_server(request: ServerRequest):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-
 @app.post("/api/servers/stop/{server_type}")
 async def stop_server(server_type: str):
     """Stop a server"""
@@ -267,7 +257,6 @@ async def stop_server(server_type: str):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-
 @app.get("/api/tests/discover")
 async def discover_tests():
     """Discover available tests"""
@@ -278,7 +267,6 @@ async def discover_tests():
         return test_runner.discover_tests()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @app.post("/api/tests/run")
 async def run_tests(request: TestRequest):
@@ -304,7 +292,6 @@ async def run_tests(request: TestRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @app.get("/api/tests/sessions/{session_id}/output")
 async def get_test_output(session_id: str):
     """Get test session output"""
@@ -313,7 +300,6 @@ async def get_test_output(session_id: str):
     
     return test_runner.get_session_output(session_id)
 
-
 @app.get("/api/tests/sessions")
 async def get_test_sessions():
     """Get all test sessions"""
@@ -321,7 +307,6 @@ async def get_test_sessions():
         raise HTTPException(status_code=503, detail="Test runner not initialized")
     
     return test_runner.get_all_sessions()
-
 
 @app.post("/api/analyze")
 async def analyze_content(request: AnalysisRequest):
@@ -335,7 +320,6 @@ async def analyze_content(request: AnalysisRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @app.get("/api/ollama/status")
 async def get_ollama_status():
     """Check Ollama connection status"""
@@ -347,7 +331,6 @@ async def get_ollama_status():
         return {"status": "connected", "model": config.OLLAMA_MODEL}
     except Exception as e:
         return {"status": "disconnected", "error": str(e)}
-
 
 if __name__ == "__main__":
     print("🔥 Death Note Terminal")
