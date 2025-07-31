@@ -23,7 +23,7 @@ from src.app2.services.context.nice_lookup import NICELookupService
 from src.app2.services.context.redis_queue import ConversationQueue
 from src.app2.services.chat.stakeholder_router import StakeholderRouter
 from src.app2.services.chat.raven_bridge import RavenBridge
-
+from src.app2.services.database.initialization_service import initialize_database_on_startup
 logger = structlog.get_logger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -149,36 +149,44 @@ _raven_bridge: Optional[RavenBridge] = None
 async def init_services():
     """Initialize all V2 services on application startup."""
     global _medical_agent, _nice_lookup, _conversation_queue, _stakeholder_router, _raven_bridge
-    
+
     try:
         logger.info("🚀 Initializing V2 services...")
         
+        # Initialize database with seed data FIRST (other services depend on this)
+        logger.info("🗄️ Initializing database with seed data...")
+        await initialize_database_on_startup()
+        logger.info("✅ Database initialization completed")
+
         # Initialize DSPy Medical Agent
         _medical_agent = MedicalTriageAgent(model_name=settings_v2.FAIRDOC_V2_DSPy_MODEL)
         logger.info("🩺 Medical agent initialized")
-        
+
         # Initialize NICE Lookup Service
         _nice_lookup = NICELookupService()
         logger.info("📋 NICE lookup service initialized")
-        
+
         # Initialize Redis-based Conversation Queue
         _conversation_queue = ConversationQueue()
         await _conversation_queue.initialize()
         logger.info("💬 Conversation queue initialized")
-        
+
         # Initialize Stakeholder Router
         _stakeholder_router = StakeholderRouter()
         logger.info("🔄 Stakeholder router initialized")
-        
+
         # Initialize Raven Bridge
         _raven_bridge = RavenBridge()
         logger.info("📤 Raven bridge initialized")
-        
+
         logger.info("✅ All V2 services initialized successfully")
-        
+
     except Exception as e:
         logger.error("❌ Service initialization failed", error=str(e))
-        raise
+        logger.error("💥 Failed component during V2 service initialization")
+        raise RuntimeError(f"V2 service initialization failed: {str(e)}") from e
+
+
 
 async def get_medical_agent() -> MedicalTriageAgent:
     """Get DSPy medical triage agent instance."""

@@ -1,6 +1,7 @@
 {
     "python.defaultInterpreterPath": "./fairdoc_ai_triage/.venv/bin/python",
     "python.analysis.extraPaths": [
+        "fairdoc_ai_triage/src/app2/services/database/",
         "./fairdoc_ai_triage/src/app2/services/chat/",
         "./fairdoc_ai_triage/src/app2/services/",
         "./fairdoc_ai_triage/src/app2/utils/",
