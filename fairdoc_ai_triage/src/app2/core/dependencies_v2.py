@@ -19,6 +19,7 @@ import asyncio
 
 from src.app2.core.config_v2 import settings_v2
 from src.app2.services.dspy.medical_agent import MedicalTriageAgent
+from src.app2.services.dspy.question_generator import MedicalQuestionGenerator
 from src.app2.services.context.nice_lookup import NICELookupService
 from src.app2.services.context.redis_queue import ConversationQueue
 from src.app2.services.chat.stakeholder_router import StakeholderRouter
@@ -140,7 +141,9 @@ async def get_redis_client() -> Redis:
 # ---------------------------------------------------------------------------
 
 # Global service instances (initialized once)
+# Global service instances (initialized once)
 _medical_agent: Optional[MedicalTriageAgent] = None
+_question_generator: Optional[MedicalQuestionGenerator] = None
 _nice_lookup: Optional[NICELookupService] = None
 _conversation_queue: Optional[ConversationQueue] = None
 _stakeholder_router: Optional[StakeholderRouter] = None
@@ -158,9 +161,14 @@ async def init_services():
         await initialize_database_on_startup()
         logger.info("✅ Database initialization completed")
 
-        # Initialize DSPy Medical Agent
+        # Initialize DSPy Medical Agent  
         _medical_agent = MedicalTriageAgent(model_name=settings_v2.FAIRDOC_V2_DSPy_MODEL)
         logger.info("🩺 Medical agent initialized")
+
+        # Initialize Question Generator
+        _question_generator = MedicalQuestionGenerator(model_name=settings_v2.FAIRDOC_V2_DSPy_MODEL)
+        logger.info("❓ Question generator initialized")
+
 
         # Initialize NICE Lookup Service
         _nice_lookup = NICELookupService()
@@ -205,6 +213,15 @@ async def get_nice_lookup() -> NICELookupService:
             detail="NICE lookup service not initialized"
         )
     return _nice_lookup
+
+async def get_question_generator() -> MedicalQuestionGenerator:
+    """Get medical question generator instance."""
+    if _question_generator is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Question generator not initialized"
+        )
+    return _question_generator
 
 async def get_conversation_queue() -> ConversationQueue:
     """Get Redis conversation queue instance."""

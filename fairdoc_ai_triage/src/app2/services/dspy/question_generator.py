@@ -165,14 +165,82 @@ class MedicalQuestionModule(dspy.Module):
         """Detect emergency red flags in symptoms"""
         symptoms_lower = symptoms.lower()
         emergency_patterns = {
-            'crushing_chest_pain': ['crushing', 'squeezing', 'elephant on chest'],
-            'chest_pain_radiation': ['radiating', 'spreading', 'arm pain', 'jaw pain'],
+            'crushing_chest_pain': ['crushing', 'squeezing', 'elephant on chest', 'heavy chest'],
+            'chest_pain_radiation': ['radiating', 'spreading', 'arm pain', 'jaw pain', 'shoulder pain', 'back pain'],
             'thunderclap_headache': ['thunderclap', 'worst headache ever', 'sudden severe'],
-            'severe_breathlessness': ['can\'t breathe', 'gasping', 'severe shortness'],
-            'loss_consciousness': ['fainted', 'passed out', 'lost consciousness'],
-            'severe_bleeding': ['heavy bleeding', 'blood loss', 'hemorrhage'],
-            'pain_migration': ['pain moved', 'started around navel', 'migrated'],
-            'neck_stiffness': ['neck stiff', 'can\'t bend neck', 'meningeal']
+            'severe_breathlessness': ['can\'t breathe', 'gasping', 'severe shortness', 'air hunger', 'laboured breathing'],
+            'loss_consciousness': ['fainted', 'passed out', 'lost consciousness', 'unconscious', 'syncopal episode'],
+            'severe_bleeding': ['heavy bleeding', 'blood loss', 'hemorrhage', 'uncontrollable bleeding', 'saturating dressing'],
+            'pain_migration': ['pain moved', 'started around navel', 'migrated', 'belly button', 'moved to right side'],
+            'neck_stiffness': ['neck stiff', 'can\'t bend neck', 'meningeal', 'pain bending neck'],
+            'heart_failure_triad': ['shortness of breath', 'ankle swelling', 'fatigue', 'fluid retention', 'swollen legs', 'weight gain'],
+            'appendicitis_classic': ['belly button', 'right side', 'mcburney', 'rebound tenderness', 'pain in lower right abdomen'],
+            'stroke_symptoms_FAST': ['face droop', 'arm weakness', 'slurred speech', 'facial drooping', 'one side weak'],
+            'sepsis_signs': ['high temperature', 'fever', 'shivering', 'chills', 'fast breathing', 'fast heart rate', 'confusion'],
+            'anaphylaxis': ['swelling face', 'swollen tongue', 'wheezing', 'hives', 'rash', 'difficulty swallowing'],
+            'pulmonary_embolism_signs': ['sudden chest pain', 'coughing blood', 'low oxygen', 'breathless', 'sharp pain on breathing'],
+            'ectopic_pregnancy': ['shoulder tip pain', 'one-sided tummy pain', 'vaginal bleeding', 'spotting'],
+            'diabetic_ketoacidosis': ['fruity breath', 'high blood sugar', 'frequent urination', 'vomiting', 'abdominal pain'],
+            'severe_allergic_reaction': ['itchy skin', 'swollen throat', 'hives', 'breathing difficulty after sting'],
+            'sudden_vision_loss': ['lost vision suddenly', 'blurry vision in one eye', 'double vision', 'seeing black spots'],
+            'hypoglycaemic_coma': ['confusion', 'pale', 'sweaty', 'shaking', 'seizure', 'low blood sugar', 'lost consciousness'],
+            'hyperglycaemic_hyperosmolar_state': ['severe dehydration', 'very high blood sugar', 'no ketones', 'coma'],
+            'adrenal_crisis': ['severe weakness', 'hypotension', 'vomiting', 'abdominal pain', 'fever'],
+            'thyroid_storm': ['high fever', 'tachycardia', 'palpitations', 'confusion', 'agitation'],
+            'acute_angle_closure_glaucoma': ['severe eye pain', 'red eye', 'blurred vision', 'seeing halos'],
+            'retinal_detachment': ['flashes of light', 'floaters', 'curtain coming down', 'lost peripheral vision'],
+            'cauda_equina_syndrome': ['saddle anaesthesia', 'urinary retention', 'incontinence', 'back pain', 'numbness inner thighs'],
+            'septic_arthritis': ['hot joint', 'swollen joint', 'painful joint', 'fever', 'can\'t move joint'],
+            'compartment_syndrome': ['severe leg pain', 'pain out of proportion', 'tense muscle', 'numbness', 'tingling'],
+            'non_accidental_injury': ['suspicious bruising', 'multiple fractures', 'injury inconsistent with story', 'cigarette burns'],
+            'febrile_seizure': ['seizure with fever', 'shaking', 'high temperature', 'loss of consciousness'],
+            'croup': ['barking cough', 'inspiratory stridor', 'hoarse voice', 'breathing difficulty'],
+            'meningitis_rash': ['non-blanching rash', 'fever', 'neck stiffness', 'headache'],
+            'necrotizing_fasciitis': ['severe pain', 'redness', 'swelling', 'blisters', 'skin death'],
+            'gastrointestinal_bleeding': ['vomiting blood', 'coffee ground vomit', 'black tarry stools', 'melena'],
+            'bowel_obstruction': ['severe stomach pain', 'colicky pain', 'bloated abdomen', 'can\'t pass gas'],
+            'pancreatitis': ['severe abdominal pain', 'radiating to back', 'worse after eating', 'nausea', 'vomiting'],
+            'ruptured_aortic_aneurysm': ['sudden severe abdominal pain', 'back pain', 'fainting', 'pulsating lump'],
+            'acute_cholecystitis': ['severe upper right abdominal pain', 'radiating to shoulder', 'fever', 'nausea'],
+            'acute_pyelonephritis': ['loin pain', 'back pain', 'fever', 'shivering', 'painful urination'],
+            'renal_colic': ['severe loin pain', 'groin pain', 'agony', 'can\'t get comfortable'],
+            'testicular_torsion': ['sudden severe testicular pain', 'swollen testicle', 'nausea', 'vomiting'],
+            'postpartum_hemorrhage': ['heavy vaginal bleeding after birth', 'saturating pads', 'clots', 'dizziness'],
+            'pre-eclampsia_eclampsia': ['headache', 'blurred vision', 'swelling face/hands', 'high blood pressure', 'seizure'],
+            'placental_abruption': ['constant abdominal pain', 'dark red vaginal bleeding', 'firm uterus'],
+            'uterine_rupture': ['sudden severe abdominal pain during labour', 'loss of contractions', 'fetal distress'],
+            'cord_prolapse': ['feeling of something coming out', 'visible cord in vagina', 'fetal distress'],
+            'burns_severe': ['blisters', 'redness', 'pain', 'loss of sensation', 'charred skin'],
+            'head_trauma': ['confusion', 'headache', 'vomiting', 'loss of consciousness', 'amnesia'],
+            'spinal_cord_injury': ['neck pain', 'back pain', 'numbness', 'paralysis', 'lost sensation'],
+            'drug_overdose_opioid': ['pinpoint pupils', 'slow breathing', 'unresponsive', 'blue lips'],
+            'drug_overdose_stimulant': ['agitation', 'fast heart rate', 'high temperature', 'seizure', 'chest pain'],
+            'poisoning_general': ['vomiting', 'abdominal pain', 'confusion', 'drowsiness', 'unusual smell'],
+            'carbon_monoxide_poisoning': ['headache', 'dizziness', 'nausea', 'cherry-red skin', 'multiple people affected'],
+            'heat_stroke': ['high body temperature', 'hot dry skin', 'confusion', 'loss of consciousness'],
+            'hypothermia': ['shivering', 'confusion', 'cold skin', 'slow breathing', 'unconsciousness'],
+            'acute_psychosis': ['hallucinations', 'delusions', 'disorganized thoughts', 'agitation', 'incoherent speech'],
+            'suicidal_ideation': ['talking about suicide', 'giving away possessions', 'feeling hopeless', 'making a plan'],
+            'catatonia': ['immobility', 'mutism', 'waxy flexibility', 'staring', 'echolalia'],
+            'acute_gout': ['sudden severe joint pain', 'red joint', 'swollen joint', 'big toe'],
+            'septic_shock': ['low blood pressure', 'high fever', 'cold extremities', 'confusion', 'organ failure'],
+            'toxic_shock_syndrome': ['high fever', 'rash', 'low blood pressure', 'vomiting', 'diarrhea'],
+            'febrile_neutropenia': ['fever', 'low white cell count', 'chills', 'sore throat'],
+            'hemolytic_uremic_syndrome': ['bloody diarrhea', 'low platelet count', 'kidney failure', 'tiredness'],
+            'hypertensive_emergency': ['severe headache', 'blurred vision', 'chest pain', 'blood pressure >180/120'],
+            'cardiogenic_shock': ['low blood pressure', 'fast heart rate', 'cold clammy skin', 'shortness of breath'],
+            'dissecting_aortic_aneurysm': ['sudden tearing chest pain', 'radiating to back', 'different blood pressures in arms'],
+            'pulmonary_oedema': ['severe breathlessness', 'coughing pink frothy sputum', 'sweating', 'anxiety'],
+            'acute_urinary_retention': ['severe lower abdominal pain', 'unable to urinate', 'distended bladder'],
+            'volvulus': ['sudden severe abdominal pain', 'vomiting', 'bloating', 'bloody stool'],
+            'intussusception': ['abdominal pain', 'vomiting', 'jelly-like stool with blood'],
+            'pneumothorax': ['sudden sharp chest pain', 'shortness of breath', 'collapsed lung', 'decreased breath sounds'],
+            'tension_pneumothorax': ['sudden sharp chest pain', 'tracheal deviation', 'low blood pressure', 'neck vein distension'],
+            'status_epilepticus': ['seizure lasting more than 5 minutes', 'multiple seizures without recovery', 'unconsciousness'],
+            'acute_vertigo': ['sudden severe dizziness', 'spinning sensation', 'nausea', 'vomiting'],
+            'transient_ischaemic_attack': ['temporary stroke symptoms', 'slurred speech', 'arm weakness', 'facial droop'],
+            'deep_vein_thrombosis': ['painful leg swelling', 'redness', 'warmth', 'calf tenderness'],
+            'acute_kidney_injury': ['decreased urination', 'swelling legs', 'tiredness', 'confusion']
         }
         
         detected = []
@@ -188,14 +256,18 @@ class MedicalQuestionModule(dspy.Module):
             return "low"
         
         critical_indicators = ['crushing_chest_pain', 'thunderclap_headache', 'loss_consciousness', 'severe_bleeding']
-        high_indicators = ['chest_pain_radiation', 'severe_breathlessness', 'pain_migration']
-        
+        high_indicators = ['chest_pain_radiation', 'severe_breathlessness', 'pain_migration', 'appendicitis_classic']
+        medium_indicators = ['heart_failure_triad', 'neck_stiffness']
+
         if any(ind in critical_indicators for ind in emergency_indicators):
             return "critical"
         elif any(ind in high_indicators for ind in emergency_indicators):
             return "high"
-        else:
+        elif any(ind in medium_indicators for ind in emergency_indicators):
             return "medium"
+        else:
+            return "low"
+
     
     def _combine_with_emergency_bank(self, priority_qs: str, emergency_qs: str, symptoms: str, urgency: str) -> List[str]:
         """Combine generated questions with emergency question bank"""

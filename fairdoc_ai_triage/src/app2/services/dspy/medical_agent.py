@@ -111,7 +111,7 @@ class MedicalTriageProgram(dspy.Module):
 class MedicalTriageAgent:
     """DSPy-powered medical triage agent with native reasoning separation"""
     
-    def __init__(self, model_name: str = "deepseek-r1:8b"):
+    def __init__(self, model_name: str = "deepseek-r1:8b", question_generator=None):
         """Initialize agent with DSPy program architecture"""
         self.model_name = model_name
         self._configure_dspy_with_thinking()
@@ -119,11 +119,19 @@ class MedicalTriageAgent:
         # Use DSPy program instead of single signature
         self.triage_program = MedicalTriageProgram()
         
+        # Initialize question generator
+        if question_generator is None:
+            from src.app2.services.dspy.question_generator import MedicalQuestionGenerator
+            self.question_generator = MedicalQuestionGenerator(model_name=model_name)
+        else:
+            self.question_generator = question_generator
+        
         # Conversation state tracking
         self.conversation_history = dspy.History(messages=[])
         self.turn_count = 0
         
         logger.info("🩺 Medical Triage Agent initialized", model=model_name)
+
     
     def _configure_dspy_with_thinking(self):
         """Configure DSPy with DeepSeek-R1 via proper Ollama integration"""
@@ -180,6 +188,19 @@ class MedicalTriageAgent:
             
             # Parse response using DSPy's native structure
             response = self._parse_dspy_response(medical_result, emergency_result)
+
+            # Generate specialized questions using question generator
+            if not response.get("is_complete") and response["outcome"] == "inconclusive":
+                question_result = self.question_generator.suggest_questions(
+                    symptom_text=symptoms,
+                    conversation_context=str(history),
+                    nice_context=nice_context,
+                    max_questions=1
+                )
+                if question_result["questions"]:
+                    response["next_question"] = question_result["questions"][0]
+                    response["reasoning"] += f" | Question reasoning: {question_result.get('medical_reasoning', '')}"
+
             
             # Update conversation history
             self._update_history(history, symptoms, response)

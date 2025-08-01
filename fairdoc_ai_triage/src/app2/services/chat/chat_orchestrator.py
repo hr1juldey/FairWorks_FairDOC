@@ -34,13 +34,19 @@ class ChatOrchestrator:
     for multi-turn medical conversations
     """
     
-    def __init__(self):
+    def __init__(self, question_generator=None):
         # Initialize service dependencies
-        self.medical_agent = MedicalTriageAgent(model_name=settings_v2.FAIRDOC_V2_DSPy_MODEL)
+        from src.app2.services.dspy.question_generator import MedicalQuestionGenerator
+        if question_generator is None:
+            question_generator = MedicalQuestionGenerator(model_name=settings_v2.FAIRDOC_V2_DSPy_MODEL)
+        
+        self.medical_agent = MedicalTriageAgent(
+            model_name=settings_v2.FAIRDOC_V2_DSPy_MODEL,
+            question_generator=question_generator
+        )    
         self.conversation_queue = ConversationQueue()
         self.nice_lookup = NICELookupService()
         self.stakeholder_router = StakeholderRouter()
-        
         logger.info("🏥 Chat Orchestrator initialized")
     
     async def initialize(self) -> None:
