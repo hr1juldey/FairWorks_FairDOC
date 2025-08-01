@@ -126,22 +126,31 @@ class MedicalTriageAgent:
         logger.info("🩺 Medical Triage Agent initialized", model=model_name)
     
     def _configure_dspy_with_thinking(self):
-        """Configure DSPy with DeepSeek-R1 thinking enabled"""
+        """Configure DSPy with DeepSeek-R1 via proper Ollama integration"""
         try:
-            # Enable thinking for reasoning models using DSPy's native support
-            lm = dspy.LM(
-                f'ollama_chat/{self.model_name}',
-                api_base='http://localhost:11434',
-                api_key='',
-                # DSPy native thinking support for reasoning models
-                **{'thinking': True, 'stream': False}
-            )
+            # Method 1: Direct Ollama integration (Recommended)
+            lm = dspy.LM(model=f'ollama/{self.model_name}')
             dspy.configure(lm=lm)
-            logger.info("✅ DSPy configured with thinking enabled")
+            logger.info("✅ DSPy configured with DeepSeek-R1 via Ollama")
+            
         except Exception as e:
-            logger.error("❌ Failed to configure DSPy", error=str(e))
-            raise
-    
+            # Method 2: Fallback to OpenAI-compatible endpoint
+            try:
+                lm = dspy.OpenAI(
+                    api_base='http://localhost:11434/v1/',
+                    api_key='ollama',  # Required but not validated
+                    model=self.model_name,
+                    model_type='chat'
+                )
+                dspy.configure(lm=lm)
+                logger.info("✅ DSPy configured with DeepSeek-R1 via OpenAI-compatible API")
+                
+            except Exception as fallback_error:
+                logger.error("❌ Both Ollama methods failed", 
+                            primary_error=str(e),
+                            fallback_error=str(fallback_error))
+                raise
+
     async def process_turn(
         self,
         symptoms: str,

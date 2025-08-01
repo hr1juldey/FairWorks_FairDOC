@@ -293,8 +293,6 @@ class MedicalQuestionGenerator:
                 f'ollama_chat/{self.model_name}',
                 api_base='http://localhost:11434',
                 api_key='',
-                # KEEP thinking enabled for medical question generation
-                think=True,  # Enable thinking for complex medical reasoning
                 stream=False
             )
             dspy.configure(lm=lm)

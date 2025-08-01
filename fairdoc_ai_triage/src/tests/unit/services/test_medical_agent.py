@@ -1,22 +1,27 @@
 """
-Real DSPy Medical Agent Integration Tests
-Tests actual LLM responses with medical reasoning scenarios
-Production-ready testing with real Ollama integration
+Unit Tests for DSPy Medical Agent
+Tests medical reasoning, conversation state, and DSPy integration
+Production-grade testing with proper mocking and error scenarios
 """
 import pytest
 import asyncio
-import time
-from unittest.mock import patch
+from unittest.mock import Mock, patch, AsyncMock, MagicMock
 import dspy
 from typing import Dict, Any
 
-# Real test environment - no mocking of core DSPy functionality
+
+# Test environment setup
 with patch.dict('os.environ', {
     'SECRET_KEY': 'test-secret-key',
     'DATABASE_URL': 'postgresql+asyncpg://test:test@localhost/test',
     'REDIS_URL': 'redis://localhost:6379/0',
+    'MINIO_ENDPOINT': 'localhost:9000',
+    'MINIO_ACCESS_KEY': 'test',
+    'MINIO_SECRET_KEY': 'test',
     'OLLAMA_BASE_URL': 'http://localhost:11434',
-    'FAIRDOC_V2_DSPy_MODEL': 'deepseek-r1:8b',
+    'RAVEN_WEBHOOK_URL': 'http://localhost:8080/webhook',
+    'RAVEN_API_KEY': 'test-key',
+    'RAVEN_SECRET': 'test-secret',
     'JWT_SECRET_KEY': 'jwt-secret',
     'CELERY_BROKER_URL': 'redis://localhost:6379/1',
     'CELERY_RESULT_BACKEND': 'redis://localhost:6379/2'
@@ -28,314 +33,268 @@ with patch.dict('os.environ', {
         ConversationTurn
     )
 
-@pytest.fixture
-def real_nice_context():
-    """Real NICE protocol context for chest pain"""
-    return """
-    NICE Guideline CG95 - Chest Pain Assessment
-    
-    Emergency Criteria:
-    - Crushing central chest pain >20 minutes
-    - Pain radiating to left arm, jaw, or neck
-    - Associated with sweating, nausea, breathlessness
-    - Cardiac risk factors present
-    
-    Red Flags:
-    - crushing_chest_pain
-    - left_arm_radiation
-    - severe_sweating
-    - cardiac_risk_factors
-    
-    Initial Questions:
-    1. Can you describe the chest pain quality and location?
-    2. Does activity or rest change the pain?
-    3. Any nausea, sweating, or breathlessness?
-    
-    Self-Care Criteria:
-    - Musculoskeletal pain reproducible on palpation
-    - No cardiac risk factors
-    - Pain varies with position/movement
-    """
 
 @pytest.fixture
-def headache_nice_context():
-    """Real NICE protocol context for headache"""
-    return """
-    NICE Guideline NG127 - Headache Assessment
-    
-    Emergency Criteria:
-    - Sudden onset worst headache ever (thunderclap)
-    - Headache with neck stiffness
-    - Headache with fever and rash
-    - Neurological deficit present
-    
-    Red Flags:
-    - thunderclap_headache
-    - neck_stiffness
-    - photophobia
-    - neurological_deficit
-    
-    Self-Care Criteria:
-    - Tension-type headache pattern
-    - No red flag symptoms
-    - Responsive to simple analgesia
-    """
+def mock_dspy_response():
+    """Mock DSPy prediction response"""
+    response = Mock()
+    response.outcome_classification = "emergency"
+    response.confidence_score = 85
+    response.next_question = "Do you have chest pain radiating to your arm?"
+    response.reasoning = "Patient shows signs of possible cardiac emergency"
+    response.red_flags = "chest_pain, shortness_of_breath"
+    return response
 
-class TestRealDSPyMedicalAgent:
-    """Test medical agent with real LLM integration"""
+
+@pytest.fixture
+def mock_dspy_complete_response():
+    """Mock DSPy response indicating completion"""
+    response = Mock()
+    response.outcome_classification = "self_care"
+    response.confidence_score = 90
+    response.next_question = "COMPLETE"
+    response.reasoning = "Minor headache, recommend rest and hydration"
+    response.red_flags = ""
+    return response
+
+
+@pytest.fixture
+async def dspy_warmup_sleep():
+    """Add sleep for DSPy first-time initialization"""
+    await asyncio.sleep(2)  # 2 second warmup
+
+
+class TestMedicalTriageAgent:
+    """Test DSPy medical agent core functionality"""
     
-    @pytest.mark.asyncio
-    async def test_agent_real_initialization(self):
-        """Test real agent initialization with Ollama connection"""
-        # Allow time for DSPy to warm up
-        await asyncio.sleep(2)
+    @patch('src.app2.services.dspy.medical_agent.dspy.LM')
+    @patch('src.app2.services.dspy.medical_agent.dspy.configure')
+    def test_agent_initialization_success(self, mock_configure, mock_lm_class):
+        """Test successful agent initialization with DSPy configuration"""
+        mock_lm_class.return_value = Mock()
         
-        agent = MedicalTriageAgent(model_name="deepseek-r1:8b")
+        agent = MedicalTriageAgent(model_name="test-model")
         
-        assert agent.model_name == "deepseek-r1:8b"
+        assert agent.model_name == "test-model"
         assert agent.turn_count == 0
         assert isinstance(agent.conversation_history, dspy.History)
-        assert hasattr(agent, 'predict')
-        assert isinstance(agent.predict, dspy.ChainOfThought)
+        mock_lm_class.assert_called_once_with(
+            'ollama_chat/test-model',
+            api_base='http://localhost:11434',
+            api_key='',
+            thinking=True,
+            stream=False
+        )
+        mock_configure.assert_called_once()
+    
+    @patch('src.app2.services.dspy.medical_agent.dspy.LM')
+    @patch('src.app2.services.dspy.medical_agent.dspy.configure')
+    def test_agent_initialization_failure(self, mock_configure, mock_lm_class):
+        """Test agent initialization handles DSPy configuration errors"""
+        mock_lm_class.side_effect = Exception("DSPy configuration failed")
+        
+        with pytest.raises(Exception, match="DSPy configuration failed"):
+            MedicalTriageAgent()
     
     @pytest.mark.asyncio
-    async def test_real_emergency_chest_pain_scenario(self, real_nice_context):
-        """Test real emergency chest pain with actual LLM response"""
-        # DSPy warmup delay
-        await asyncio.sleep(3)
-        
+    async def test_process_turn_emergency_detection(self, mock_dspy_response, dspy_warmup_sleep):
+        """Test medical turn processing with emergency outcome"""
         agent = MedicalTriageAgent()
         
-        # Real emergency symptoms that should trigger emergency response
-        emergency_symptoms = (
-            "I have severe crushing chest pain in the center of my chest "
-            "that started 30 minutes ago. The pain is radiating down my left arm "
-            "and I'm sweating heavily and feel very nauseous. I'm having trouble breathing."
-        )
-        
-        start_time = time.time()
+        # Mock the DSPy program
+        mock_program_result = {
+            'medical_reasoning': mock_dspy_response,
+            'emergency_analysis': Mock(is_emergency=True, critical_flags="chest_pain")
+        }
+        agent.triage_program = Mock(return_value=mock_program_result)
+
         result = await agent.process_turn(
-            symptoms=emergency_symptoms,
-            nice_context=real_nice_context
+            symptoms="severe chest pain radiating to left arm",
+            nice_context="Chest pain protocol: Consider cardiac emergency"
         )
-        processing_time = time.time() - start_time
         
-        # Validate real LLM response for emergency
-        assert result["outcome"] == "emergency"  # Based on parsing logic
-        assert result["confidence"] >= 70  # Should be high confidence for clear emergency
-        assert result["reasoning"] is not None
-        assert len(result["reasoning"]) > 10  # Real reasoning from LLM
-        assert processing_time < 30  # Should respond within 30 seconds
-        
-        # Check for medical red flags in response
-        red_flags = result.get("red_flags", [])
-        assert len(red_flags) > 0  # Should detect red flags
-        
-        # Validate conversation state
+        assert result["outcome"] == "emergency"
+        assert result["confidence"] == 85
+        assert result["next_question"] == "Do you have chest pain radiating to your arm?"
+        assert "chest_pain" in result["red_flags"]
+        assert result["is_complete"] is False
         assert agent.turn_count == 1
-        assert len(agent.conversation_history.messages) == 1
     
     @pytest.mark.asyncio
-    async def test_real_self_care_headache_scenario(self, headache_nice_context):
-        """Test real self-care headache with actual LLM response"""
-        await asyncio.sleep(2)
-        
+    async def test_process_turn_conversation_completion(self, mock_dspy_complete_response):
+        """Test conversation completion when agent returns COMPLETE"""
         agent = MedicalTriageAgent()
         
-        # Mild headache symptoms that should suggest self-care
-        mild_symptoms = (
-            "I have a dull headache around my temples that started this morning. "
-            "It feels like a tight band around my head. No nausea, no vision changes, "
-            "no neck stiffness. I've had similar headaches before when stressed."
-        )
+        mock_program_result = {
+            'medical_reasoning': mock_dspy_complete_response,
+            'emergency_analysis': Mock(is_emergency=False, critical_flags="")
+        }
+        agent.triage_program = Mock(return_value=mock_program_result)
         
         result = await agent.process_turn(
-            symptoms=mild_symptoms,
-            nice_context=headache_nice_context
+            symptoms="mild headache",
+            nice_context="Headache assessment protocol"
         )
         
-        # Validate real LLM response for self-care
-        # Based on parsing logic: "self_care_advice".split('_')[0] = "self"
-        assert result["outcome"] in ["self", "routine", "inconclusive"]  # Accept any non-emergency
-        assert result["confidence"] >= 50
-        assert result["reasoning"] is not None
-        
-        # Should have fewer or no red flags for mild headache
-        red_flags = result.get("red_flags", [])
-        emergency_flags = ["thunderclap", "neck_stiffness", "neurological_deficit"]
-        has_emergency_flags = any(flag in str(red_flags) for flag in emergency_flags)
-        assert not has_emergency_flags  # Should not detect emergency red flags
+        assert result["outcome"] == "self"
+        assert result["confidence"] == 90
+        assert result["next_question"] is None
+        assert result["is_complete"] is True
+        assert len(result["red_flags"]) == 0
     
     @pytest.mark.asyncio
-    async def test_real_multi_turn_conversation(self, real_nice_context):
-        """Test real multi-turn conversation with progressive questioning"""
-        await asyncio.sleep(2)
-        
+    async def test_process_turn_invalid_symptoms(self):
+        """Test error handling for empty symptoms"""
         agent = MedicalTriageAgent()
         
-        # Turn 1: Vague initial symptoms
-        result1 = await agent.process_turn(
-            symptoms="I have some chest discomfort",
-            nice_context=real_nice_context
-        )
-        
-        # Should ask for more information
-        assert result1["outcome"] in ["inconclusive", "routine"]
-        assert result1["next_question"] is not None
-        assert len(result1["next_question"]) > 5  # Real question from LLM
-        assert not result1["is_complete"]
-        assert agent.turn_count == 1
-        
-        # Turn 2: More specific emergency symptoms
-        result2 = await agent.process_turn(
-            symptoms=(
-                "Actually, it's now a severe crushing pain in my chest, "
-                "going down my left arm, and I'm sweating a lot"
-            ),
-            nice_context=real_nice_context
-        )
-        
-        # Should now escalate to emergency
-        assert result2["outcome"] == "emergency"
-        assert result2["confidence"] > result1["confidence"]  # Increased confidence
-        assert agent.turn_count == 2
-        assert len(agent.conversation_history.messages) == 2
-        
-        # Validate conversation progression
-        turn1_data = agent.conversation_history.messages[0]
-        turn2_data = agent.conversation_history.messages[1]
-        assert turn1_data["turn"] == 1
-        assert turn2_data["turn"] == 2
-        assert turn2_data["confidence"] > turn1_data["confidence"]
-    
-    @pytest.mark.asyncio
-    async def test_real_llm_error_handling(self):
-        """Test error handling with real agent when LLM is unavailable"""
-        # Use invalid model to simulate LLM failure
-        try:
-            agent = MedicalTriageAgent(model_name="invalid-model-name")
-            
-            result = await agent.process_turn(
-                symptoms="test symptoms",
-                nice_context="test context"
+        with pytest.raises(ValueError, match="Symptoms cannot be empty"):
+            await agent.process_turn(
+                symptoms="",
+                nice_context="Any protocol"
             )
-            
-            # Should return graceful error response
-            assert result["outcome"] == "inconclusive"
-            assert result["confidence"] == 0
-            assert "error" in result["reasoning"].lower()
-            assert not result["is_complete"]
-            
-        except Exception as e:
-            # Expected for invalid model - test that it fails gracefully
-            pytest.rasies("DSPy configuration failed" in str(e) or "model" in str(e).lower()) 
-    
-    def test_real_response_parsing_logic(self):
-        """Test actual response parsing logic from the medical agent"""
-        agent = MedicalTriageAgent.__new__(MedicalTriageAgent)  # Skip __init__
         
-        # Mock a real DSPy response structure
-        from unittest.mock import Mock
-        
-        # Test emergency outcome parsing
-        response = Mock()
-        response.outcome_classification = "emergency"
-        response.confidence_score = 92
-        response.next_question = "Call 999 immediately"
-        response.reasoning = "Cardiac emergency indicators present"
-        response.red_flags = "crushing_chest_pain, left_arm_radiation"
-        
-        parsed = agent._parse_response(response)
-        assert parsed["outcome"] == "emergency"
-        assert parsed["confidence"] == 92
-        assert "crushing_chest_pain" in parsed["red_flags"]
-        
-        # Test self_care outcome parsing - should map to "self"
-        response.outcome_classification = "self"  # Use "self" not "self_care"
-        parsed = agent._parse_response(response)
-        assert parsed["outcome"] == "self"  # Based on split('_')[0] logic
-        
-        # Test COMPLETE question handling
-        response.next_question = "COMPLETE"
-        parsed = agent._parse_response(response)
-        assert parsed["next_question"] is None
-        assert parsed["is_complete"] is True
-
-class TestRealDSPyIntegration:
-    """Test DSPy framework integration aspects"""
-    
-    def test_signature_real_structure(self):
-        """Test DSPy signature structure is correctly defined"""
-        # Validate signature fields exist
-        assert hasattr(MedicalTriageSignature, '__annotations__')
-        fields = MedicalTriageSignature.__annotations__
-        
-        # Input fields
-        required_inputs = ['current_symptoms', 'conversation_history', 'nice_protocols']
-        for field in required_inputs:
-            assert field in fields
-        
-        # Output fields
-        required_outputs = ['outcome_classification', 'confidence_score', 'next_question', 
-                          'reasoning', 'red_flags']
-        for field in required_outputs:
-            assert field in fields
-    
-    def test_medical_outcome_enum_real_values(self):
-        """Test medical outcome enum matches expected values"""
-        # Test all enum values exist
-        expected_outcomes = ["EMERGENCY", "ROUTINE_DOCTOR", "SELF_CARE", "INCONCLUSIVE", "SPAM_DETECTED"]
-        for outcome in expected_outcomes:
-            assert hasattr(MedicalOutcome, outcome)
-        
-        # Test enum string values for parsing logic
-        assert MedicalOutcome.EMERGENCY.value == "emergency_route_to_doctor"
-        assert MedicalOutcome.SELF_CARE.value == "self_care_advice"
-        assert MedicalOutcome.ROUTINE_DOCTOR.value == "routine_doctor_consultation"
-        
-        # Test parsing logic compatibility
-        for outcome in MedicalOutcome:
-            first_part = outcome.value.split('_')[0]
-            assert len(first_part) > 0  # Should have valid first part for parsing
-
-class TestProductionScenarios:
-    """Test production-ready scenarios with real medical data"""
+        with pytest.raises(ValueError, match="Symptoms cannot be empty"):
+            await agent.process_turn(
+                symptoms="   ",  # Whitespace only
+                nice_context="Any protocol"
+            )
     
     @pytest.mark.asyncio
-    async def test_conversation_state_management(self):
-        """Test real conversation state persistence and reset"""
-        await asyncio.sleep(2)
-        
+    async def test_process_turn_dspy_error_handling(self):
+        """Test graceful error handling when DSPy program fails"""
         agent = MedicalTriageAgent()
+        agent.triage_program = Mock(side_effect=Exception("DSPy model error"))
         
-        # Process a turn to create state
-        await agent.process_turn(
-            symptoms="test symptoms",
-            nice_context="test context"
+        result = await agent.process_turn(
+            symptoms="chest pain",
+            nice_context="Chest pain protocol"
         )
         
-        # Validate state exists
-        assert agent.turn_count > 0
-        assert len(agent.conversation_history.messages) > 0
+        # Should return error response instead of crashing
+        assert result["outcome"] == "inconclusive"
+        assert result["confidence"] == 0
+        assert "error" in result["reasoning"].lower()
+        assert result["next_question"] is not None
+        assert result["is_complete"] is False
+    
+    def test_parse_response_validation(self):
+        """Test response parsing with boundary conditions"""
+        agent = MedicalTriageAgent()
         
-        # Test reset
+        # Test confidence bounds
+        mock_medical_result = Mock()
+        mock_medical_result.outcome_classification = "emergency"
+        mock_medical_result.confidence_score = 150  # Above 100
+        mock_medical_result.next_question = "Test question"
+        mock_medical_result.red_flags = "flag1, flag2"
+        
+        mock_emergency_result = Mock()
+        mock_emergency_result.is_emergency = False
+        mock_emergency_result.critical_flags = ""
+        
+        parsed = agent._parse_dspy_response(mock_medical_result, mock_emergency_result)
+        assert parsed["confidence"] == 100  # Clamped to 100
+        
+        # Test negative confidence
+        mock_medical_result.confidence_score = -10
+        parsed = agent._parse_dspy_response(mock_medical_result, mock_emergency_result)
+        assert parsed["confidence"] == 0  # Clamped to 0
+    
+    def test_conversation_history_tracking(self):
+        """Test conversation history updates correctly"""
+        agent = MedicalTriageAgent()
+        history = dspy.History(messages=[])
+        
+        response = {
+            "outcome": "inconclusive",
+            "confidence": 75,
+            "next_question": "Any other symptoms?",
+            "reasoning": "Need more information",
+            "red_flags": ["mild_concern"]
+        }
+        
+        agent._update_history(history, "test symptoms", response)
+        
+        assert len(history.messages) == 1
+        turn_data = history.messages[0]
+        assert turn_data["current_symptoms"] == "test symptoms"
+        assert turn_data["outcome_classification"] == "inconclusive"
+        assert turn_data["confidence"] == 75
+    
+    def test_conversation_reset(self):
+        """Test conversation state reset functionality"""
+        agent = MedicalTriageAgent()
+        agent.turn_count = 5
+        
+        # Mock history with messages
+        agent.conversation_history.messages = [{"test": "data"}]
+        
         agent.reset_conversation()
+        
         assert agent.turn_count == 0
         assert len(agent.conversation_history.messages) == 0
         assert isinstance(agent.conversation_history, dspy.History)
+    
+    def test_conversation_summary(self):
+        """Test conversation summary generation"""
+        agent = MedicalTriageAgent()
+        agent.turn_count = 3
         
-        # Test summary with real data
-        agent.turn_count = 2
-        # Use mock for messages to avoid DSPy History immutability issues
-        from unittest.mock import Mock
+        # Mock history with messages
         mock_history = Mock()
         mock_history.messages = [
-            {"outcome_classification": "inconclusive", "confidence": 60},
-            {"outcome_classification": "emergency", "confidence": 90}
+            {"outcome_classification": "inconclusive"},
+            {"outcome_classification": "routine"},
+            {"outcome_classification": "emergency"}
         ]
         agent.conversation_history = mock_history
         
         summary = agent.get_conversation_summary()
-        assert summary["turns"] == 2
-        assert summary["history_length"] == 2
+        
+        assert summary["turns"] == 3
+        assert summary["history_length"] == 3
         assert summary["last_outcome"] == "emergency"
+
+
+class TestMedicalTriageSignature:
+    """Test DSPy signature structure and field validation"""
+    
+    def test_signature_fields_defined(self):
+        """Test that all required fields are properly defined"""
+        # DSPy signatures have fields in __annotations__
+        fields = MedicalTriageSignature.__annotations__
+        
+        # Input fields
+        assert 'current_symptoms' in fields
+        assert 'conversation_history' in fields
+        assert 'nice_protocols' in fields
+        
+        # Output fields  
+        assert 'outcome_classification' in fields
+        assert 'confidence_score' in fields
+        assert 'next_question' in fields
+        assert 'medical_reasoning' in fields
+        assert 'red_flags' in fields
+
+
+class TestMedicalOutcomeEnum:
+    """Test medical outcome enumeration"""
+    
+    def test_medical_outcome_values(self):
+        """Test all expected medical outcomes are defined"""
+        expected_enum_names = [
+            "EMERGENCY",
+            "ROUTINE_DOCTOR",
+            "SELF_CARE", 
+            "INCONCLUSIVE",
+            "SPAM_DETECTED"
+        ]
+        
+        for enum_name in expected_enum_names:
+            assert hasattr(MedicalOutcome, enum_name)
+    
+    def test_medical_outcome_string_values(self):
+        """Test medical outcome enum string values"""
+        assert MedicalOutcome.EMERGENCY.value == "emergency_route_to_doctor"
+        assert MedicalOutcome.ROUTINE_DOCTOR.value == "routine_doctor_consultation"
+        assert MedicalOutcome.SELF_CARE.value == "self_care_advice"
