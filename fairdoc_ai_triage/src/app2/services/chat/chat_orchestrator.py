@@ -10,13 +10,18 @@ Single responsibility: Orchestrate medical chat business logic
 from typing import Optional, Dict, Any
 import structlog
 from datetime import datetime
-
+import dspy
 from src.app2.models.schemas.multiturn_chat import (
     MultiTurnChatRequest,
     MultiTurnChatResponse,
     ConversationState,
     ConversationTurn,
-    MedicalOutcome
+    MedicalOutcome,
+    ConversationStatus
+)
+from src.app2.models.schemas.medical_triage import (
+
+    RedFlagIndicator
 )
 from src.app2.services.dspy.medical_agent import MedicalTriageAgent
 from src.app2.services.context.redis_queue import ConversationQueue
@@ -54,38 +59,45 @@ class ChatOrchestrator:
         await self.conversation_queue.initialize()
         logger.info("✅ Chat Orchestrator ready")
     
-    async def process_conversation_turn(
-        self,
-        request: MultiTurnChatRequest
-    ) -> Dict[str, Any]:
-        """
-        Process one turn of medical conversation
+    async def process_conversation_turn(self, request: MultiTurnChatRequest) -> Dict[str, Any]:
+        """Process one turn of medical conversation with proper context management"""
         
-        Returns orchestration result with all necessary data
-        for API response building
-        """
         logger.info("🩺 Processing conversation turn",
-                   user_id=request.stakeholder_id,
-                   conversation_id=request.conversation_id,
-                   stakeholder=request.stakeholder_role)
-        
+                    user_id=request.stakeholder_id,
+                    conversation_id=request.conversation_id,
+                    stakeholder=request.stakeholder_role)
+
         # Step 1: Get or create conversation
         conversation_id = await self._get_or_create_conversation(request)
-        
-        # Step 2: Retrieve conversation state
+
+        # Step 2: Retrieve conversation state AND HISTORY
         conversation_state = await self.conversation_queue.get_conversation_state(conversation_id)
         if not conversation_state:
             raise ValueError(f"Conversation {conversation_id} not found")
-        
-        # Step 3: Look up NICE protocols
+
+        # ✅ CRITICAL FIX: Build conversation history for context
+        conversation_history = dspy.History(messages=[])
+        for turn in conversation_state.get("conversation_history", []):
+            conversation_history.messages.append({
+                "turn": turn["turn"],
+                "current_symptoms": turn["user_response"],
+                "outcome_classification": turn["outcome"],
+                "next_question": turn.get("agent_question"),
+                "reasoning": turn.get("agent_reasoning", ""),
+                "confidence": turn["confidence"],
+                "red_flags": turn.get("red_flags", [])
+            })
+
+        # Step 3: Look up NICE protocols with enhanced matching
         nice_context = self.nice_lookup.find_relevant_protocols(request.user_message)
         
-        # Step 4: Process with DSPy medical agent
+        # Step 4: Process with DSPy medical agent WITH CONTEXT
         agent_result = await self.medical_agent.process_turn(
             symptoms=request.user_message,
-            nice_context=nice_context["protocol_text"]
+            nice_context=nice_context["protocol_text"],
+            history=conversation_history  # ✅ PASS CONTEXT
         )
-        
+
         # Step 5: Update conversation state
         updated_state = await self.conversation_queue.update_conversation_turn(
             conversation_id=conversation_id,
@@ -93,7 +105,6 @@ class ChatOrchestrator:
             agent_result=agent_result
         )
 
-        
         # Step 6: Route messages to stakeholders
         message_routes = await self.stakeholder_router.route_message(
             conversation_id=conversation_id,
@@ -101,24 +112,27 @@ class ChatOrchestrator:
             message=request.user_message,
             medical_outcome=agent_result["outcome"]
         )
-        
+
         logger.info("✅ Conversation turn processed",
-                   conversation_id=conversation_id,
-                   outcome=agent_result["outcome"],
-                   turn=updated_state["turn_count"])
-        
+                    conversation_id=conversation_id,
+                    outcome=agent_result["outcome"],
+                    turn=updated_state["turn_count"],
+                    context_turns=len(conversation_history.messages))  # ✅ LOG CONTEXT
+
         return {
             "conversation_id": conversation_id,
             "agent_result": agent_result,
             "updated_state": updated_state,
             "nice_context": nice_context,
             "message_routes": message_routes,
+            "context_maintained": len(conversation_history.messages) > 0,  # ✅ TRACK CONTEXT
             "requires_emergency_alert": agent_result["outcome"] == "emergency",
             "requires_persistence": (
-                agent_result.get("is_complete", False) or 
+                agent_result.get("is_complete", False) or
                 updated_state["status"] == "completed"
             )
         }
+
     
     async def get_conversation_state(self, conversation_id: str) -> Optional[Dict]:
         """Get conversation state from Redis"""
@@ -148,16 +162,11 @@ class ChatOrchestrator:
                 "overall_status": "unhealthy"
             }
     
-    def build_chat_response(
-        self,
-        orchestration_result: Dict[str, Any]
-    ) -> MultiTurnChatResponse:
-        """Build structured chat response from orchestration result"""
-        
+    def build_chat_response(self, orchestration_result: Dict[str, Any]) -> MultiTurnChatResponse:
         agent_result = orchestration_result["agent_result"]
         updated_state = orchestration_result["updated_state"]
         conversation_id = orchestration_result["conversation_id"]
-        
+
         # Map agent outcome to schema enum
         outcome_mapping = {
             "emergency": MedicalOutcome.EMERGENCY,
@@ -166,24 +175,45 @@ class ChatOrchestrator:
             "inconclusive": MedicalOutcome.INCONCLUSIVE,
             "spam": MedicalOutcome.SPAM_DETECTED
         }
-        
+
         medical_outcome = outcome_mapping.get(
             agent_result["outcome"],
             MedicalOutcome.INCONCLUSIVE
         )
-        
+
+        # Convert red flags to proper format
+        red_flags_detected = []
+        for flag in agent_result.get("red_flags", []):
+            if isinstance(flag, str):
+                red_flags_detected.append(RedFlagIndicator(symptom=flag, critical=True))
+            else:
+                red_flags_detected.append(flag)
+
+        # Determine conversation status
+        if agent_result.get("is_complete", False):
+            conv_status = ConversationStatus.COMPLETED
+        elif medical_outcome == MedicalOutcome.EMERGENCY:
+            conv_status = ConversationStatus.ESCALATED
+        else:
+            conv_status = ConversationStatus.IN_PROGRESS
+
         return MultiTurnChatResponse(
             conversation_id=conversation_id,
-            agent_response=agent_result.get("next_question", "Thank you for the information."),
+            agent_message=agent_result.get("next_question", "Thank you for the information."),
             next_question=agent_result.get("next_question"),
             medical_outcome=medical_outcome,
-            confidence_score=agent_result["confidence"],
-            is_conversation_complete=agent_result.get("is_complete", False),
-            turn_number=updated_state["turn_count"],
-            red_flags=agent_result.get("red_flags", []),
-            reasoning=agent_result.get("reasoning", ""),
-            estimated_completion_turns=self._estimate_remaining_turns(updated_state)
+            confidence_score=float(agent_result["confidence"]),
+            red_flags_detected=red_flags_detected,  # ✅ CORRECT FIELD
+            requires_human_review=medical_outcome in [MedicalOutcome.EMERGENCY, MedicalOutcome.ROUTINE_DOCTOR],
+            is_emergency=medical_outcome == MedicalOutcome.EMERGENCY,
+            conversation_status=conv_status,  # ✅ CORRECT FIELD
+            turn_count=updated_state["turn_count"],  # ✅ CORRECT FIELD
+            relevant_protocols=orchestration_result.get("nice_context", {}).get("protocol_code", "").split(","),
+            notify_stakeholders=[],  # Add proper logic later
+            processing_time_ms=orchestration_result.get("processing_time_ms"),
+            model_version="v2.6-stable"
         )
+
     
     async def _get_or_create_conversation(self, request: MultiTurnChatRequest) -> str:
         """Get existing conversation or create new one"""

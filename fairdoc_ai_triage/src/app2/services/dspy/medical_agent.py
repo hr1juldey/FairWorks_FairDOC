@@ -220,22 +220,23 @@ class MedicalTriageAgent:
             return self._create_error_response(str(e))
     
     def _parse_dspy_response(self, medical_result, emergency_result) -> Dict[str, Any]:
-        """Parse DSPy program results using native structure"""
+        """Parse DSPy program results with proper conversation management"""
+        
         # Extract red flags as list
         red_flags = []
         if hasattr(medical_result, 'red_flags') and medical_result.red_flags:
             red_flags = [flag.strip() for flag in medical_result.red_flags.split(',') if flag.strip()]
-        
+
         # Add emergency red flags if detected
         if emergency_result.is_emergency and hasattr(emergency_result, 'critical_flags'):
             emergency_flags = [flag.strip() for flag in emergency_result.critical_flags.split(',') if flag.strip()]
             red_flags.extend(emergency_flags)
-        
+
         # Validate outcome classification
         outcome = medical_result.outcome_classification.lower()
         if outcome not in [e.value.split('_')[0] for e in MedicalOutcome]:
             outcome = "emergency" if emergency_result.is_emergency else "inconclusive"
-        
+
         # Ensure confidence bounds
         try:
             confidence = int(medical_result.confidence_score)
@@ -245,22 +246,42 @@ class MedicalTriageAgent:
             confidence = max(0, min(100, confidence))
         except (ValueError, AttributeError):
             confidence = 85 if emergency_result.is_emergency else 50
+
+        # ✅ CRITICAL FIX: Conversation length management
+        should_complete = False
         
+        # Only complete conversation if:
+        # 1. Emergency detected (immediate escalation)
+        # 2. High confidence conclusive outcome after 8+ turns
+        # 3. Reached maximum turns (25)
+        if emergency_result.is_emergency:
+            should_complete = True
+            outcome = "emergency"
+        elif self.turn_count >= 25:
+            should_complete = True
+        elif self.turn_count >= 8 and confidence >= 90 and outcome in ["routine", "self_care"]:
+            should_complete = True
+        else:
+            # Force inconclusive to continue conversation
+            if outcome != "emergency":
+                outcome = "inconclusive"
+            should_complete = False
+
         return {
             "outcome": outcome,
             "confidence": confidence,
             "next_question": (
                 medical_result.next_question
-                if medical_result.next_question != "COMPLETE"
+                if not should_complete and medical_result.next_question != "COMPLETE"
                 else None
             ),
             "reasoning": getattr(medical_result, 'medical_reasoning', ''),
-            "thinking": getattr(medical_result, 'reasoning', ''),  # DSPy thinking output
+            "thinking": getattr(medical_result, 'reasoning', ''),
             "red_flags": red_flags,
-            "is_complete": medical_result.next_question == "COMPLETE",
+            "is_complete": should_complete,  # ✅ PROPER COMPLETION LOGIC
             "emergency_detected": emergency_result.is_emergency
         }
-    
+
     def _update_history(self, history: dspy.History, symptoms: str, response: Dict[str, Any]):
         """Update conversation history with DSPy structure"""
         turn_data = {

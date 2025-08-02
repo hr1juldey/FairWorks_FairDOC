@@ -13,7 +13,8 @@ from datetime import datetime
 from src.app2.utils.datetime_utils import utcnow_timestamp
 from src.app2.models.schemas.multiturn_chat import (
     MultiTurnChatRequest,
-    MultiTurnChatResponse
+    MultiTurnChatResponse,
+    StakeholderRole
 )
 from src.app2.services.chat.chat_orchestrator import ChatOrchestrator
 from src.app2.services.chat.emergency_handler import EmergencyHandler
@@ -159,6 +160,23 @@ async def health_check(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=f"Service unhealthy: {str(e)}"
         )
+@router.post("/chat/emergency-test", response_model=MultiTurnChatResponse)
+async def emergency_detection_test(
+    symptoms: str = "severe chest pain radiating to left arm with sweating",
+    chat_orchestrator: ChatOrchestrator = Depends(get_chat_orchestrator)
+):
+    """Test endpoint for emergency detection"""
+    
+    request = MultiTurnChatRequest(
+        user_message=symptoms,
+        stakeholder_role=StakeholderRole.PATIENT,
+        stakeholder_id="test_emergency_patient"
+    )
+    
+    orchestration_result = await chat_orchestrator.process_conversation_turn(request)
+    response = chat_orchestrator.build_chat_response(orchestration_result)
+    
+    return response
 
 async def _schedule_background_tasks(
     orchestration_result: dict,
