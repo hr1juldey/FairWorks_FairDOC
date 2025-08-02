@@ -65,9 +65,9 @@ class ChatOrchestrator:
         for API response building
         """
         logger.info("🩺 Processing conversation turn",
-                   user_id=request.user_id,
+                   user_id=request.stakeholder_id,
                    conversation_id=request.conversation_id,
-                   stakeholder=request.stakeholder_type)
+                   stakeholder=request.stakeholder_role)
         
         # Step 1: Get or create conversation
         conversation_id = await self._get_or_create_conversation(request)
@@ -78,26 +78,27 @@ class ChatOrchestrator:
             raise ValueError(f"Conversation {conversation_id} not found")
         
         # Step 3: Look up NICE protocols
-        nice_context = self.nice_lookup.find_relevant_protocols(request.message)
+        nice_context = self.nice_lookup.find_relevant_protocols(request.user_message)
         
         # Step 4: Process with DSPy medical agent
         agent_result = await self.medical_agent.process_turn(
-            symptoms=request.message,
+            symptoms=request.user_message,
             nice_context=nice_context["protocol_text"]
         )
         
         # Step 5: Update conversation state
         updated_state = await self.conversation_queue.update_conversation_turn(
             conversation_id=conversation_id,
-            user_response=request.message,
+            user_response=request.user_message,
             agent_result=agent_result
         )
+
         
         # Step 6: Route messages to stakeholders
         message_routes = await self.stakeholder_router.route_message(
             conversation_id=conversation_id,
-            from_stakeholder=request.stakeholder_type,
-            message=request.message,
+            from_stakeholder=request.stakeholder_role,
+            message=request.user_message,
             medical_outcome=agent_result["outcome"]
         )
         
@@ -187,12 +188,30 @@ class ChatOrchestrator:
     async def _get_or_create_conversation(self, request: MultiTurnChatRequest) -> str:
         """Get existing conversation or create new one"""
         if request.conversation_id:
-            return request.conversation_id
+            # Check if conversation exists in Redis
+            existing_state = await self.conversation_queue.get_conversation_state(str(request.conversation_id))
+            if existing_state:
+                return str(request.conversation_id)
+            else:
+                # Conversation ID provided but doesn't exist - create it
+                conversation_id = await self.conversation_queue.start_conversation(
+                    user_id=request.stakeholder_id,
+                    initial_symptoms=request.user_message
+                )
+                # Update the conversation with the requested ID
+                await self.conversation_queue._override_conversation_id(
+                    old_id=conversation_id,
+                    new_id=str(request.conversation_id)
+                )
+                return str(request.conversation_id)
         else:
+            # Create new conversation
             return await self.conversation_queue.start_conversation(
-                user_id=request.user_id,
-                initial_symptoms=request.message
+                user_id=request.stakeholder_id,
+                initial_symptoms=request.user_message
             )
+
+
     
     def _estimate_remaining_turns(self, state: dict) -> Optional[int]:
         """Estimate remaining conversation turns based on current state"""

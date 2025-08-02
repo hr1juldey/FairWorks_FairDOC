@@ -7,11 +7,17 @@ import asyncio
 import os
 import pytest
 import pytest_asyncio
-from typing import Dict, Any
+from typing import Dict, Any, Generator
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from unittest.mock import AsyncMock
+
+
+# Configure pytest-asyncio
+pytest_plugins = ('pytest_asyncio',)
+
+
 
 # Centralized test environment variables
 TEST_ENV_VARS = {
@@ -56,13 +62,28 @@ def setup_test_environment():
     os.environ.clear()
     os.environ.update(original_env)
 
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create event loop for async test session"""
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+# Replace this in your conftest.py
+
+@pytest.fixture(scope='session')
+def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
+    """Create an instance of the default event loop for the test session."""
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
     yield loop
     loop.close()
+
+@pytest.fixture(autouse=True)
+def reset_dspy_state():
+    """Reset DSPy state between tests to avoid interference"""
+    import dspy
+    # Reset any global DSPy configuration
+    dspy.configure(lm=None)
+    yield
+    # Cleanup after test
+    dspy.configure(lm=None)
+
 
 # === V1 Database Test Fixtures ===
 

@@ -161,104 +161,206 @@ class MedicalQuestionModule(dspy.Module):
             emergency_indicators=emergency_indicators
         )
     
-    def _detect_emergency_indicators(self, symptoms: str, protocols: str) -> List[str]:
-        """Detect emergency red flags in symptoms"""
+
+    
+    def _detect_emergency_indicators(self, symptoms: str, nice_context: str) -> List[str]:
+        """Context-aware emergency detection with medically sound severity thresholds."""
         symptoms_lower = symptoms.lower()
+        detected_patterns = []
+
+        # Emergency patterns with revised severity thresholds
+        # Severity 1: Critical, single-keyword trigger for highly specific and dangerous symptoms
+        # Severity 2: High alert, requires a pattern match AND context
+        # Severity 3: Multi-factor alert, requires multiple keywords/context to be met
         emergency_patterns = {
-            'crushing_chest_pain': ['crushing', 'squeezing', 'elephant on chest', 'heavy chest'],
-            'chest_pain_radiation': ['radiating', 'spreading', 'arm pain', 'jaw pain', 'shoulder pain', 'back pain'],
-            'thunderclap_headache': ['thunderclap', 'worst headache ever', 'sudden severe'],
-            'severe_breathlessness': ['can\'t breathe', 'gasping', 'severe shortness', 'air hunger', 'laboured breathing'],
-            'loss_consciousness': ['fainted', 'passed out', 'lost consciousness', 'unconscious', 'syncopal episode'],
-            'severe_bleeding': ['heavy bleeding', 'blood loss', 'hemorrhage', 'uncontrollable bleeding', 'saturating dressing'],
-            'pain_migration': ['pain moved', 'started around navel', 'migrated', 'belly button', 'moved to right side'],
-            'neck_stiffness': ['neck stiff', 'can\'t bend neck', 'meningeal', 'pain bending neck'],
-            'heart_failure_triad': ['shortness of breath', 'ankle swelling', 'fatigue', 'fluid retention', 'swollen legs', 'weight gain'],
-            'appendicitis_classic': ['belly button', 'right side', 'mcburney', 'rebound tenderness', 'pain in lower right abdomen'],
-            'stroke_symptoms_FAST': ['face droop', 'arm weakness', 'slurred speech', 'facial drooping', 'one side weak'],
-            'sepsis_signs': ['high temperature', 'fever', 'shivering', 'chills', 'fast breathing', 'fast heart rate', 'confusion'],
-            'anaphylaxis': ['swelling face', 'swollen tongue', 'wheezing', 'hives', 'rash', 'difficulty swallowing'],
-            'pulmonary_embolism_signs': ['sudden chest pain', 'coughing blood', 'low oxygen', 'breathless', 'sharp pain on breathing'],
-            'ectopic_pregnancy': ['shoulder tip pain', 'one-sided tummy pain', 'vaginal bleeding', 'spotting'],
-            'diabetic_ketoacidosis': ['fruity breath', 'high blood sugar', 'frequent urination', 'vomiting', 'abdominal pain'],
-            'severe_allergic_reaction': ['itchy skin', 'swollen throat', 'hives', 'breathing difficulty after sting'],
-            'sudden_vision_loss': ['lost vision suddenly', 'blurry vision in one eye', 'double vision', 'seeing black spots'],
-            'hypoglycaemic_coma': ['confusion', 'pale', 'sweaty', 'shaking', 'seizure', 'low blood sugar', 'lost consciousness'],
-            'hyperglycaemic_hyperosmolar_state': ['severe dehydration', 'very high blood sugar', 'no ketones', 'coma'],
-            'adrenal_crisis': ['severe weakness', 'hypotension', 'vomiting', 'abdominal pain', 'fever'],
-            'thyroid_storm': ['high fever', 'tachycardia', 'palpitations', 'confusion', 'agitation'],
-            'acute_angle_closure_glaucoma': ['severe eye pain', 'red eye', 'blurred vision', 'seeing halos'],
-            'retinal_detachment': ['flashes of light', 'floaters', 'curtain coming down', 'lost peripheral vision'],
-            'cauda_equina_syndrome': ['saddle anaesthesia', 'urinary retention', 'incontinence', 'back pain', 'numbness inner thighs'],
-            'septic_arthritis': ['hot joint', 'swollen joint', 'painful joint', 'fever', 'can\'t move joint'],
-            'compartment_syndrome': ['severe leg pain', 'pain out of proportion', 'tense muscle', 'numbness', 'tingling'],
-            'non_accidental_injury': ['suspicious bruising', 'multiple fractures', 'injury inconsistent with story', 'cigarette burns'],
-            'febrile_seizure': ['seizure with fever', 'shaking', 'high temperature', 'loss of consciousness'],
-            'croup': ['barking cough', 'inspiratory stridor', 'hoarse voice', 'breathing difficulty'],
-            'meningitis_rash': ['non-blanching rash', 'fever', 'neck stiffness', 'headache'],
-            'necrotizing_fasciitis': ['severe pain', 'redness', 'swelling', 'blisters', 'skin death'],
-            'gastrointestinal_bleeding': ['vomiting blood', 'coffee ground vomit', 'black tarry stools', 'melena'],
-            'bowel_obstruction': ['severe stomach pain', 'colicky pain', 'bloated abdomen', 'can\'t pass gas'],
-            'pancreatitis': ['severe abdominal pain', 'radiating to back', 'worse after eating', 'nausea', 'vomiting'],
-            'ruptured_aortic_aneurysm': ['sudden severe abdominal pain', 'back pain', 'fainting', 'pulsating lump'],
-            'acute_cholecystitis': ['severe upper right abdominal pain', 'radiating to shoulder', 'fever', 'nausea'],
-            'acute_pyelonephritis': ['loin pain', 'back pain', 'fever', 'shivering', 'painful urination'],
-            'renal_colic': ['severe loin pain', 'groin pain', 'agony', 'can\'t get comfortable'],
-            'testicular_torsion': ['sudden severe testicular pain', 'swollen testicle', 'nausea', 'vomiting'],
-            'postpartum_hemorrhage': ['heavy vaginal bleeding after birth', 'saturating pads', 'clots', 'dizziness'],
-            'pre-eclampsia_eclampsia': ['headache', 'blurred vision', 'swelling face/hands', 'high blood pressure', 'seizure'],
-            'placental_abruption': ['constant abdominal pain', 'dark red vaginal bleeding', 'firm uterus'],
-            'uterine_rupture': ['sudden severe abdominal pain during labour', 'loss of contractions', 'fetal distress'],
-            'cord_prolapse': ['feeling of something coming out', 'visible cord in vagina', 'fetal distress'],
-            'burns_severe': ['blisters', 'redness', 'pain', 'loss of sensation', 'charred skin'],
-            'head_trauma': ['confusion', 'headache', 'vomiting', 'loss of consciousness', 'amnesia'],
-            'spinal_cord_injury': ['neck pain', 'back pain', 'numbness', 'paralysis', 'lost sensation'],
-            'drug_overdose_opioid': ['pinpoint pupils', 'slow breathing', 'unresponsive', 'blue lips'],
-            'drug_overdose_stimulant': ['agitation', 'fast heart rate', 'high temperature', 'seizure', 'chest pain'],
-            'poisoning_general': ['vomiting', 'abdominal pain', 'confusion', 'drowsiness', 'unusual smell'],
-            'carbon_monoxide_poisoning': ['headache', 'dizziness', 'nausea', 'cherry-red skin', 'multiple people affected'],
-            'heat_stroke': ['high body temperature', 'hot dry skin', 'confusion', 'loss of consciousness'],
-            'hypothermia': ['shivering', 'confusion', 'cold skin', 'slow breathing', 'unconsciousness'],
-            'acute_psychosis': ['hallucinations', 'delusions', 'disorganized thoughts', 'agitation', 'incoherent speech'],
-            'suicidal_ideation': ['talking about suicide', 'giving away possessions', 'feeling hopeless', 'making a plan'],
-            'catatonia': ['immobility', 'mutism', 'waxy flexibility', 'staring', 'echolalia'],
-            'acute_gout': ['sudden severe joint pain', 'red joint', 'swollen joint', 'big toe'],
-            'septic_shock': ['low blood pressure', 'high fever', 'cold extremities', 'confusion', 'organ failure'],
-            'toxic_shock_syndrome': ['high fever', 'rash', 'low blood pressure', 'vomiting', 'diarrhea'],
-            'febrile_neutropenia': ['fever', 'low white cell count', 'chills', 'sore throat'],
-            'hemolytic_uremic_syndrome': ['bloody diarrhea', 'low platelet count', 'kidney failure', 'tiredness'],
-            'hypertensive_emergency': ['severe headache', 'blurred vision', 'chest pain', 'blood pressure >180/120'],
-            'cardiogenic_shock': ['low blood pressure', 'fast heart rate', 'cold clammy skin', 'shortness of breath'],
-            'dissecting_aortic_aneurysm': ['sudden tearing chest pain', 'radiating to back', 'different blood pressures in arms'],
-            'pulmonary_oedema': ['severe breathlessness', 'coughing pink frothy sputum', 'sweating', 'anxiety'],
-            'acute_urinary_retention': ['severe lower abdominal pain', 'unable to urinate', 'distended bladder'],
-            'volvulus': ['sudden severe abdominal pain', 'vomiting', 'bloating', 'bloody stool'],
-            'intussusception': ['abdominal pain', 'vomiting', 'jelly-like stool with blood'],
-            'pneumothorax': ['sudden sharp chest pain', 'shortness of breath', 'collapsed lung', 'decreased breath sounds'],
-            'tension_pneumothorax': ['sudden sharp chest pain', 'tracheal deviation', 'low blood pressure', 'neck vein distension'],
-            'status_epilepticus': ['seizure lasting more than 5 minutes', 'multiple seizures without recovery', 'unconsciousness'],
-            'acute_vertigo': ['sudden severe dizziness', 'spinning sensation', 'nausea', 'vomiting'],
-            'transient_ischaemic_attack': ['temporary stroke symptoms', 'slurred speech', 'arm weakness', 'facial droop'],
-            'deep_vein_thrombosis': ['painful leg swelling', 'redness', 'warmth', 'calf tenderness'],
-            'acute_kidney_injury': ['decreased urination', 'swelling legs', 'tiredness', 'confusion']
+            # --- SEVERITY 1: CRITICAL, SINGLE KEYWORD TRIGGER ---
+            'thunderclap_headache': {
+                'patterns': ['thunderclap', 'worst headache ever', 'sudden severe'],
+                'context_required': ['headache', 'sudden', 'severe'],
+                'severity_threshold': 1  # 'thunderclap' alone is enough to be a critical indicator
+            },
+            'meningitis_rash': {
+                'patterns': ['non-blanching rash', 'petechial rash', 'glass test'],
+                'context_required': ['rash', 'fever', 'neck'],
+                'severity_threshold': 1  # 'non-blanching' is a definitive red flag
+            },
+            'ruptured_aortic_aneurysm': {
+                'patterns': ['sudden severe abdominal pain', 'pulsating lump', 'collapse'],
+                'context_required': ['aorta', 'aneurysm', 'rupture'],
+                'severity_threshold': 1  # A "pulsating lump" or "collapse" is a critical sign
+            },
+            'uterine_rupture': {
+                'patterns': ['sudden severe abdominal pain during labour', 'loss of contractions', 'fetal distress'],
+                'context_required': ['uterus', 'rupture', 'labour'],
+                'severity_threshold': 1  # 'loss of contractions' during labor is an emergency sign
+            },
+            'cord_prolapse': {
+                'patterns': ['feeling of something coming out', 'visible cord in vagina'],
+                'context_required': ['cord', 'prolapse', 'delivery'],
+                'severity_threshold': 1  # The mention of a "visible cord" is an immediate trigger
+            },
+            'dissecting_aortic_aneurysm': {
+                'patterns': ['sudden tearing chest pain', 'different blood pressures in arms'],
+                'context_required': ['aorta', 'dissection', 'tear'],
+                'severity_threshold': 1  # A "tearing" chest pain is a specific and critical descriptor
+
+            },
+            'status_epilepticus': {
+                'patterns': ['seizure lasting more than 5 minutes', 'multiple seizures without recovery', 'continuous seizure'],
+                'context_required': ['status', 'epilepticus', 'seizure'],
+                'severity_threshold': 1  # A prolonged seizure is a definitive emergency
+
+            },
+            'toxic_shock_syndrome': {
+                'patterns': ['toxic shock syndrome', 'desquamation'],
+                'context_required': ['fever', 'rash', 'low blood pressure'],
+                'severity_threshold': 1  # 'Toxic shock syndrome' is a highly specific and critical phrase
+            },
+            'hemolytic_uremic_syndrome': {
+                'patterns': ['hemolytic uremic syndrome', 'bloody diarrhea', 'kidney failure'],
+                'context_required': ['kidney', 'failure', 'platelet'],
+                'severity_threshold': 1  # 'Hemolytic uremic syndrome' is a specific diagnosis
+
+            },
+            # --- SEVERITY 2: HIGH ALERT, PATTERN + CONTEXT ---
+            'crushing_chest_pain': {
+                'patterns': ['crushing', 'squeezing', 'elephant on chest', 'heavy chest', 'pressure chest'],
+                'context_required': ['chest', 'pain', 'cardiac', 'heart'],
+                'severity_threshold': 2
+            },
+            'chest_pain_radiation': {
+                'patterns': ['radiating', 'spreading', 'arm pain', 'jaw pain'],
+                'context_required': ['chest', 'radiation', 'pain'],
+                'severity_threshold': 2
+            },
+            'severe_breathlessness': {
+                'patterns': ["can't breathe", 'gasping', 'severe shortness', 'air hunger'],
+                'context_required': ['breath', 'oxygen', 'respiratory'],
+                'severity_threshold': 2
+            },
+            'loss_consciousness': {
+                'patterns': ['fainted', 'passed out', 'lost consciousness', 'unconscious'],
+                'context_required': ['consciousness', 'alert', 'response'],
+                'severity_threshold': 2
+            },
+            'severe_bleeding': {
+                'patterns': ['heavy bleeding', 'blood loss', 'hemorrhage', 'uncontrollable bleeding'],
+                'context_required': ['bleeding', 'blood', 'soaked'],
+                'severity_threshold': 2
+            },
+            'pain_migration': {
+                'patterns': ['pain moved', 'started around navel', 'migrated', 'belly button'],
+                'context_required': ['abdomen', 'pain', 'migration'],
+                'severity_threshold': 2
+            },
+            'neck_stiffness': {
+                'patterns': ['neck stiff', "can't bend neck", 'meningeal', 'pain bending neck'],
+                'context_required': ['neck', 'stiffness', 'meningeal'],
+                'severity_threshold': 2
+            },
+            'heart_failure_triad': {
+                'patterns': ['shortness of breath', 'ankle swelling', 'fatigue', 'fluid retention'],
+                'context_required': ['heart', 'fluid', 'breath', 'swelling'],
+                'severity_threshold': 2
+            },
+            'appendicitis_classic': {
+                'patterns': ['belly button', 'right side', 'mcburney', 'rebound tenderness'],
+                'context_required': ['abdomen', 'pain', 'right'],
+                'severity_threshold': 2
+            },
+            'stroke_symptoms_FAST': {
+                'patterns': ['face droop', 'arm weakness', 'slurred speech', 'facial drooping'],
+                'context_required': ['stroke', 'face', 'arm', 'speech'],
+                'severity_threshold': 2
+            },
+            'sepsis_signs': {
+                'patterns': ['high temperature', 'fever', 'shivering', 'chills', 'fast breathing', 'confusion'],
+                'context_required': ['infection', 'sepsis', 'temperature'],
+                'severity_threshold': 2
+            },
+            'anaphylaxis': {
+                'patterns': ['swelling face', 'swollen tongue', 'wheezing', 'hives', 'rash', 'difficulty swallowing'],
+                'context_required': ['allergy', 'reaction', 'swelling'],
+                'severity_threshold': 2
+            },
+            'pulmonary_embolism_signs': {
+                'patterns': ['sudden chest pain', 'coughing blood', 'low oxygen', 'breathless'],
+                'context_required': ['clot', 'lungs', 'embolism'],
+                'severity_threshold': 2
+            },
+            'ectopic_pregnancy': {
+                'patterns': ['shoulder tip pain', 'one-sided tummy pain', 'vaginal bleeding'],
+                'context_required': ['pregnancy', 'bleeding', 'pain'],
+                'severity_threshold': 2
+            },
+            'diabetic_ketoacidosis': {
+                'patterns': ['fruity breath', 'high blood sugar', 'frequent urination', 'abdominal pain'],
+                'context_required': ['diabetes', 'sugar', 'ketones'],
+                'severity_threshold': 2
+            },
+            # --- SEVERITY 3: MULTI-FACTOR ALERTS ---
+            'non_accidental_injury': {
+                'patterns': ['suspicious bruising', 'multiple fractures', 'injury inconsistent with story'],
+                'context_required': ['injury', 'trauma', 'child', 'abuse'],
+                'severity_threshold': 3  # This requires multiple pieces of evidence to be a red flag
+            },
+            'hypoglycaemic_coma': {
+                'patterns': ['confusion', 'pale', 'sweaty', 'shaking', 'seizure'],
+                'context_required': ['low blood sugar', 'lost consciousness', 'diabetes'],
+                'severity_threshold': 3
+            },
+            'febrile_neutropenia': {
+                'patterns': ['fever', 'low white cell count', 'chills'],
+                'context_required': ['neutropenia', 'immunocompromised', 'oncology'],
+                'severity_threshold': 3  # A diagnosis that requires context of existing conditions
+            },
+            'hypertensive_emergency': {
+                'patterns': ['severe headache', 'blurred vision', 'chest pain'],
+                'context_required': ['blood pressure >180/120', 'hypertension', 'emergency'],
+                'severity_threshold': 3
+            }
         }
-        
-        detected = []
-        for indicator, patterns in emergency_patterns.items():
-            if any(pattern in symptoms_lower for pattern in patterns):
-                detected.append(indicator)
-        
-        return detected
+
+        for indicator, config in emergency_patterns.items():
+            pattern_matches = sum(1 for pattern in config['patterns'] if pattern in symptoms_lower)
+            context_matches = sum(1 for context in config['context_required'] if context in symptoms_lower)
+            
+            # Use the severity threshold logic to flag an emergency
+            if pattern_matches >= 1 and context_matches >= config['severity_threshold']:
+                detected_patterns.append(indicator)
+
+        return detected_patterns
+
+
+
     
     def _assess_urgency_level(self, emergency_indicators: List[str]) -> str:
-        """Assess medical urgency based on emergency indicators"""
+        """Assess medical urgency based on emergency indicators with new severity categories"""
         if not emergency_indicators:
             return "low"
         
-        critical_indicators = ['crushing_chest_pain', 'thunderclap_headache', 'loss_consciousness', 'severe_bleeding']
-        high_indicators = ['chest_pain_radiation', 'severe_breathlessness', 'pain_migration', 'appendicitis_classic']
-        medium_indicators = ['heart_failure_triad', 'neck_stiffness']
-
+        # SEVERITY 1: Critical indicators (single keyword triggers)
+        critical_indicators = [
+            'thunderclap_headache', 'meningitis_rash', 'ruptured_aortic_aneurysm',
+            'uterine_rupture', 'cord_prolapse', 'dissecting_aortic_aneurysm', 
+            'status_epilepticus', 'toxic_shock_syndrome', 'hemolytic_uremic_syndrome'
+        ]
+        
+        # SEVERITY 2: High indicators (pattern + context required)
+        high_indicators = [
+            'crushing_chest_pain', 'chest_pain_radiation', 'severe_breathlessness',
+            'loss_consciousness', 'severe_bleeding', 'pain_migration', 'neck_stiffness',
+            'heart_failure_triad', 'appendicitis_classic', 'stroke_symptoms_FAST',
+            'sepsis_signs', 'anaphylaxis', 'pulmonary_embolism_signs', 
+            'ectopic_pregnancy', 'diabetic_ketoacidosis'
+        ]
+        
+        # SEVERITY 3: Multi-factor indicators (multiple evidence required)
+        medium_indicators = [
+            'non_accidental_injury', 'hypoglycaemic_coma', 'febrile_neutropenia',
+            'hypertensive_emergency'
+        ]
+        
         if any(ind in critical_indicators for ind in emergency_indicators):
             return "critical"
         elif any(ind in high_indicators for ind in emergency_indicators):
@@ -267,6 +369,7 @@ class MedicalQuestionModule(dspy.Module):
             return "medium"
         else:
             return "low"
+
 
     
     def _combine_with_emergency_bank(self, priority_qs: str, emergency_qs: str, symptoms: str, urgency: str) -> List[str]:
@@ -378,9 +481,16 @@ class MedicalQuestionGenerator:
         symptom_text: str,
         conversation_context: str = "",
         nice_protocols: str = "",
-        max_questions: int = 3
+        max_questions: int = 3,
+        nice_context: str = None,  # ✅ ADD BACKWARD COMPATIBILITY
+        **kwargs
     ) -> Dict[str, Any]:
         """Generate NICE-compliant medical questions with reasoning"""
+
+        # Handle backward compatibility
+        if nice_context is not None and not nice_protocols:
+            nice_protocols = nice_context
+            
         try:
             result = self.question_program(
                 symptoms=symptom_text,

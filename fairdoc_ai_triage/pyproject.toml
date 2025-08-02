@@ -79,12 +79,14 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     # Testing
-    "pytest>=7.4.0",
-    "pytest-asyncio>=0.21.0",
-    "pytest-cov>=4.1.0",
-    "pytest-mock>=3.12.0",
-    "httpx>=0.25.0",
+    "pytest>=8.4.1",
+    "pytest-asyncio>=1.1.0",
+    "pytest-cov>=6.2.1",
+    "pytest-mock>=3.14.1",
+    "pytest-xdist>=3.6.0",
+    "httpx>=0.28.1",
     "factory-boy>=3.3.0",
+    "faker>=28.4.1",
     
     # Development Tools
     "black>=23.9.0",
@@ -97,7 +99,7 @@ dev = [
     "mkdocs>=1.5.0",
     "mkdocs-material>=9.4.0",
     
-    # Performance
+    # Performance Testing
     "locust>=2.17.0",
 ]
 
@@ -112,7 +114,7 @@ build-backend = "hatchling.build"
 
 # Fix: Explicitly tell hatchling where to find packages
 [tool.hatch.build.targets.wheel]
-packages = ["src/app"]
+packages = ["src/app", "src/app2"]
 
 [tool.hatch.build.targets.sdist]
 include = [
@@ -128,28 +130,56 @@ testpaths = ["src/tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+    "asyncio: marks tests as asyncio",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+    "e2e: marks tests as end-to-end tests",
+    "slow: marks tests as slow running",
+]
 addopts = [
     "--strict-markers",
     "--strict-config",
     "--cov=src/app",
+    "--cov=src/app2",
     "--cov-report=html",
     "--cov-report=term-missing:skip-covered",
+    "--tb=short",
 ]
 filterwarnings = [
     "error",
     "ignore::UserWarning",
     "ignore::DeprecationWarning",
+    "ignore::RuntimeWarning:dspy.*",
+    "ignore::PendingDeprecationWarning",
 ]
 
 [tool.black]
 line-length = 88
 target-version = ['py311']
 include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
 
 [tool.isort]
 profile = "black"
 multi_line_output = 3
 line_length = 88
+known_first_party = ["src"]
+known_third_party = ["fastapi", "pydantic", "sqlalchemy", "dspy"]
 
 [tool.mypy]
 python_version = "3.11"
@@ -160,11 +190,32 @@ disallow_untyped_defs = true
 no_implicit_optional = true
 warn_redundant_casts = true
 warn_unused_ignores = true
+exclude = [
+    "^src/tests/",
+    "^build/",
+    "^dist/",
+]
 
+# Updated dependency-groups for uv compatibility
 [dependency-groups]
-dev = [
-    "httpx>=0.28.1",
+test = [
     "pytest>=8.4.1",
     "pytest-asyncio>=1.1.0",
     "pytest-cov>=6.2.1",
+    "pytest-mock>=3.14.1",
+    "pytest-xdist>=3.6.0",
+    "httpx>=0.28.1",
+    "factory-boy>=3.3.0",
+    "faker>=28.4.1",
+]
+dev = [
+    "black>=23.9.0",
+    "isort>=5.12.0",
+    "flake8>=6.1.0",
+    "mypy>=1.6.0",
+    "pre-commit>=3.5.0",
+]
+docs = [
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.4.0",
 ]

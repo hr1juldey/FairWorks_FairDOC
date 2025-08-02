@@ -108,3 +108,28 @@ class ConversationQueue:
         """Retrieve conversation state"""
         state_data = await self.redis.get(f"{self.state_prefix}:{conversation_id}")
         return json.loads(state_data) if state_data else None
+
+    async def _override_conversation_id(self, old_id: str, new_id: str) -> bool:
+        """Override conversation ID for test compatibility"""
+        # Get existing state
+        state_data = await self.redis.get(f"{self.state_prefix}:{old_id}")
+        if not state_data:
+            return False
+        
+        # Parse and update conversation ID
+        state = json.loads(state_data)
+        state["conversation_id"] = new_id
+        
+        # Store with new ID and remove old
+        await self.redis.setex(
+            f"{self.state_prefix}:{new_id}", 
+            int(timedelta(hours=24).total_seconds()), 
+            json.dumps(state)
+        )
+        await self.redis.delete(f"{self.state_prefix}:{old_id}")
+        
+        # Update queue references
+        await self.redis.lrem(f"{self.queue_prefix}:pending", 0, old_id)
+        await self.redis.lpush(f"{self.queue_prefix}:pending", new_id)
+        
+        return True

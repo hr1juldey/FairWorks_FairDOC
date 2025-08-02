@@ -194,8 +194,8 @@ class MedicalTriageAgent:
                 question_result = self.question_generator.suggest_questions(
                     symptom_text=symptoms,
                     conversation_context=str(history),
-                    nice_context=nice_context,
-                    max_questions=1
+                    nice_protocols=nice_context,
+                    max_questions=2
                 )
                 if question_result["questions"]:
                     response["next_question"] = question_result["questions"][0]

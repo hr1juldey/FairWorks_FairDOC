@@ -4,7 +4,7 @@
     {
       "label": "Auto-Cleanup PyCache",
       "type": "shell",
-      "command": "while true; do find . -type d -name '__pycache__' -exec rm -rf {} + && find . -type f -name '*.pyc' -delete; sleep 300; done",
+      "command": "while true; do find . -type d -name '__pycache__' -exec rm -rf {} + && find . -type f -name '*.pyc' -delete; sleep 30; done",
       "isBackground": true,
       "problemMatcher": []
     }
