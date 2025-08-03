@@ -9,13 +9,14 @@ from unittest.mock import patch, Mock, AsyncMock
 import requests
 import aiohttp
 import structlog
+from src.app2.core.config_v2 import settings_v2
 
 logger = structlog.get_logger(__name__)
 
 # Test environment setup
 with patch.dict('os.environ', {
     'OLLAMA_BASE_URL': 'http://localhost:11434',
-    'FAIRDOC_V2_DSPy_MODEL': 'deepseek-r1:8b',
+    'FAIRDOC_V2_DSPy_MODEL': settings_v2.DSPY_MODEL_NAME,
 }):
     from src.app2.services.dspy.medical_agent import MedicalTriageAgent
 

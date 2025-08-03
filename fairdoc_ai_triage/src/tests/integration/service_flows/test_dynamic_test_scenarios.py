@@ -29,6 +29,7 @@ import statistics
 import dspy
 from colorama import init, Fore, Back, Style
 import pytest
+from src.app2.core.config_v2 import settings_v2
 
 # Initialize colorama for colored terminal output
 init(autoreset=True)
@@ -348,15 +349,16 @@ class MedicalConversationStressTest:
         self.conversation_metrics: List[ConversationMetrics] = []
         
     def _configure_dspy(self):
-        """Configure DSPy with DeepSeek-R1 model"""
+        """Configure DSPy with configured model"""
+        
         try:
             lm = dspy.LM(
-                'ollama/deepseek-r1:8b',
+            f'ollama/{settings_v2.DSPY_MODEL_NAME}',
                 api_base='http://localhost:11434',
                 api_key=''
             )
             dspy.configure(lm=lm)
-            print(f"{Fore.GREEN}✅ DSPy configured with DeepSeek-R1")
+            print(f"{Fore.GREEN}✅ DSPy configured with {settings_v2.DSPY_MODEL_NAME}")
         except Exception as e:
             print(f"{Fore.RED}❌ DSPy configuration failed: {e}")
             # Use mock for testing
@@ -687,7 +689,7 @@ class MedicalConversationStressTest:
         print(f"{Fore.YELLOW}📋 Testing {num_conversations} conversations with 20+ turns each")
         print(f"{Fore.YELLOW}🎭 Simulating Indian patients with panic scenarios")
         print(f"{Fore.YELLOW}💬 WhatsApp-style conversations with delays and typos")
-        print(f"{Fore.YELLOW}🤖 Testing DeepSeek-R1 model via DSPy")
+        print(f"{Fore.YELLOW}🤖 Testing {settings_v2.DSPY_MODEL_NAME} model via DSPy")
         print("=" * 70)
         
         start_time = time.time()

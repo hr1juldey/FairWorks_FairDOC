@@ -12,7 +12,7 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from unittest.mock import AsyncMock
-
+from src.app2.core.config_v2 import settings_v2
 
 # Configure pytest-asyncio
 pytest_plugins = ('pytest_asyncio',)
@@ -36,7 +36,7 @@ TEST_ENV_VARS = {
     "MINIO_SECRET_KEY": "test_minio_key",
     "MINIO_BUCKET_NAME": "test-bucket",
     "OLLAMA_BASE_URL": "http://localhost:11434",
-    "OLLAMA_MODEL": "deepseek-r1:8b",
+    "OLLAMA_MODEL": settings_v2.DSPY_MODEL_NAME,
     "RAVEN_WEBHOOK_URL": "http://localhost:8080/test",
     "RAVEN_API_KEY": "test-raven-key",
     "RAVEN_SECRET": "test-raven-secret",
@@ -45,7 +45,7 @@ TEST_ENV_VARS = {
     "CELERY_RESULT_BACKEND": "redis://:test_pass@localhost:6379/2",
     # V2 specific variables
     "FAIRDOC_V2_ENABLED": "true",
-    "FAIRDOC_V2_DSPy_MODEL": "deepseek-r1:8b",
+    "FAIRDOC_V2_DSPy_MODEL": settings_v2.FAIRDOC_V2_DSPy_MODEL,
     "FAIRDOC_V2_MAX_CONVERSATION_TURNS": "8",
     "TELEGRAM_BOT_TOKEN": "test-telegram-token",
 }

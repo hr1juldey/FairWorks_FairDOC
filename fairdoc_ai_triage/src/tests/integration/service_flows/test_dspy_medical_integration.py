@@ -10,13 +10,14 @@ import time
 from typing import Dict, Any, List
 from unittest.mock import patch, Mock
 import structlog
+from src.app2.core.config_v2 import settings_v2
 
 logger = structlog.get_logger(__name__)
 
 # Test environment setup for integration testing
 with patch.dict('os.environ', {
     'OLLAMA_BASE_URL': 'http://localhost:11434',
-    'FAIRDOC_V2_DSPy_MODEL': 'deepseek-r1:8b',
+    'FAIRDOC_V2_DSPy_MODEL': settings_v2.DSPY_MODEL_NAME,
     'REDIS_URL': 'redis://localhost:6379/0',
     'DATABASE_URL': 'postgresql+asyncpg://test:test@localhost/test',
 }):

@@ -45,12 +45,12 @@ class TestCompleteDSPyWorkflowRealLLM:
         try:
             # Initialize real components (NO MOCKS)
             self.question_generator = MedicalQuestionGenerator(
-                model_name=settings_v2.FAIRDOC_V2_DSPy_MODEL
+                model_name=settings_v2.DSPy_MODEL_NAME
             )
             
             self.medical_agent = MedicalTriageAgent(
-                model_name=settings_v2.FAIRDOC_V2_DSPy_MODEL,
-                question_generator=self.question_generator
+            model_name=settings_v2.DSPY_MODEL_NAME,
+            question_generator=self.question_generator
             )
             
             self.chat_orchestrator = ChatOrchestrator(

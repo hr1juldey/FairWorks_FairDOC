@@ -1,6 +1,6 @@
 """
-Real LLM Call Integration Tests - Verified DeepSeek API Monitoring
-Tests that actually verify LLM calls are made to Ollama/DeepSeek
+Real LLM Call Integration Tests - Verified Configured Model API Monitoring
+Tests that actually verify LLM calls are made to Ollama/Configured Model
 Includes API call interception and verification
 """
 import pytest
@@ -11,13 +11,15 @@ import httpx
 from typing import Dict, Any, List
 from unittest.mock import patch, Mock, AsyncMock
 import structlog
+from src.app2.core.config_v2 import settings_v2
+
 
 logger = structlog.get_logger(__name__)
 
 # Test environment setup without over-mocking
 with patch.dict('os.environ', {
     'OLLAMA_BASE_URL': 'http://localhost:11434',
-    'FAIRDOC_V2_DSPy_MODEL': 'deepseek-r1:8b',
+    'FAIRDOC_V2_DSPy_MODEL': settings_v2.DSPY_MODEL_NAME,
     'REDIS_URL': 'redis://localhost:6379/0',
     'DATABASE_URL': 'postgresql+asyncpg://test:test@localhost/test',
 }):
@@ -68,7 +70,7 @@ class LLMCallMonitor:
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
-            "model": "deepseek-r1:8b",
+            "model": settings_v2.DSPY_MODEL_NAME,
             "created_at": "2025-08-01T21:30:00Z",
             "response": json.dumps({
                 "outcome_classification": "inconclusive",
