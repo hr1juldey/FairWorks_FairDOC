@@ -1,7 +1,7 @@
 """
 Multi-turn Medical Conversation Agent powered by DSPy
 Implements progressive questioning using DSPy modules and programs
-Enhanced with native DSPy reasoning separation for DeepSeek-R1
+Enhanced with native DSPy reasoning separation for Reasoning LLM
 """
 
 import dspy
@@ -10,6 +10,7 @@ from enum import Enum
 import structlog
 import asyncio
 from dataclasses import dataclass
+from src.app2.core.config_v2 import settings_v2   # added settings v2 
 
 logger = structlog.get_logger(__name__)
 
@@ -38,7 +39,7 @@ class MedicalTriageSignature(dspy.Signature):
     conversation_history: dspy.History = dspy.InputField(desc="Previous conversation turns")
     nice_protocols: str = dspy.InputField(desc="Relevant NICE protocol guidelines")
     
-    # Reasoning output (for DeepSeek-R1 thinking)
+    # Reasoning output (for Reasoning LLM thinking)
     medical_reasoning: str = dspy.OutputField(desc="Step-by-step medical reasoning process")
     
     # Final decision outputs
@@ -111,9 +112,9 @@ class MedicalTriageProgram(dspy.Module):
 class MedicalTriageAgent:
     """DSPy-powered medical triage agent with native reasoning separation"""
     
-    def __init__(self, model_name: str = "deepseek-r1:8b", question_generator=None):
+    def __init__(self, model_name: str = None, question_generator=None):
         """Initialize agent with DSPy program architecture"""
-        self.model_name = model_name
+        self.model_name = model_name or settings_v2.DSPY_MODEL_NAME
         self._configure_dspy_with_thinking()
         
         # Use DSPy program instead of single signature
@@ -134,12 +135,12 @@ class MedicalTriageAgent:
 
     
     def _configure_dspy_with_thinking(self):
-        """Configure DSPy with DeepSeek-R1 via proper Ollama integration"""
+        """Configure DSPy with Reasoning LLM via proper Ollama integration"""
         try:
             # Method 1: Direct Ollama integration (Recommended)
             lm = dspy.LM(model=f'ollama/{self.model_name}')
             dspy.configure(lm=lm)
-            logger.info("✅ DSPy configured with DeepSeek-R1 via Ollama")
+            logger.info("✅ DSPy configured with Reasoning LLM via Ollama")
             
         except Exception as e:
             # Method 2: Fallback to OpenAI-compatible endpoint
@@ -151,7 +152,7 @@ class MedicalTriageAgent:
                     model_type='chat'
                 )
                 dspy.configure(lm=lm)
-                logger.info("✅ DSPy configured with DeepSeek-R1 via OpenAI-compatible API")
+                logger.info("✅ DSPy configured with Reasoning LLM via OpenAI-compatible API")
                 
             except Exception as fallback_error:
                 logger.error("❌ Both Ollama methods failed", 
@@ -253,11 +254,11 @@ class MedicalTriageAgent:
         # Only complete conversation if:
         # 1. Emergency detected (immediate escalation)
         # 2. High confidence conclusive outcome after 8+ turns
-        # 3. Reached maximum turns (25)
+        # 3. Reached maximum turns (20)
         if emergency_result.is_emergency:
             should_complete = True
             outcome = "emergency"
-        elif self.turn_count >= 25:
+        elif self.turn_count >= 20:
             should_complete = True
         elif self.turn_count >= 8 and confidence >= 90 and outcome in ["routine", "self_care"]:
             should_complete = True

@@ -1,12 +1,13 @@
 """
 DSPy Medical Question Generator with Examples and Thinking
 Uses DSPy examples and reasoning for NICE-compliant medical questions
-Enhanced with DeepSeek-R1 thinking for emergency protocols
+Enhanced with Reasoning LLM thinking for emergency protocols
 """
 
 import dspy
 from typing import List, Dict, Any, Optional
 import structlog
+from src.app2.core.config_v2 import settings_v2
 
 logger = structlog.get_logger(__name__)
 
@@ -17,7 +18,7 @@ class MedicalQuestionSignature(dspy.Signature):
     nice_protocols: str = dspy.InputField(desc="Relevant NICE emergency protocols")
     emergency_indicators: str = dspy.InputField(desc="Red flag symptoms detected")
     
-    # Thinking outputs for DeepSeek-R1
+    # Thinking outputs for Reasoning LLM
     medical_reasoning: str = dspy.OutputField(desc="Clinical reasoning for question priority")
     emergency_assessment: str = dspy.OutputField(desc="Emergency risk assessment reasoning")
     
@@ -452,8 +453,8 @@ class QuestionProgram(dspy.Module):
 class MedicalQuestionGenerator:
     """Production DSPy medical question generator with thinking enabled"""
     
-    def __init__(self, model_name: str = "deepseek-r1:8b"):
-        self.model_name = model_name
+    def __init__(self, model_name: str = None):
+        self.model_name = model_name or settings_v2.DSPY_MODEL_NAME
         self._configure_dspy_with_thinking()
         
         # Initialize DSPy program with examples
@@ -462,7 +463,7 @@ class MedicalQuestionGenerator:
         logger.info("❓ Medical Question Generator with thinking initialized", model=model_name)
     
     def _configure_dspy_with_thinking(self):
-        """Configure DSPy with DeepSeek-R1 thinking ENABLED for medical reasoning"""
+        """Configure DSPy with Reasoning LLM thinking ENABLED for medical reasoning"""
         try:
             lm = dspy.LM(
                 f'ollama_chat/{self.model_name}',
@@ -540,7 +541,7 @@ class MedicalQuestionGenerator:
         }
 
 # Singleton with DSPy examples and thinking enabled
-question_generator = MedicalQuestionGenerator()
+question_generator = MedicalQuestionGenerator(settings_v2.DSPY_MODEL_NAME)
 
 # Legacy compatibility maintained
 def suggest_questions(symptom_text: str, max_questions: int = 3) -> List[str]:

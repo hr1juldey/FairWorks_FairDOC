@@ -20,6 +20,8 @@ from src.app2.models.database.gold_standards_seed import (
 from src.app2.services.dspy.medical_agent import MedicalTriageAgent
 from src.app2.core.database_v2 import get_async_session
 
+from src.app2.core.config_v2 import settings_v2
+
 logger = structlog.get_logger(__name__)
 
 class MedicalAccuracySignature(dspy.Signature):
@@ -175,7 +177,8 @@ class OptimizationProgram(dspy.Module):
 class EvaluationOptimizer:
     """Production-ready DSPy evaluation and optimization with native modules"""
     
-    def __init__(self, model_name: str = "deepseek-r1:8b"):
+    def __init__(self, model_name: str = None):
+        model_name = model_name or settings_v2.DSPY_MODEL_NAME
         self.medical_agent = MedicalTriageAgent(model_name=model_name)
         self.evaluation_program = EvaluationProgram(self.medical_agent)
         self.optimization_program = OptimizationProgram(self.medical_agent)
@@ -294,4 +297,4 @@ class EvaluationOptimizer:
         return examples
 
 # Singleton instance with DSPy modules
-evaluation_optimizer = EvaluationOptimizer()
+evaluation_optimizer = EvaluationOptimizer(settings_v2.DSPY_MODEL_NAME)
