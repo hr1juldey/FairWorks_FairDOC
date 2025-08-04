@@ -67,6 +67,7 @@ class PatientProfile:
     
     # Medical background
     medical_condition: str  # Links to MedicalCondition ID
+    expected_outcome: str  # ADD THIS LINE
     previous_medical_experience: str
     health_anxiety_level: int  # 0-100
     trust_in_technology: int  # 0-100
@@ -130,6 +131,7 @@ PATIENT_PROFILES = {
         occupation="Software Engineer",
         
         medical_condition="acute_mi_stemi",  # Heart attack - emergency
+        expected_outcome="emergency",  # ADD THIS LINE
         previous_medical_experience="Limited, mostly online consultations",
         health_anxiety_level=60,
         trust_in_technology=85,
@@ -164,6 +166,7 @@ PATIENT_PROFILES = {
         occupation="Homemaker",
         
         medical_condition="postpartum_depression",  # Routine consultation
+        expected_outcome="routine_doctor",  # ADD THIS LINE
         previous_medical_experience="Regular visits to family doctor, gynecologist",
         health_anxiety_level=75,
         trust_in_technology=45,
@@ -198,6 +201,7 @@ PATIENT_PROFILES = {
         occupation="Retired clerk",
         
         medical_condition="hypertension_management",  # Routine consultation  
+        expected_outcome="routine_doctor",  # ADD THIS LINE
         previous_medical_experience="Regular BP monitoring, multiple doctor visits",
         health_anxiety_level=85,
         trust_in_technology=25,
@@ -232,6 +236,7 @@ PATIENT_PROFILES = {
         occupation="College student",
         
         medical_condition="acute_appendicitis",  # Emergency
+        expected_outcome="emergency",  # ADD THIS LINE
         previous_medical_experience="College health center, very limited",
         health_anxiety_level=90,
         trust_in_technology=70,
@@ -266,6 +271,7 @@ PATIENT_PROFILES = {
         occupation="Marketing Manager",
         
         medical_condition="breast_lump_concern",  # Routine consultation
+        expected_outcome="routine_doctor",  # ADD THIS LINE
         previous_medical_experience="Regular health checkups, corporate health programs",
         health_anxiety_level=70,
         trust_in_technology=80,
@@ -300,6 +306,7 @@ PATIENT_PROFILES = {
         occupation="Domestic worker",
         
         medical_condition="recurring_uti",  # Routine consultation
+        expected_outcome="routine_doctor",  # ADD THIS LINE
         previous_medical_experience="Government hospital visits, local clinic",
         health_anxiety_level=95,
         trust_in_technology=15,
@@ -334,6 +341,7 @@ PATIENT_PROFILES = {
         occupation="Factory supervisor",
         
         medical_condition="tension_headache",  # Self-care
+        expected_outcome="self_care",  # ADD THIS LINE
         previous_medical_experience="Occasional clinic visits, self-medication",
         health_anxiety_level=40,
         trust_in_technology=55,
@@ -368,6 +376,7 @@ PATIENT_PROFILES = {
         occupation="Construction worker",
         
         medical_condition="gastroenteritis_viral",  # Self-care
+        expected_outcome="self_care",  # ADD THIS LINE
         previous_medical_experience="Village doctor, government hospital emergency visits",
         health_anxiety_level=80,
         trust_in_technology=30,
@@ -406,7 +415,7 @@ def get_patients_by_economic_status(status: EconomicStatus) -> List[PatientProfi
 
 def get_patients_by_condition_outcome(expected_outcome: str) -> List[PatientProfile]:
     """Get patients whose conditions have specific expected outcome"""
-    from medical_conditions import get_condition
+    from src.tests.e2e.user_scenarios.medical_conditions import get_condition
     
     matching_patients = []
     for profile in PATIENT_PROFILES.values():
@@ -527,7 +536,7 @@ def validate_patient_profiles() -> Dict[str, Any]:
     validation_results["gender_distribution"] = gender_dist
     
     # Condition outcome distribution
-    from medical_conditions import get_condition
+    from src.tests.e2e.user_scenarios.medical_conditions import get_condition
     outcome_dist = {}
     for profile in PATIENT_PROFILES.values():
         condition = get_condition(profile.medical_condition)

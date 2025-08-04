@@ -13,6 +13,16 @@ from src.app2.models.schemas.medical_triage import MedicalOutcome
 
 logger = structlog.get_logger(__name__)
 
+
+class UrgencyLevel(str, Enum):
+    LOW = "low"
+    MEDIUM = "medium" 
+    HIGH = "high"
+    CRITICAL = "critical"
+class TrustLevel(str, Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
 @dataclass
 class SymptomProgression:
     """How symptoms develop during conversation"""
@@ -22,18 +32,6 @@ class SymptomProgression:
     timeline: str                   # How symptoms developed over time
     triggers: List[str]             # What triggers or worsens symptoms
 
-@dataclass
-class UrgencyLevel(str, Enum):
-    LOW = "low"
-    MEDIUM = "medium" 
-    HIGH = "high"
-    CRITICAL = "critical"
-
-@dataclass
-class TrustLevel(str, Enum):
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
 
 @dataclass 
 class MedicalCondition:

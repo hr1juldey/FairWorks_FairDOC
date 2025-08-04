@@ -73,7 +73,7 @@ class DSPyPatientAgent:
         
         logger.info("🤖 DSPy Patient Agent initialized",
                    patient_id=self.profile.patient_id,
-                   condition=self.medical_condition.name,
+                   condition=self.medical_condition.condition_name,
                    emotion=self.current_emotional_state)
     
     async def respond_to_agent(self, agent_question: str, agent_tone: str = "professional") -> Dict[str, Any]:
@@ -430,7 +430,7 @@ def create_patient_agent(patient_id: str, model_name: str) -> DSPyPatientAgent:
 def create_diverse_patient_agents(model_name: str, count: int = 4) -> List[DSPyPatientAgent]:
     """Create diverse set of patient agents for testing"""
     
-    from patient_profiles import get_diverse_patient_sample
+    from src.tests.e2e.user_scenarios.patient_profiles import get_diverse_patient_sample
     
     patient_ids = get_diverse_patient_sample(count)
     agents = []

@@ -107,7 +107,7 @@ class TestDSPyConversationsE2E:
             assert condition is not None, f"Condition {condition_id} not found"
             
             # Verify condition completeness
-            assert condition.name, f"Condition {condition_id} missing name"
+            assert condition.condition_name, f"Condition {condition_id} missing condition_name"
             assert condition.expected_outcome, f"Condition {condition_id} missing expected outcome"
             assert condition.symptom_progression, f"Condition {condition_id} missing symptom progression"
             assert condition.relevant_protocols, f"Condition {condition_id} missing protocols"
@@ -137,7 +137,7 @@ class TestDSPyConversationsE2E:
         """Test DSPy patient agent creation and basic functionality"""
         logger.info("🧪 Testing DSPy patient agent creation")
         
-        test_patient_ids = ["rajesh_mumbai", "priya_bangalore", "amit_delhi"]
+        test_patient_ids = ["mumbai_tech_male", "bangalore_professional", "delhi_housewife"]
         
         for patient_id in test_patient_ids:
             # Create patient agent
@@ -201,9 +201,9 @@ class TestDSPyConversationsE2E:
         
         # Test Medical Agent
         patient_condition_pairs = [
-            ("rajesh_mumbai", "chest_pain_angina"),
-            ("priya_bangalore", "tension_headache"),
-            ("amit_delhi", "acute_appendicitis")
+            ("mumbai_tech_male", "acute_mi_stemi"),
+            ("pune_working_male", "tension_headache"),
+            ("kolkata_student", "acute_appendicitis")
         ]
         
         agent_results = await evaluator.evaluate_medical_agent(patient_condition_pairs)
@@ -259,7 +259,7 @@ class TestDSPyConversationsE2E:
         logger.info("🧪 Testing single E2E conversation")
         
         # Test with a clear emergency case
-        test_patient = "rohit_pune"  # Acute appendicitis case
+        test_patient = "pune_working_male"  # Acute appendicitis case
         
         chat_orchestrator = ChatOrchestrator()
         await chat_orchestrator.initialize()
@@ -306,10 +306,10 @@ class TestDSPyConversationsE2E:
         
         # Test subset of patients for faster execution
         test_patients = [
-            "rajesh_mumbai",    # Routine case
-            "amit_delhi",       # Emergency case
-            "priya_bangalore",  # Self-care case
-            "meera_kolkata"     # Routine case
+                "mumbai_tech_male",   # Emergency case (MI)
+                "kolkata_student",    # Emergency case (appendicitis)
+                "pune_working_male",  # Self-care case (headache)
+                "delhi_housewife"     # Routine case (postpartum depression)
         ]
         
         chat_orchestrator = ChatOrchestrator()
@@ -399,9 +399,9 @@ class TestDSPyConversationsE2E:
         
         # Test with different conversation scenarios
         test_scenarios = [
-            ("rajesh_mumbai", "routine"),     # Should have moderate score
-            ("amit_delhi", "emergency"),      # Should have high score if detected correctly  
-            ("priya_bangalore", "self_care")  # Should have good score for self-care
+            ("mumbai_tech_male", "emergency"),     # Should have moderate score
+            ("kolkata_student", "emergency"),      # Should have high score if detected correctly  
+            ("pune_working_male", "self_care")     # Should have good score for self-care
         ]
         
         chat_orchestrator = ChatOrchestrator()
