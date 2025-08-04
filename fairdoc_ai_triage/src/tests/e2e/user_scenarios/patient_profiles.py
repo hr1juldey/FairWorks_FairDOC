@@ -78,6 +78,16 @@ class PatientProfile:
     primary_emotion: EmotionalState
     stress_response: str  # How they respond to medical stress
     
+    def get_communication_style(self) -> Dict[str, Any]:
+        """Get communication style characteristics"""
+        return {
+            "typing_speed": self.communication_style.typing_speed,
+            "vocabulary": self.communication_style.vocabulary,
+            "sentence_structure": self.communication_style.sentence_structure,
+            "cultural_expressions": self.communication_style.cultural_expressions,
+            "tech_comfort": self.communication_style.tech_comfort
+        }
+    
     def get_emotional_modifiers(self) -> Dict[str, Any]:
         """Get emotional modifiers for conversation behavior"""
         

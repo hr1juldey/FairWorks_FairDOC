@@ -16,9 +16,16 @@ logger = structlog.get_logger(__name__)
 
 class UrgencyLevel(str, Enum):
     LOW = "low"
-    MEDIUM = "medium" 
+    MEDIUM = "medium"
     HIGH = "high"
     CRITICAL = "critical"
+
+class SeverityLevel(str, Enum):
+    MILD = "mild"
+    MODERATE = "moderate"
+    SEVERE = "severe"
+    CRITICAL = "critical"
+
 class TrustLevel(str, Enum):
     LOW = "low"
     MEDIUM = "medium"
@@ -39,7 +46,8 @@ class MedicalCondition:
     condition_id: str
     condition_name: str
     expected_outcome: MedicalOutcome
-    
+    severity: SeverityLevel
+
     # Clinical characteristics
     symptom_progression: SymptomProgression
     red_flag_indicators: List[str]
@@ -95,6 +103,7 @@ MEDICAL_CONDITIONS = {
         condition_id="acute_mi_stemi",
         condition_name="ST-Elevation Myocardial Infarction",
         expected_outcome=MedicalOutcome.EMERGENCY,
+        severity=SeverityLevel.CRITICAL,
         
         symptom_progression=SymptomProgression(
             initial="severe chest pain like someone sitting on my chest",
@@ -136,6 +145,7 @@ MEDICAL_CONDITIONS = {
         condition_id="acute_appendicitis", 
         condition_name="Acute Appendicitis",
         expected_outcome=MedicalOutcome.EMERGENCY,
+        severity=SeverityLevel.SEVERE,
         
         symptom_progression=SymptomProgression(
             initial="stomach pain that started around my belly button",
@@ -177,7 +187,8 @@ MEDICAL_CONDITIONS = {
         condition_id="postpartum_depression",
         condition_name="Postpartum Depression", 
         expected_outcome=MedicalOutcome.ROUTINE_DOCTOR,
-        
+        severity=SeverityLevel.MODERATE,
+
         symptom_progression=SymptomProgression(
             initial="feeling very low and sad most of the time since baby was born",
             intermediate=[
@@ -217,7 +228,8 @@ MEDICAL_CONDITIONS = {
         condition_id="hypertension_management",
         condition_name="Hypertension Follow-up",
         expected_outcome=MedicalOutcome.ROUTINE_DOCTOR,
-        
+        severity=SeverityLevel.MODERATE,
+
         symptom_progression=SymptomProgression(
             initial="my blood pressure readings have been high lately",
             intermediate=[
@@ -255,6 +267,7 @@ MEDICAL_CONDITIONS = {
         condition_id="breast_lump_concern",
         condition_name="Breast Lump Evaluation",
         expected_outcome=MedicalOutcome.ROUTINE_DOCTOR,
+        severity=SeverityLevel.MODERATE,
         
         symptom_progression=SymptomProgression(
             initial="found a lump in my left breast during self-examination",
@@ -293,7 +306,8 @@ MEDICAL_CONDITIONS = {
         condition_id="recurring_uti",
         condition_name="Recurrent Urinary Tract Infection",
         expected_outcome=MedicalOutcome.ROUTINE_DOCTOR,
-        
+        severity=SeverityLevel.MODERATE,
+
         symptom_progression=SymptomProgression(
             initial="burning sensation when passing urine since 2 days",
             intermediate=[
@@ -331,7 +345,8 @@ MEDICAL_CONDITIONS = {
         condition_id="tension_headache",
         condition_name="Tension-Type Headache",
         expected_outcome=MedicalOutcome.SELF_CARE,
-        
+        severity=SeverityLevel.MILD,
+
         symptom_progression=SymptomProgression(
             initial="having headache like tight band around head since morning",
             intermediate=[
@@ -365,6 +380,7 @@ MEDICAL_CONDITIONS = {
         condition_id="gastroenteritis_viral", 
         condition_name="Viral Gastroenteritis",
         expected_outcome=MedicalOutcome.SELF_CARE,
+        severity=SeverityLevel.MILD,
         
         symptom_progression=SymptomProgression(
             initial="loose motions and stomach upset since yesterday",

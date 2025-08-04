@@ -6,6 +6,7 @@ Manages conversation flows, timing, evaluation, and result aggregation
 
 import asyncio
 import time
+import uuid
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -95,7 +96,7 @@ class ConversationOrchestrator:
             patient_satisfaction_estimated=0.0
         )
         
-        conversation_id = f"test_{patient_id}_{int(time.time())}"
+        conversation_id = f"test_{patient_id}_{str(uuid.uuid4())}"
         
         try:
             # Start conversation with initial patient message

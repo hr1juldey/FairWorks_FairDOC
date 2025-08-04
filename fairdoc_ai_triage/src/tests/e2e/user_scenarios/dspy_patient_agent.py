@@ -54,7 +54,13 @@ class DSPyPatientAgent:
     def __init__(self, patient_profile: PatientProfile, model_name: str):
         self.profile = patient_profile
         self.model_name = model_name
-        
+        # Initialize DSPy configuration
+        lm = dspy.LM(
+            f"ollama/{model_name}", 
+            api_base="http://localhost:11434"
+            )
+        dspy.configure(lm=lm)
+
         # Initialize DSPy modules
         self.response_generator = dspy.ChainOfThought(PatientResponseSignature)
         self.emotional_processor = dspy.ChainOfThought(PatientEmotionalStateSignature)
