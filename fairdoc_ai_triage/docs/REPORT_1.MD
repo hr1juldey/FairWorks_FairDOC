@@ -34,7 +34,6 @@ The system implements a **genuine adversarial testing architecture** with distin
 - Patient agents progress symptoms realistically **without revealing diagnosis**[^5]
 - Independent evaluation framework scores conversations against **gold standards**[^6]
 
-
 ## **2. Patient Realism Assessment**
 
 ### **Finding: Exceptionally Realistic Patient Modeling**
@@ -55,7 +54,6 @@ Performance radar chart showing FairDoc AI system metrics across 8 key dimension
 
 **Communication Realism:**
 
-
 | City | Local Expressions | Grammar Patterns | Cultural Context |
 | :-- | :-- | :-- | :-- |
 | Mumbai | "yaar", "boss", "bindaas" | "I am having", "It is paining" | Time-conscious, competitive |
@@ -67,7 +65,6 @@ Performance radar chart showing FairDoc AI system metrics across 8 key dimension
 - **Typing patterns** vary by economic status (7% vs 1% typo rates)[^10]
 - **Emotional progression** during conversations (anxious→worried→fearful)[^11]
 - **Cultural factors** like family influence (60-95% based on demographics)[^12]
-
 
 ## **3. System Resilience and Intelligence**
 
@@ -96,7 +93,6 @@ Turn 3: Red flag detection → Emergency escalation
 Turn 4+: Detailed history → Outcome determination
 ```
 
-
 ## **4. Medical Agent vs Patient Agent Performance**
 
 ### **Medical Agent Performance: 65.44% Overall**
@@ -111,7 +107,6 @@ Turn 4+: Detailed history → Outcome determination
 
 - **Question generation**: Critical underperformance at 13.63%[^24]
 - **Moderate diagnostic accuracy** in non-emergency cases[^25]
-
 
 ### **Patient Agent Performance: 85% Estimated**
 
@@ -141,7 +136,6 @@ Timeline showing multi-turn patient-agent interactions with outcome progression 
 **Context Failure Points:**
 
 - One test failure in patient profile validation, but core conversation context maintained[^33]
-
 
 ## **6. Medical Problem-Solving vs Conversation**
 
@@ -173,7 +167,6 @@ The system demonstrates **genuine clinical reasoning** rather than mere conversa
 - **Potential over-diagnosis**: Multiple pain cases flagged as emergency[^39]
 - **Question quality issues** may lead to incomplete assessments[^40]
 
-
 ## **8. Bias Assessment**
 
 ### **Finding: Multiple Bias Risks Identified**
@@ -196,20 +189,18 @@ Bias risk assessment heatmap identifying critical areas requiring attention in t
 - Economic stratification modeled appropriately[^45]
 - Gender and age representation adequate[^46]
 
-
 ## **9. Precision, Recall, and Accuracy Metrics**
 
 ### **Quantitative Performance Analysis:**
 
-**Emergency Detection Performance:**
+#### **Emergency Detection Performance:**
 
 - **Precision**: 100.0% (1/1 emergency cases correctly identified)
 - **Recall**: 100.0% (0 emergency cases missed)
 - **Accuracy**: 100.0% (3/3 cases correctly classified)
 - **F1-Score**: 100.0% (perfect balance of precision and recall)
 
-**Component-Wise Accuracy:**
-
+#### **Component-Wise Accuracy:**
 
 | Component | Accuracy | Status | Critical Issues |
 | :-- | :-- | :-- | :-- |
@@ -220,15 +211,16 @@ Bias risk assessment heatmap identifying critical areas requiring attention in t
 | NICE Protocol Lookup | 80.0% | GOOD | Appropriate matching |
 | **Overall System** | **68.8%** | **MODERATE** | **Mixed performance** |
 
-**Confusion Matrix (Emergency Detection):**
+---
 
-```
-                    Predicted
-                Emergency  Non-Emergency
-Actual Emergency      1           0
-    Non-Emergency     0           2
-```
+#### **Confusion Matrix (Emergency Detection):**
 
+|                 | **Predicted Emergency** | **Predicted Non-Emergency** |
+|-----------------|-------------------------|------------------------------|
+| **Actual Emergency**     | 1                       | 0                            |
+| **Actual Non-Emergency** | 0                       | 2                            |
+
+---
 
 ## **Key Recommendations**
 
@@ -241,7 +233,7 @@ Actual Emergency      1           0
 
 The FairDoc AI system demonstrates a **sophisticated adversarial testing framework** with genuine medical problem-solving capabilities. While emergency detection performs excellently (100% accuracy), the critical weakness in question generation (13.63% performance) poses significant risk to overall system efficacy. The patient simulation achieves remarkable realism, and context maintenance is robust. However, algorithmic bias from single-model dependency and cultural limitations require attention.
 
-**Overall Assessment: Promising foundation with critical optimization needs**
+### **Overall Assessment: Promising foundation with critical optimization needs**
 
 **Citations:**
 Source: dspy_patient_agent.py - PatientResponseSignature class[^1]
@@ -336,7 +328,7 @@ Source: patient_profiles.py - Economic stratification modeling[^45]
 
 Source: patient_profiles.py - Gender and age representation
 
-<div style="text-align: center">⁂</div>
+<div style="text-align: center">=======================================================⁂==================================================</div>
 
 [^1]: log.txt
 
