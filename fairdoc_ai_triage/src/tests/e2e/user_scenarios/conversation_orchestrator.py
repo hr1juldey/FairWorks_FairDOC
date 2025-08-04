@@ -96,7 +96,7 @@ class ConversationOrchestrator:
             patient_satisfaction_estimated=0.0
         )
         
-        conversation_id = f"test_{patient_id}_{str(uuid.uuid4())}"
+        conversation_id = str(uuid.uuid4())
         
         try:
             # Start conversation with initial patient message

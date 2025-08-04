@@ -63,7 +63,17 @@ class MedicalCondition:
     pain_level: int                  # 0-10 pain scale
     urgency_perception: UrgencyLevel          # How urgent patient perceives condition
     communication_difficulty: float  # 0-1, how hard condition makes communication
+
+    @property
+    def name(self) -> str:
+        """Backwards compatibility property"""
+        return self.condition_name
     
+    @name.setter  
+    def name(self, value: str):
+        """Backwards compatibility setter"""
+        self.condition_name = value
+        
     def get_progressive_symptoms(self, turn_number: int) -> List[str]:
         """Get symptoms that should be available at specific turn"""
         if turn_number == 1:

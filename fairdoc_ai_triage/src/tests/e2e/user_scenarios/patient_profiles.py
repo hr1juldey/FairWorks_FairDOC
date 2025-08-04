@@ -5,10 +5,16 @@ Each profile includes medical conditions, communication styles, and socioeconomi
 """
 
 from typing import Dict, List, Optional, Any
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 import random
-
+from src.tests.e2e.user_scenarios.patient_personas import (
+    PatientPersonaFactory, 
+    PatientPersona, 
+    City, 
+    EconomicStrength, 
+    Mood
+)
 class Gender(str, Enum):
     MALE = "male"
     FEMALE = "female"
@@ -47,47 +53,108 @@ class CommunicationStyle:
     cultural_expressions: List[str]  # Common expressions in their local context
     tech_comfort: str  # "low", "medium", "high"
 
+# Modify the existing PatientProfile class definition
 @dataclass
 class PatientProfile:
-    """Complete patient profile for testing"""
+    """Complete patient profile for testing - Enhanced with backwards compatibility"""
+    
+    # Keep ALL existing fields exactly as they are - ZERO CHANGES
     patient_id: str
     name: str
     age: int
     gender: Gender
-    
-    # Geographic and cultural
     city: str
     state: str
-    region: str  # North, South, East, West, Central
-    
-    # Socioeconomic
+    region: str
     education: Education
     economic_status: EconomicStatus
     occupation: str
-    
-    # Medical background
-    medical_condition: str  # Links to MedicalCondition ID
-    expected_outcome: str  # ADD THIS LINE
+    medical_condition: str
+    expected_outcome: str
     previous_medical_experience: str
-    health_anxiety_level: int  # 0-100
-    trust_in_technology: int  # 0-100
-    family_influence: int  # 0-100, how much family affects decisions
-    
-    # Communication and behavior
+    health_anxiety_level: int
+    trust_in_technology: int
+    family_influence: int
     communication_style: CommunicationStyle
     primary_emotion: EmotionalState
-    stress_response: str  # How they respond to medical stress
-    
+    stress_response: str
+
+    # NEW: Add persona field with default None - this won't break existing constructors 
+      
+    _persona: Optional[PatientPersona] = field(default=None, repr=False, init=False)
+
     def get_communication_style(self) -> Dict[str, Any]:
-        """Get communication style characteristics"""
-        return {
+        """Enhanced communication style with backwards compatibility"""
+        
+        # PRESERVE existing behavior - start with exact same implementation
+        base_style = {
             "typing_speed": self.communication_style.typing_speed,
             "vocabulary": self.communication_style.vocabulary,
             "sentence_structure": self.communication_style.sentence_structure,
             "cultural_expressions": self.communication_style.cultural_expressions,
             "tech_comfort": self.communication_style.tech_comfort
         }
+        
+        # ENHANCE: Add persona-based typing patterns
+        try:
+            # Build persona on-demand if not exists
+            if self._persona is None:
+                self._persona = PatientPersonaFactory.create_patient(
+                    city=City(self.city.lower()),
+                    medical_condition=self.medical_condition,
+                    expected_outcome=self.expected_outcome,
+                    gender=self.gender.value,
+                    age=self.age,
+                    economic_strength=self._map_economic_status(),
+                    mood=self._map_primary_emotion()
+                )
+            
+            # Get typing patterns from persona
+            typing_patterns = self._persona.get_typing_pattern()
+            
+            # MERGE: Add persona typing patterns to base style
+            enhanced_style = {
+                **base_style,  # Keep all existing fields
+                "pause_patterns": typing_patterns["pause_range"],  # ADD missing field that tests expect
+                "typo_rate": typing_patterns["typo_rate"],
+                "repeat_rate": typing_patterns["repeat_rate"], 
+                "abbreviation_use": typing_patterns["abbreviation_use"]
+            }
+            
+            return enhanced_style
+            
+        except Exception:
+            # FALLBACK: If anything fails, return original behavior
+            # This ensures existing code never breaks
+            return base_style
+ 
+
+    def _map_economic_status(self) -> EconomicStrength:
+        """Map PatientProfile economic status to PatientPersona economic strength"""
+        mapping = {
+            EconomicStatus.LOW: EconomicStrength.LOWER,
+            EconomicStatus.LOWER_MIDDLE: EconomicStrength.LOWER_MIDDLE,
+            EconomicStatus.MIDDLE: EconomicStrength.LOWER_MIDDLE,
+            EconomicStatus.UPPER_MIDDLE: EconomicStrength.UPPER_MIDDLE,
+            EconomicStatus.HIGH: EconomicStrength.UPPER
+        }
+        return mapping.get(self.economic_status, EconomicStrength.LOWER_MIDDLE)
+
+    def _map_primary_emotion(self) -> Mood:
+        """Map PatientProfile emotion to PatientPersona mood"""
+        mapping = {
+            EmotionalState.CALM: Mood.CALM,
+            EmotionalState.ANXIOUS: Mood.ANXIOUS,
+            EmotionalState.WORRIED: Mood.WORRIED,
+            EmotionalState.FEARFUL: Mood.AFRAID,
+            EmotionalState.CONFUSED: Mood.CONFUSED,
+            EmotionalState.SAD: Mood.SAD,
+            EmotionalState.HOPEFUL: Mood.CALM  # Map to closest available
+        }
+        return mapping.get(self.primary_emotion, Mood.ANXIOUS) 
     
+        
+    # Keep ALL existing methods exactly as they are - NO CHANGES
     def get_emotional_modifiers(self) -> Dict[str, Any]:
         """Get emotional modifiers for conversation behavior"""
         
@@ -122,6 +189,11 @@ class PatientProfile:
             base_modifiers["repetition_likelihood"] += 0.2
         
         return base_modifiers
+
+
+
+
+
 
 # Comprehensive Patient Profiles Database
 PATIENT_PROFILES = {
