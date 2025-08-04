@@ -15,8 +15,7 @@ import asyncio
 import structlog
 
 from src.tests.e2e.user_scenarios.patient_profiles import PatientProfile, get_patient_profile, EmotionalState
-from src.tests.e2e.user_scenarios.medical_conditions import MedicalCondition, get_condition, get_condition_symptoms_at_turn
-
+from src.tests.e2e.user_scenarios.medical_conditions import MedicalCondition, get_condition, get_condition_symptoms_at_turn, UrgencyLevel, TrustLevel
 logger = structlog.get_logger(__name__)
 
 class PatientResponseSignature(dspy.Signature):
@@ -32,8 +31,8 @@ class PatientResponseSignature(dspy.Signature):
     
     # Output response
     patient_message: str = dspy.OutputField(desc="Patient's natural response reflecting their background and condition")
-    emotional_state: str = dspy.OutputField(desc="Current emotional state: calm|anxious|worried|fearful|confused|sad")
-    urgency_level: str = dspy.OutputField(desc="Patient's perceived urgency: low|medium|high|critical")
+    emotional_state: str = dspy.OutputField(desc=f"Current emotional state: {'|'.join([e.value for e in EmotionalState])}")
+    urgency_level: str = dspy.OutputField(desc=f"Patient's perceived urgency: {'|'.join([u.value for u in UrgencyLevel])}")
     communication_difficulty: str = dspy.OutputField(desc="Any communication challenges or hesitations")
 
 class PatientEmotionalStateSignature(dspy.Signature):
@@ -47,7 +46,7 @@ class PatientEmotionalStateSignature(dspy.Signature):
     
     new_emotional_state: str = dspy.OutputField(desc="Updated emotional state based on interaction")
     emotional_reasoning: str = dspy.OutputField(desc="Why the emotional state changed or remained same")
-    trust_level: str = dspy.OutputField(desc="Patient's trust in the medical conversation: low|medium|high")
+    trust_level: str = dspy.OutputField(desc=f"Patient's trust in the medical conversation: {'|'.join([t.value for t in TrustLevel])}")
 
 class DSPyPatientAgent:
     """DSPy-powered patient simulation agent"""
@@ -63,7 +62,7 @@ class DSPyPatientAgent:
         # Conversation state
         self.conversation_history = []
         self.turn_count = 0
-        self.current_emotional_state = self.profile.primary_emotion.value
+        self.current_emotional_state = self.profile.primary_emotion  # Keep as enum
         self.conversation_active = True
         self.trust_level = "medium"  # Start with medium trust
         
@@ -243,7 +242,7 @@ class DSPyPatientAgent:
         emotional_modifiers = self.profile.get_emotional_modifiers()
         
         # Repetition for anxious patients
-        if (self.current_emotional_state == "anxious" and 
+        if (self.current_emotional_state == EmotionalState.ANXIOUS and 
             random.random() < emotional_modifiers["repetition_likelihood"]):
             # Add repetitive phrases
             anxious_additions = ["I'm really worried", "I don't know what to do", "Is this serious?"]
@@ -251,7 +250,7 @@ class DSPyPatientAgent:
             modified_message = f"{modified_message} {addition}"
         
         # Shorter messages for fearful patients
-        if (self.current_emotional_state == "fearful" and 
+        if (self.current_emotional_state == EmotionalState.FEARFUL and 
             len(modified_message.split()) > 15):
             words = modified_message.split()
             modified_message = " ".join(words[:12]) + "..."

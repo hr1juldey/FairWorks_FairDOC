@@ -18,9 +18,22 @@ class SymptomProgression:
     """How symptoms develop during conversation"""
     initial: str                    # First symptoms mentioned
     intermediate: List[str]         # Symptoms revealed with questioning
-    severe: List[str]              # Severe symptoms if condition worsens
-    timeline: str                  # How symptoms developed over time
-    triggers: List[str]            # What triggers or worsens symptoms
+    severe: List[str]               # Severe symptoms if condition worsens
+    timeline: str                   # How symptoms developed over time
+    triggers: List[str]             # What triggers or worsens symptoms
+
+@dataclass
+class UrgencyLevel(str, Enum):
+    LOW = "low"
+    MEDIUM = "medium" 
+    HIGH = "high"
+    CRITICAL = "critical"
+
+@dataclass
+class TrustLevel(str, Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
 
 @dataclass 
 class MedicalCondition:
@@ -32,17 +45,17 @@ class MedicalCondition:
     # Clinical characteristics
     symptom_progression: SymptomProgression
     red_flag_indicators: List[str]
-    relevant_protocols: List[str]  # NICE protocol codes
+    relevant_protocols: List[str]   # NICE protocol codes
     
     # Testing parameters
-    minimum_turns_expected: int     # Minimum turns to identify condition
-    maximum_turns_acceptable: int   # Maximum acceptable turns
+    minimum_turns_expected: int         # Minimum turns to identify condition
+    maximum_turns_acceptable: int       # Maximum acceptable turns
     emergency_detection_critical: bool  # Whether missing emergency is critical failure
-    confidence_threshold: float     # Expected final confidence
+    confidence_threshold: float         # Expected final confidence
     
     # Patient behavior modifiers
-    pain_level: int                # 0-10 pain scale
-    urgency_perception: str        # How urgent patient perceives condition
+    pain_level: int                  # 0-10 pain scale
+    urgency_perception: UrgencyLevel          # How urgent patient perceives condition
     communication_difficulty: float  # 0-1, how hard condition makes communication
     
     def get_progressive_symptoms(self, turn_number: int) -> List[str]:
@@ -117,7 +130,7 @@ MEDICAL_CONDITIONS = {
         confidence_threshold=90.0,
         
         pain_level=9,
-        urgency_perception="very_high",
+        urgency_perception=UrgencyLevel.CRITICAL,
         communication_difficulty=0.3  # Pain makes it hard to focus
     ),
     
@@ -158,7 +171,7 @@ MEDICAL_CONDITIONS = {
         confidence_threshold=85.0,
         
         pain_level=8,
-        urgency_perception="high",
+        urgency_perception=UrgencyLevel.HIGH,
         communication_difficulty=0.2
     ),
     
@@ -198,7 +211,7 @@ MEDICAL_CONDITIONS = {
         confidence_threshold=75.0,
         
         pain_level=2,
-        urgency_perception="medium",
+        urgency_perception=UrgencyLevel.MEDIUM,
         communication_difficulty=0.4  # Emotional state affects communication
     ),
     
@@ -236,7 +249,7 @@ MEDICAL_CONDITIONS = {
         confidence_threshold=70.0,
         
         pain_level=3,
-        urgency_perception="medium",
+        urgency_perception=UrgencyLevel.MEDIUM,
         communication_difficulty=0.1
     ),
     
@@ -274,7 +287,7 @@ MEDICAL_CONDITIONS = {
         confidence_threshold=75.0,
         
         pain_level=1,
-        urgency_perception="high",  # High anxiety despite not emergency
+        urgency_perception=UrgencyLevel.HIGH,    # High anxiety despite not emergency
         communication_difficulty=0.3  # Anxiety affects communication
     ),
     
@@ -312,7 +325,7 @@ MEDICAL_CONDITIONS = {
         confidence_threshold=80.0,
         
         pain_level=4,
-        urgency_perception="medium",
+        urgency_perception=UrgencyLevel.MEDIUM,
         communication_difficulty=0.2
     ),
     
@@ -346,7 +359,7 @@ MEDICAL_CONDITIONS = {
         confidence_threshold=70.0,
         
         pain_level=5,
-        urgency_perception="low",
+        urgency_perception=UrgencyLevel.LOW,
         communication_difficulty=0.1
     ),
     
@@ -380,7 +393,7 @@ MEDICAL_CONDITIONS = {
         confidence_threshold=75.0,
         
         pain_level=4,
-        urgency_perception="low",
+        urgency_perception=UrgencyLevel.LOW,
         communication_difficulty=0.1
     )
 }
@@ -633,3 +646,12 @@ def simulate_symptom_revelation(condition_id: str, turn_number: int, agent_quest
         "pain_level": condition.pain_level,
         "communication_difficulty": condition.communication_difficulty
     }
+
+def get_condition_symptoms_at_turn(condition_id: str, turn_number: int) -> str:
+    """Get symptoms that should be available at specific turn for a condition"""
+    condition = get_condition(condition_id)
+    if not condition:
+        return "Unknown condition symptoms"
+    
+    symptoms = condition.get_progressive_symptoms(turn_number)
+    return "; ".join(symptoms) if symptoms else "No specific symptoms for this turn"
