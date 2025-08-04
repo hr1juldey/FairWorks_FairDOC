@@ -9,9 +9,9 @@ from dataclasses import dataclass
 from enum import Enum
 import structlog
 
-from patient_profiles import get_patient_profile
-from medical_conditions import get_condition
-from conversation_orchestrator import ConversationResult, ConversationMetrics
+from src.tests.e2e.user_scenarios.patient_profiles import get_patient_profile
+from src.tests.e2e.user_scenarios.medical_conditions import get_condition
+from src.tests.e2e.user_scenarios.conversation_orchestrator import ConversationResult, ConversationMetrics
 
 logger = structlog.get_logger(__name__)
 

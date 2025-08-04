@@ -11,7 +11,7 @@ import structlog
 import statistics
 
 from src.tests.e2e.user_scenarios.patient_profiles import get_all_patient_ids, get_patient_profile
-from medical_conditions import get_condition, get_all_condition_ids
+from src.tests.e2e.user_scenarios.medical_conditions import get_condition, get_all_condition_ids
 from src.app2.services.dspy.medical_agent import MedicalTriageAgent
 from src.app2.services.dspy.question_generator import MedicalQuestionGenerator
 from src.app2.services.dspy.evaluation_optimizer import EvaluationOptimizer

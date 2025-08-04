@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 import structlog
 
-from patient_profiles import get_patient_profile, get_all_patient_ids
+from src.tests.e2e.user_scenarios.patient_profiles import get_patient_profile, get_all_patient_ids
 from medical_conditions import get_condition
 from dspy_patient_agent import create_patient_agent
 from src.app2.services.chat.chat_orchestrator import ChatOrchestrator
