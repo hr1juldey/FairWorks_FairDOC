@@ -14,8 +14,8 @@ import time
 import asyncio
 import structlog
 
-from patient_profiles import PatientProfile, get_patient_profile, EmotionalState
-from medical_conditions import MedicalCondition, get_condition, get_condition_symptoms_at_turn
+from src.tests.e2e.user_scenarios.patient_profiles import PatientProfile, get_patient_profile, EmotionalState
+from src.tests.e2e.user_scenarios.medical_conditions import MedicalCondition, get_condition, get_condition_symptoms_at_turn
 
 logger = structlog.get_logger(__name__)
 
@@ -313,22 +313,42 @@ class DSPyPatientAgent:
         
         condition_severity = self.medical_condition.severity.value
         
-        # Emergency conditions worsen quickly
+        # Emergency conditions worsen quickly with base severity consideration
         if self.medical_condition.expected_outcome.value == "emergency_route_to_doctor":
             if self.turn_count >= 3:
+                # Always severe for emergency conditions at turn 3+
                 return "severe"
             elif self.turn_count >= 2:
-                return "moderate_to_severe"
+                # Use condition severity or escalate to moderate_to_severe
+                if condition_severity in ["severe", "critical"]:
+                    return "severe"
+                else:
+                    return "moderate_to_severe"
             else:
-                return "moderate"
+                # Early turns: use base condition severity or default to moderate
+                if condition_severity in ["severe", "critical"]:
+                    return "moderate_to_severe"
+                elif condition_severity == "moderate":
+                    return "moderate"
+                else:
+                    return "mild_to_moderate"
         
-        # Routine conditions stay stable
+        # Routine conditions stay relatively stable but consider base severity
         elif self.medical_condition.expected_outcome.value == "routine_doctor_consultation":
-            return "moderate"
+            if condition_severity == "severe":
+                return "moderate_to_severe"
+            elif condition_severity == "moderate":
+                return "moderate"
+            else:
+                return "mild_to_moderate"
         
-        # Self-care conditions are mild
+        # Self-care conditions are generally mild but still consider base severity
         else:
-            return "mild"
+            if condition_severity in ["severe", "moderate"]:
+                return "mild_to_moderate"
+            else:
+                return "mild"
+
     
     def _should_end_conversation(self, response_result) -> bool:
         """Determine if conversation should end based on patient state"""

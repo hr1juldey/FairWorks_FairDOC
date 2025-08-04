@@ -6,6 +6,7 @@
         "./fairdoc_ai_triage/src/app2/services/",
         "./fairdoc_ai_triage/src/app2/utils/",
         "./fairdoc_ai_triage/src/app2/",
+        "./fairdoc_ai_triage/src/tests/e2e/user_scenarios",
         "./fairdoc_ai_triage/src/tests/",
         "./fairdoc_ai_triage/src/",
         "./fairdoc_ai_triage/",

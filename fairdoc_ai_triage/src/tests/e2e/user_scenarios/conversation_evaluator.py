@@ -12,8 +12,8 @@ import asyncio
 from datetime import datetime
 
 from src.app2.models.schemas.medical_triage import MedicalOutcome
-from patient_profiles import PatientProfile, get_patient_profile
-from medical_conditions import MedicalCondition, get_condition
+from src.tests.e2e.user_scenarios.patient_profiles import PatientProfile, get_patient_profile
+from src.tests.e2e.user_scenarios.medical_conditions import MedicalCondition, get_condition
 
 logger = structlog.get_logger(__name__)
 

@@ -16,11 +16,11 @@ from datetime import datetime
 # Add the project root to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
 
-from patient_profiles import get_all_patient_ids, get_patient_profile, PATIENT_PROFILES
-from medical_conditions import get_all_condition_ids, get_condition, MEDICAL_CONDITIONS
-from dspy_patient_agent import create_patient_agent
-from conversation_orchestrator import ConversationOrchestrator
-from dspy_module_evaluator import DSPyModuleEvaluator
+from src.tests.e2e.user_scenarios.patient_profiles import get_all_patient_ids, get_patient_profile, PATIENT_PROFILES
+from src.tests.e2e.user_scenarios.medical_conditions import get_all_condition_ids, get_condition, MEDICAL_CONDITIONS
+from src.tests.e2e.user_scenarios.dspy_patient_agent import create_patient_agent
+from src.tests.e2e.user_scenarios.conversation_orchestrator import ConversationOrchestrator
+from src.tests.e2e.user_scenarios.dspy_module_evaluator import DSPyModuleEvaluator
 
 from src.app2.core.config_v2 import settings_v2
 from src.app2.services.chat.chat_orchestrator import ChatOrchestrator
@@ -399,9 +399,9 @@ class TestDSPyConversationsE2E:
         
         # Test with different conversation scenarios
         test_scenarios = [
-            ("rajesh_mumbai", "routine"),    # Should have moderate score
-            ("amit_delhi", "emergency"),     # Should have high score if detected correctly  
-            ("priya_bangalore", "self_care") # Should have good score for self-care
+            ("rajesh_mumbai", "routine"),     # Should have moderate score
+            ("amit_delhi", "emergency"),      # Should have high score if detected correctly  
+            ("priya_bangalore", "self_care")  # Should have good score for self-care
         ]
         
         chat_orchestrator = ChatOrchestrator()
@@ -503,9 +503,9 @@ class TestDSPyConversationsE2E:
                    system_ready=final_report["system_ready"])
         
         # Print final report for human review
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print("DSPY MEDICAL TRIAGE E2E TEST REPORT")
-        print("="*80)
+        print("=" * 80)
         print(f"Overall Pass Rate: {overall_pass_rate:.1f}%")
         print(f"System Ready: {final_report['system_ready']}")
         print(f"Model: {settings_v2.DSPY_MODEL_NAME}")
@@ -516,7 +516,7 @@ class TestDSPyConversationsE2E:
         print("\nRecommendations:")
         for rec in final_report["recommendations"]:
             print(f"  • {rec}")
-        print("="*80)
+        print("=" * 80)
         
         return final_report
 

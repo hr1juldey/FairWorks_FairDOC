@@ -16,6 +16,8 @@ from medical_conditions import get_condition
 from dspy_patient_agent import create_patient_agent
 from src.app2.services.chat.chat_orchestrator import ChatOrchestrator
 from src.app2.models.schemas.multiturn_chat import MultiTurnChatRequest, StakeholderRole, ChatProvider
+from src.tests.e2e.user_scenarios.medical_conditions import MedicalCondition  # Add MedicalCondition here
+
 
 logger = structlog.get_logger(__name__)
 
@@ -101,7 +103,7 @@ class ConversationOrchestrator:
             
             # Patient initiates conversation
             patient_response = await patient_agent.respond_to_agent(
-                "Please tell me about your symptoms",
+                f"Please tell me about your symptoms. I understand you're experiencing: {initial_symptoms}",
                 "professional"
             )
             
@@ -120,15 +122,17 @@ class ConversationOrchestrator:
                            patient_id=patient_id, turn=turn_number)
                 
                 # Send patient message to medical agent
+                
                 chat_request = MultiTurnChatRequest(
-                    conversation_id=conversation_id,
-                    user_message=patient_response["patient_message"],
-                    stakeholder_role=StakeholderRole.PATIENT,
-                    stakeholder_id=patient_id,
-                    chat_provider=ChatProvider.API_DIRECT,
-                    patient_age=patient_profile.age,
-                    patient_gender=patient_profile.gender.value
-                )
+                conversation_id=conversation_id,
+                user_message=patient_response["patient_message"] + f" Initial symptoms: {initial_symptoms}",  # Use initial_symptoms in the chat request
+                stakeholder_role=StakeholderRole.PATIENT,
+                stakeholder_id=patient_id,
+                chat_provider=ChatProvider.API_DIRECT,
+                patient_age=patient_profile.age,
+                patient_gender=patient_profile.gender.value
+            )
+
                 
                 # Process through chat orchestrator (medical agent)
                 orchestration_result = await self.chat_orchestrator.process_conversation_turn(chat_request)
@@ -288,7 +292,7 @@ class ConversationOrchestrator:
     
     def _evaluate_emergency_detection(
         self, 
-        condition: "MedicalCondition",
+        condition: MedicalCondition,
         medical_response
     ) -> bool:
         """Evaluate if emergency was correctly detected"""
@@ -340,7 +344,7 @@ class ConversationOrchestrator:
     
     def _evaluate_conversation_quality(
         self,
-        condition: "MedicalCondition",
+        condition: MedicalCondition,
         metrics: ConversationMetrics,
         transcript: List[Dict[str, Any]]
     ) -> float:
@@ -404,7 +408,7 @@ class ConversationOrchestrator:
     
     def _determine_test_outcome(
         self,
-        condition: "MedicalCondition",
+        condition: MedicalCondition,
         metrics: ConversationMetrics,
         evaluation_score: float
     ) -> Tuple[bool, List[str]]:
@@ -564,4 +568,3 @@ class ConversationOrchestrator:
             recommendations.append("System performing well - continue monitoring")
         
         return recommendations
-    
