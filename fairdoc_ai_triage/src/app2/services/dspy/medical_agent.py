@@ -11,6 +11,7 @@ import structlog
 import asyncio
 from dataclasses import dataclass
 from src.app2.core.config_v2 import settings_v2   # added settings v2 
+from src.app2.services.dspy.question_generator import MedicalQuestionGenerator
 
 logger = structlog.get_logger(__name__)
 
@@ -122,7 +123,7 @@ class MedicalTriageAgent:
         
         # Initialize question generator
         if question_generator is None:
-            from src.app2.services.dspy.question_generator import MedicalQuestionGenerator
+            
             self.question_generator = MedicalQuestionGenerator(model_name=model_name)
         else:
             self.question_generator = question_generator
@@ -135,14 +136,18 @@ class MedicalTriageAgent:
 
     
     def _configure_dspy_with_thinking(self):
-        """Configure DSPy with Reasoning LLM via proper Ollama integration"""
+        """Configure DSPy with Reasoning LLM via robust Ollama integration"""
         try:
-            # Method 1: Direct Ollama integration (Recommended)
-            lm = dspy.LM(model=f'ollama/{self.model_name}')
+            # Method 1: Enhanced Ollama integration with error handling
+            lm = dspy.LM(
+                model=f'ollama/{self.model_name}',
+                api_base=getattr(settings_v2, 'OLLAMA_BASE_URL', 'http://localhost:11434')
+            )
             dspy.configure(lm=lm)
             logger.info("✅ DSPy configured with Reasoning LLM via Ollama")
             
         except Exception as e:
+
             # Method 2: Fallback to OpenAI-compatible endpoint
             try:
                 lm = dspy.OpenAI(
@@ -222,51 +227,83 @@ class MedicalTriageAgent:
     
     def _parse_dspy_response(self, medical_result, emergency_result) -> Dict[str, Any]:
         """Parse DSPy program results with proper conversation management"""
-        
-        # Extract red flags as list
+        # Extract red flags as list with safe attribute access
         red_flags = []
         if hasattr(medical_result, 'red_flags') and medical_result.red_flags:
             red_flags = [flag.strip() for flag in medical_result.red_flags.split(',') if flag.strip()]
+        
+        # Safety check for medical_result attributes
+        if not hasattr(medical_result, 'outcome_classification'):
+            logger.warning("Missing outcome_classification in medical_result")
+            medical_result.outcome_classification = "inconclusive"
+        if not hasattr(medical_result, 'confidence_score'):
+            logger.warning("Missing confidence_score in medical_result")
+            medical_result.confidence_score = 50
+
 
         # Add emergency red flags if detected
         if emergency_result.is_emergency and hasattr(emergency_result, 'critical_flags'):
             emergency_flags = [flag.strip() for flag in emergency_result.critical_flags.split(',') if flag.strip()]
             red_flags.extend(emergency_flags)
 
-        # Validate outcome classification
+        # Validate outcome classification with emergency bypass prevention
         outcome = medical_result.outcome_classification.lower()
-        if outcome not in [e.value.split('_')[0] for e in MedicalOutcome]:
-            outcome = "emergency" if emergency_result.is_emergency else "inconclusive"
+        valid_outcomes = [e.value.split('_')[0] for e in MedicalOutcome]
+        
+        # CRITICAL FIX: Prevent emergency detection bypass
+        if outcome not in valid_outcomes:
+            outcome = "inconclusive"  # Force inconclusive, don't auto-emergency
+        
+        # Override ONLY if emergency_result has high confidence
+        if emergency_result.is_emergency and hasattr(emergency_result, 'emergency_reasoning'):
+            reasoning_length = len(str(emergency_result.emergency_reasoning))
+            if reasoning_length > 50:  # Only if detailed reasoning provided
+                outcome = "emergency"
 
-        # Ensure confidence bounds
+
+        # Ensure confidence bounds with overflow protection
         try:
-            confidence = int(medical_result.confidence_score)
-            # Boost confidence if emergency detected
-            if emergency_result.is_emergency and confidence < 80:
-                confidence = max(confidence, 85)
+            base_confidence = int(medical_result.confidence_score)
+            # CRITICAL FIX: Prevent confidence overflow
+            if emergency_result.is_emergency and base_confidence < 80:
+                confidence = min(85, base_confidence + 15)  # Cap boost at 85
+            else:
+                confidence = base_confidence
+            # Double-check bounds to prevent overflow
             confidence = max(0, min(100, confidence))
         except (ValueError, AttributeError):
             confidence = 85 if emergency_result.is_emergency else 50
 
-        # ✅ CRITICAL FIX: Conversation length management
+
+        # ✅ ENHANCED CRITICAL FIX: Conversation completion logic
         should_complete = False
+        max_turns = getattr(settings_v2, 'FAIRDOC_V2_MAX_CONVERSATION_TURNS', 20)
         
-        # Only complete conversation if:
-        # 1. Emergency detected (immediate escalation)
-        # 2. High confidence conclusive outcome after 8+ turns
-        # 3. Reached maximum turns (20)
-        if emergency_result.is_emergency:
+        # 1. Emergency: Complete immediately with high confidence reasoning
+        if (emergency_result.is_emergency and 
+            hasattr(emergency_result, 'emergency_reasoning') and
+            len(str(emergency_result.emergency_reasoning)) > 30):
             should_complete = True
             outcome = "emergency"
-        elif self.turn_count >= 20:
+            
+        # 2. Maximum turns reached: Force completion
+        elif self.turn_count >= max_turns:
             should_complete = True
-        elif self.turn_count >= 8 and confidence >= 90 and outcome in ["routine", "self_care"]:
+            if outcome == "inconclusive" and confidence >= 60:
+                outcome = "routine"  # Default to routine if unclear
+                
+        # 3. High confidence non-emergency after sufficient turns
+        elif (self.turn_count >= 6 and confidence >= 85 and 
+              outcome in ["routine", "self_care"]):
             should_complete = True
+            
+        # 4. Continue conversation for inconclusive cases
         else:
-            # Force inconclusive to continue conversation
-            if outcome != "emergency":
+            if outcome not in ["emergency", "routine", "self_care"]:
                 outcome = "inconclusive"
             should_complete = False
+
+
 
         return {
             "outcome": outcome,
@@ -298,17 +335,27 @@ class MedicalTriageAgent:
         history.messages.append(turn_data)
     
     def _create_error_response(self, error_msg: str) -> Dict[str, Any]:
-        """Create standardized error response"""
+        """Create standardized error response with safety checks"""
+        # Safety fallback questions based on error type
+        if "MedicalCondition" in error_msg and "name" in error_msg:
+            fallback_question = "Could you describe your main symptoms in more detail?"
+        elif "confidence" in error_msg or "score" in error_msg:
+            fallback_question = "On a scale of 1-10, how severe are your symptoms?"
+        else:
+            fallback_question = "I'm sorry, I encountered an error. Could you please describe your symptoms again?"
+            
         return {
             "outcome": "inconclusive",
-            "confidence": 0,
-            "next_question": "I'm sorry, I encountered an error. Could you please describe your symptoms again?",
-            "reasoning": f"Error processing request: {error_msg}",
+            "confidence": 30,  # Conservative confidence for errors
+            "next_question": fallback_question,
+            "reasoning": f"System error handled safely: {error_msg[:100]}",
             "thinking": "",
             "red_flags": [],
             "is_complete": False,
-            "emergency_detected": False
+            "emergency_detected": False,
+            "error_handled": True
         }
+
     
     def reset_conversation(self):
         """Reset conversation state for new patient"""

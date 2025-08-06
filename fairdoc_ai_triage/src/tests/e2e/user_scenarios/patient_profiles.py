@@ -115,7 +115,7 @@ class PatientProfile:
             # MERGE: Add persona typing patterns to base style
             enhanced_style = {
                 **base_style,  # Keep all existing fields
-                "pause_patterns": typing_patterns["pause_range"],  # ADD missing field that tests expect
+                "pause_patterns": typing_patterns["pause_range"],  # ✅ Should be added here
                 "typo_rate": typing_patterns["typo_rate"],
                 "repeat_rate": typing_patterns["repeat_rate"], 
                 "abbreviation_use": typing_patterns["abbreviation_use"]
