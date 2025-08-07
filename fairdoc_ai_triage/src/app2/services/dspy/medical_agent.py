@@ -11,6 +11,7 @@ import structlog
 import asyncio
 from dataclasses import dataclass
 from src.app2.core.config_v2 import settings_v2   # added settings v2 
+from src.app2.core.dspy_config_v2 import ensure_dspy_configured  # central dspy config
 from src.app2.services.dspy.question_generator import MedicalQuestionGenerator
 
 logger = structlog.get_logger(__name__)
@@ -116,8 +117,13 @@ class MedicalTriageAgent:
     def __init__(self, model_name: str = None, question_generator=None):
         """Initialize agent with DSPy program architecture"""
         self.model_name = model_name or settings_v2.DSPY_MODEL_NAME
-        self._configure_dspy_with_thinking()
+        # # OLD: Individual DSPy configuration
+        # self._configure_dspy_with_thinking()
+        # NEW: Ensure DSPy is configured centrally (singleton pattern)
         
+        if not ensure_dspy_configured(self.model_name):
+            raise RuntimeError("Failed to configure DSPy")
+
         # Use DSPy program instead of single signature
         self.triage_program = MedicalTriageProgram()
         
@@ -137,33 +143,39 @@ class MedicalTriageAgent:
     
     def _configure_dspy_with_thinking(self):
         """Configure DSPy with Reasoning LLM via robust Ollama integration"""
-        try:
-            # Method 1: Enhanced Ollama integration with error handling
-            lm = dspy.LM(
-                model=f'ollama/{self.model_name}',
-                api_base=getattr(settings_v2, 'OLLAMA_BASE_URL', 'http://localhost:11434')
-            )
-            dspy.configure(lm=lm)
-            logger.info("✅ DSPy configured with Reasoning LLM via Ollama")
+        # try:
+        #     # Method 1: Enhanced Ollama integration with error handling
+        #     lm = dspy.LM(
+        #         model=f'ollama/{self.model_name}',
+        #         api_base=getattr(settings_v2, 'OLLAMA_BASE_URL', 'http://localhost:11434')
+        #     )
+        #     dspy.configure(lm=lm)
+        #     logger.info("✅ DSPy configured with Reasoning LLM via Ollama")
             
-        except Exception as e:
+        # except Exception as e:
 
-            # Method 2: Fallback to OpenAI-compatible endpoint
-            try:
-                lm = dspy.OpenAI(
-                    api_base='http://localhost:11434/v1/',
-                    api_key='ollama',  # Required but not validated
-                    model=self.model_name,
-                    model_type='chat'
-                )
-                dspy.configure(lm=lm)
-                logger.info("✅ DSPy configured with Reasoning LLM via OpenAI-compatible API")
+        #     # Method 2: Fallback to OpenAI-compatible endpoint
+        #     try:
+        #         lm = dspy.OpenAI(
+        #             api_base='http://localhost:11434/v1/',
+        #             api_key='ollama',  # Required but not validated
+        #             model=self.model_name,
+        #             model_type='chat'
+        #         )
+        #         dspy.configure(lm=lm)
+        #         logger.info("✅ DSPy configured with Reasoning LLM via OpenAI-compatible API")
                 
-            except Exception as fallback_error:
-                logger.error("❌ Both Ollama methods failed", 
-                            primary_error=str(e),
-                            fallback_error=str(fallback_error))
-                raise
+        #     except Exception as fallback_error:
+        #         logger.error("❌ Both Ollama methods failed", 
+        #                     primary_error=str(e),
+        #                     fallback_error=str(fallback_error))
+        #         raise
+        success = ensure_dspy_configured(self.model_name)
+        if not success:
+            logger.error("❌ Failed to configure DSPy via centralized provider")
+            raise RuntimeError("DSPy configuration failed")
+        
+        logger.info(f"✅ DSPy configured via centralized provider: {self.model_name}")
 
     async def process_turn(
         self,

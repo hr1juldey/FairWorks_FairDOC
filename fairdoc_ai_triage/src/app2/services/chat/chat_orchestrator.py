@@ -26,8 +26,10 @@ from src.app2.models.schemas.medical_triage import (
 from src.app2.services.dspy.medical_agent import MedicalTriageAgent
 from src.app2.services.context.redis_queue import ConversationQueue
 from src.app2.services.context.nice_lookup import NICELookupService
+from src.app2.services.dspy.question_generator import MedicalQuestionGenerator
 from src.app2.services.chat.stakeholder_router import StakeholderRouter
 from src.app2.core.config_v2 import settings_v2
+from src.app2.core.dspy_config_v2 import ensure_dspy_configured
 
 logger = structlog.get_logger(__name__)
 
@@ -41,14 +43,21 @@ class ChatOrchestrator:
     
     def __init__(self, question_generator=None):
         # Initialize service dependencies
-        from src.app2.services.dspy.question_generator import MedicalQuestionGenerator
-        if question_generator is None:
-            question_generator = MedicalQuestionGenerator(model_name=settings_v2.FAIRDOC_V2_DSPy_MODEL)
         
+        # NEW: Ensure DSPy is configured centrally before creating any DSPy agents
+        
+        
+        model_name = settings_v2.FAIRDOC_V2_DSPy_MODEL
+        if not ensure_dspy_configured(model_name):
+            raise RuntimeError("Failed to configure DSPy for chat orchestrator")
+        
+        if question_generator is None:
+            question_generator = MedicalQuestionGenerator(model_name=model_name)
         self.medical_agent = MedicalTriageAgent(
-            model_name=settings_v2.FAIRDOC_V2_DSPy_MODEL,
+            model_name=model_name,
             question_generator=question_generator
-        )    
+        )
+   
         self.conversation_queue = ConversationQueue()
         self.nice_lookup = NICELookupService()
         self.stakeholder_router = StakeholderRouter()

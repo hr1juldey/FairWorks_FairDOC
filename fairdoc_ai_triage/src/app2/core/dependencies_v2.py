@@ -1,23 +1,22 @@
 """
 V2 FastAPI Dependencies - Production-Grade Dependency Injection
 
-Provides database sessions, Redis connections, and service initialization
-for the Fairdoc AI V2 medical triage system.
-
-Follows FastAPI dependency injection patterns with proper error handling,
-connection pooling, and graceful degradation.
+Provides database sessions, Redis connections, DSPy configuration, and service initialization
+for the Fairdoc AI V2 medical triage system with centralized LLM management.
 """
 
 from typing import AsyncGenerator, Optional
 from contextlib import asynccontextmanager
 import structlog
 from fastapi import Depends, HTTPException, status
+
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from redis.asyncio import Redis, ConnectionPool
 import asyncio
 
 from src.app2.core.config_v2 import settings_v2
+from src.app2.core.dspy_config_v2 import get_llm_provider, ensure_dspy_configured  # Import DSPy config
 from src.app2.services.dspy.medical_agent import MedicalTriageAgent
 from src.app2.services.dspy.question_generator import MedicalQuestionGenerator
 from src.app2.services.context.nice_lookup import NICELookupService
@@ -89,7 +88,6 @@ _redis_client: Optional[Redis] = None
 async def init_redis_pool():
     """Initialize Redis connection pool on application startup."""
     global _redis_pool, _redis_client
-    
     try:
         _redis_pool = ConnectionPool.from_url(
             settings_v2.REDIS_URL,
@@ -97,17 +95,13 @@ async def init_redis_pool():
             max_connections=50,
             retry_on_timeout=True,
         )
-        
         _redis_client = Redis(connection_pool=_redis_pool)
-        
         # Test connection
         await _redis_client.ping()
         logger.info("✅ Redis connection pool initialized")
-        
     except Exception as e:
         logger.error("❌ Failed to initialize Redis", error=str(e))
         raise
-
 
 async def get_redis_client() -> Redis:
     """
@@ -125,13 +119,12 @@ async def get_redis_client() -> Redis:
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Redis service unavailable"
         )
-    
+
     try:
         # Test connection health
         await _redis_client.ping()
         logger.debug("📱 Redis client provided")
         return _redis_client
-        
     except Exception as e:
         logger.error("❌ Redis connection failed", error=str(e))
         raise HTTPException(
@@ -140,11 +133,47 @@ async def get_redis_client() -> Redis:
         ) from e
 
 # ---------------------------------------------------------------------------
+# DSPy Configuration Dependencies  
+# ---------------------------------------------------------------------------
+
+async def init_dspy_configuration():
+    """Initialize DSPy configuration with centralized LLM management."""
+    try:
+        logger.info("🤖 Initializing DSPy configuration...")
+        
+        # Ensure DSPy is configured with the default model
+        success = ensure_dspy_configured()
+        if not success:
+            raise RuntimeError("Failed to configure DSPy")
+            
+        # Get and log available models
+        llm_provider = get_llm_provider()
+        available_models = llm_provider.list_models()
+        
+        logger.info(f"✅ DSPy configuration initialized with {len(available_models)} models")
+        logger.info(f"Available models: {list(available_models.keys())}")
+        logger.info(f"Default model: {llm_provider._default_model}")
+        
+    except Exception as e:
+        logger.error("❌ DSPy configuration initialization failed", error=str(e))
+        raise RuntimeError(f"DSPy configuration initialization failed: {str(e)}") from e
+
+def get_dspy_provider():
+    """Get the DSPy LLM provider instance."""
+    try:
+        return get_llm_provider()
+    except Exception as e:
+        logger.error("❌ Failed to get DSPy provider", error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="DSPy provider unavailable"
+        ) from e
+
+# ---------------------------------------------------------------------------
 # Service Dependencies (Singletons)
 # ---------------------------------------------------------------------------
 
 # Global service instances (initialized once)
-
 _medical_agent: Optional[MedicalTriageAgent] = None
 _question_generator: Optional[MedicalQuestionGenerator] = None
 _nice_lookup: Optional[NICELookupService] = None
@@ -154,8 +183,8 @@ _raven_bridge: Optional[RavenBridge] = None
 
 async def init_services():
     """Initialize all V2 services on application startup."""
-    global _medical_agent, _nice_lookup, _conversation_queue, _stakeholder_router, _raven_bridge
-    
+    global _medical_agent, _nice_lookup, _conversation_queue, _stakeholder_router, _raven_bridge, _question_generator
+
     try:
         logger.info("🚀 Initializing V2 services...")
         
@@ -163,34 +192,41 @@ async def init_services():
         logger.info("🗄️ Initializing database with seed data...")
         await initialize_database_on_startup()
         logger.info("✅ Database initialization completed")
+
+        # NEW: Initialize DSPy configuration BEFORE creating agents
         
-        # Initialize DSPy Medical Agent
-        _medical_agent = MedicalTriageAgent(model_name=settings_v2.FAIRDOC_V2_DSPy_MODEL)
+        model_name = settings_v2.FAIRDOC_V2_DSPy_MODEL
+        if not ensure_dspy_configured(model_name):
+            raise RuntimeError("Failed to configure DSPy during service initialization")
+        logger.info("🤖 DSPy configuration initialized")
+
+        # Initialize DSPy Medical Agent (now uses centralized config)
+        _medical_agent = MedicalTriageAgent(model_name=model_name)
         logger.info("🩺 Medical agent initialized")
-        
-        # Initialize Question Generator
-        _question_generator = MedicalQuestionGenerator(model_name=settings_v2.FAIRDOC_V2_DSPy_MODEL)
+
+        # Initialize Question Generator (now uses centralized config)
+        _question_generator = MedicalQuestionGenerator(model_name=model_name)
         logger.info("❓ Question generator initialized")
-        
+
         # Initialize NICE Lookup Service
         _nice_lookup = NICELookupService()
         logger.info("📋 NICE lookup service initialized")
-        
+
         # Initialize Redis-based Conversation Queue
         _conversation_queue = ConversationQueue()
         await _conversation_queue.initialize()
         logger.info("💬 Conversation queue initialized")
-        
+
         # Initialize Stakeholder Router
         _stakeholder_router = StakeholderRouter()
         logger.info("🔄 Stakeholder router initialized")
-        
+
         # Initialize Raven Bridge
         _raven_bridge = RavenBridge()
         logger.info("📤 Raven bridge initialized")
-        
+
         logger.info("✅ All V2 services initialized successfully")
-        
+
     except Exception as e:
         logger.error("❌ Service initialization failed", error=str(e))
         logger.error("💥 Failed component during V2 service initialization")
@@ -259,24 +295,24 @@ async def get_raven_bridge() -> RavenBridge:
 async def cleanup_connections():
     """Clean up all connections on application shutdown."""
     logger.info("🧹 Cleaning up V2 connections...")
-    
+
     try:
         # Close Raven bridge
         if _raven_bridge:
             await _raven_bridge.close()
             logger.info("📤 Raven bridge closed")
-        
+
         # Close Redis connections
         if _redis_client:
             await _redis_client.close()
             logger.info("📱 Redis client closed")
-        
+
         # Close database engine
         await _async_engine.dispose()
         logger.info("📊 Database engine disposed")
-        
+
         logger.info("✅ All V2 connections cleaned up")
-        
+
     except Exception as e:
         logger.error("❌ Error during cleanup", error=str(e))
 
@@ -294,18 +330,19 @@ async def check_system_health() -> dict:
     health_status = {
         "database": "unknown",
         "redis": "unknown", 
+        "dspy_config": "unknown",
         "medical_agent": "unknown",
         "services": "unknown"
     }
-    
+
     # Check database
     try:
         async with AsyncSessionLocal() as session:
             await session.execute("SELECT 1")
-            health_status["database"] = "healthy"
+        health_status["database"] = "healthy"
     except Exception:
         health_status["database"] = "unhealthy"
-    
+
     # Check Redis
     try:
         if _redis_client:
@@ -315,7 +352,17 @@ async def check_system_health() -> dict:
             health_status["redis"] = "not_initialized"
     except Exception:
         health_status["redis"] = "unhealthy"
-    
+
+    # Check DSPy configuration
+    try:
+        dspy_provider = get_llm_provider()
+        if dspy_provider and dspy_provider.list_models():
+            health_status["dspy_config"] = "healthy"
+        else:
+            health_status["dspy_config"] = "not_initialized"
+    except Exception:
+        health_status["dspy_config"] = "unhealthy"
+
     # Check medical agent
     try:
         if _medical_agent:
@@ -324,7 +371,7 @@ async def check_system_health() -> dict:
             health_status["medical_agent"] = "not_initialized"
     except Exception:
         health_status["medical_agent"] = "unhealthy"
-    
+
     # Check services
     services_healthy = all([
         _nice_lookup is not None,
@@ -332,5 +379,5 @@ async def check_system_health() -> dict:
         _stakeholder_router is not None
     ])
     health_status["services"] = "healthy" if services_healthy else "unhealthy"
-    
+
     return health_status

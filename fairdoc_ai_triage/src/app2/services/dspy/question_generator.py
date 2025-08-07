@@ -18,6 +18,7 @@ except ModuleNotFoundError:  # pragma: no cover
 
 import dspy
 from src.app2.core.config_v2 import settings_v2
+from src.app2.core.dspy_config_v2 import ensure_dspy_configured  #
 
 logger = structlog.get_logger(__name__)
 
@@ -612,24 +613,43 @@ class MedicalQuestionGenerator:
     """Production DSPy medical question generator with reasoning."""
     def __init__(self, model_name: str | None = None):
         self.model_name = model_name or settings_v2.DSPY_MODEL_NAME
+        
+        # # OLD: Individual DSPy configuration  
         self._configure_dspy_with_thinking()
+        # NEW: Ensure DSPy is configured centrally
+    
+        if not ensure_dspy_configured(self.model_name):
+            raise RuntimeError("Failed to configure DSPy")
         
         self.question_program = QuestionProgram()
         logger.info("❓ Medical Question Generator initialised", model=self.model_name)
 
     # Internal DSPy configuration (unchanged)
     def _configure_dspy_with_thinking(self):
-        try:
-            lm = dspy.LM(f"ollama_chat/{self.model_name}", api_base="http://localhost:11434")
-            dspy.configure(lm=lm)
-        except Exception:
-            lm = dspy.OpenAI(
-                api_base="http://localhost:11434/v1/",
-                api_key="ollama",
-                model=self.model_name,
-                model_type="chat",
-            )
-            dspy.configure(lm=lm)
+        """Configure DSPy using centralized LLM provider"""
+        # # OLD: Individual DSPy configuration - REPLACED WITH CENTRALIZED CONFIG
+        # try:
+        #     lm = dspy.LM(f"ollama_chat/{self.model_name}", api_base="http://localhost:11434")
+        #     dspy.configure(lm=lm)
+        # except Exception:
+        #     lm = dspy.OpenAI(
+        #         api_base="http://localhost:11434/v1/",
+        #         api_key="ollama",
+        #         model=self.model_name,
+        #         model_type="chat",
+        #     )
+        #     dspy.configure(lm=lm)
+        
+        # NEW: Use centralized DSPy configuration
+        
+        
+        success = ensure_dspy_configured(self.model_name)
+        if not success:
+            logger.error("❌ Failed to configure DSPy via centralized provider")
+            raise RuntimeError("DSPy configuration failed")
+        
+        logger.info(f"✅ Question Generator DSPy configured via centralized provider: {self.model_name}")
+
 
     # ------------------------------------------------------------------ #
     #                       Public Suggest-Questions API                 #

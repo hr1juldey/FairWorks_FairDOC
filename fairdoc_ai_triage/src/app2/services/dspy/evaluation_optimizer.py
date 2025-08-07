@@ -21,6 +21,7 @@ from src.app2.services.dspy.medical_agent import MedicalTriageAgent
 from src.app2.core.database_v2 import get_async_session
 
 from src.app2.core.config_v2 import settings_v2
+from src.app2.core.dspy_config_v2 import ensure_dspy_configured
 
 logger = structlog.get_logger(__name__)
 
@@ -179,10 +180,18 @@ class EvaluationOptimizer:
     
     def __init__(self, model_name: str = None):
         model_name = model_name or settings_v2.DSPY_MODEL_NAME
+        
+        # NEW: Ensure DSPy is configured centrally before creating agents
+        
+        if not ensure_dspy_configured(model_name):
+            raise RuntimeError("Failed to configure DSPy for evaluation optimizer")
+        
         self.medical_agent = MedicalTriageAgent(model_name=model_name)
         self.evaluation_program = EvaluationProgram(self.medical_agent)
         self.optimization_program = OptimizationProgram(self.medical_agent)
         self.model_name = model_name
+        logger.info("📊 DSPy Evaluation Optimizer initialized", model=model_name)
+
         
         logger.info("📊 DSPy Evaluation Optimizer initialized", model=model_name)
     
