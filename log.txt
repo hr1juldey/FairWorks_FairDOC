@@ -1,335 +1,386 @@
-(fairdoc-ai-triage) riju279@dream-machine:~/Documents/Code/Fairdoc/FairWorks_FairDOC/fairdoc_ai_triage$ uv run pytest src/tests/e2e/user_scenarios/test_conversations_e2e.py   -v   --tb=long   --cov=src/app2   --cov-report=html  --log-cli-level=warning  --capture=tee-sys  --continue-on-collection-errors   --durations=3000
-============================================================================================================================================= test session starts ==============================================================================================================================================
+(fairdoc-ai-triage) riju279@dream-machine:~/Documents/Code/Fairdoc/FairWorks_FairDOC/fairdoc_ai_triage$ uv run pytest src/tests/e2e/user_scenarios/test_conversations_e2e.py  -v  --tb=long  --cov=src/app2  --cov-report=html --log-cli-level=warning  --capture=tee-sys --continue-on-collection-errors --durations=3000
+===================================================================================== test session starts =====================================================================================
 platform linux -- Python 3.11.13, pytest-8.4.1, pluggy-1.6.0 -- /home/riju279/Documents/Code/Fairdoc/FairWorks_FairDOC/fairdoc_ai_triage/.venv/bin/python3
 cachedir: .pytest_cache
 rootdir: /home/riju279/Documents/Code/Fairdoc/FairWorks_FairDOC/fairdoc_ai_triage
 configfile: pyproject.toml
 plugins: mock-3.14.1, asyncio-1.1.0, Faker-37.4.2, anyio-4.9.0, cov-6.2.1, xdist-3.8.0, langsmith-0.4.8
 asyncio: mode=Mode.AUTO, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
-collecting ... 2025-08-08 21:20:25 [info     ] Found 4 models from environment
-2025-08-08 21:20:25 [debug    ] Discovered models from ollama: ['gpt-oss:20b', 'gpt-oss', 'mistral:7b', 'mistral', 'deepseek-r1:8b', 'deepseek-r1', 'gemma3n:e4b', 'gemma3n']
-2025-08-08 21:20:25 [info     ] Found 8 models from ollama
-2025-08-08 21:20:25 [debug    ] ✅ Created LLM instance: deepseek-r1
-2025-08-08 21:20:25 [info     ] ✅ DSPy configured with default: deepseek-r1
-2025-08-08 21:20:25 [info     ] ✅ DSPy Provider initialized with 8 models
-2025-08-08 21:20:25 [info     ] Default model: deepseek-r1
-2025-08-08 21:20:25 [debug    ] ✅ Created LLM instance: deepseek-r1:8b
-2025-08-08 21:20:25 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:20:25 [info     ] ✅ Question Generator DSPy configured via centralized provider: deepseek-r1:8b
-2025-08-08 21:20:25 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:20:25 [info     ] ✅ Few-shot optimizer configured with medical examples
-2025-08-08 21:20:25 [info     ] 📊 Emergency-pattern DataFrame prepared patterns=102
-2025-08-08 21:20:25 [info     ] ❓ Medical Question Generator initialised model=deepseek-r1:8b
-2025-08-08 21:20:26 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:20:26 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:20:26 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:20:26 [info     ] ✅ Question Generator DSPy configured via centralized provider: deepseek-r1:8b
-2025-08-08 21:20:26 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:20:26 [info     ] ✅ Few-shot optimizer configured with medical examples
-2025-08-08 21:20:26 [info     ] 📊 Emergency-pattern DataFrame prepared patterns=102
-2025-08-08 21:20:26 [info     ] ❓ Medical Question Generator initialised model=deepseek-r1:8b
-2025-08-08 21:20:26 [info     ] 🩺 Medical Triage Agent initialized model=deepseek-r1:8b
-2025-08-08 21:20:26 [info     ] 📊 DSPy Evaluation Optimizer initialized model=deepseek-r1:8b
-2025-08-08 21:20:26 [info     ] 📊 DSPy Evaluation Optimizer initialized model=deepseek-r1:8b
+collecting ... 2025-08-08 23:56:46 [info     ] Found 4 models from environment
+2025-08-08 23:56:46 [debug    ] Discovered models from ollama: ['gpt-oss:20b', 'gpt-oss', 'mistral:7b', 'mistral', 'deepseek-r1:8b', 'deepseek-r1', 'gemma3n:e4b', 'gemma3n']
+2025-08-08 23:56:46 [info     ] Found 8 models from ollama
+2025-08-08 23:56:46 [debug    ] ✅ Created LLM instance: mistral
+2025-08-08 23:56:46 [info     ] ✅ DSPy configured with default: mistral
+2025-08-08 23:56:46 [info     ] ✅ DSPy Provider initialized with 8 models
+2025-08-08 23:56:46 [info     ] Default model: mistral
+2025-08-08 23:56:46 [debug    ] ✅ Created LLM instance: mistral:7b
+2025-08-08 23:56:46 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:56:46 [info     ] ✅ Question Generator DSPy configured via centralized provider: mistral:7b
+2025-08-08 23:56:46 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:56:46 [info     ] ✅ Few-shot optimizer configured with medical examples
+2025-08-08 23:56:46 [info     ] 📊 Emergency-pattern DataFrame prepared patterns=102
+2025-08-08 23:56:46 [info     ] ❓ Medical Question Generator initialised model=mistral:7b
+2025-08-08 23:56:46 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:56:46 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:56:46 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:56:46 [info     ] ✅ Question Generator DSPy configured via centralized provider: mistral:7b
+2025-08-08 23:56:46 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:56:46 [info     ] ✅ Few-shot optimizer configured with medical examples
+2025-08-08 23:56:46 [info     ] 📊 Emergency-pattern DataFrame prepared patterns=102
+2025-08-08 23:56:46 [info     ] ❓ Medical Question Generator initialised model=mistral:7b
+2025-08-08 23:56:46 [info     ] 🩺 Medical Triage Agent initialized model=mistral:7b
+2025-08-08 23:56:46 [info     ] 📊 DSPy Evaluation Optimizer initialized model=mistral:7b
+2025-08-08 23:56:46 [info     ] 📊 DSPy Evaluation Optimizer initialized model=mistral:7b
 collected 9 items                                                                                                                                                                                                                                                                                              
 
-src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_all_patient_profiles_valid 2025-08-08 21:20:26 [info     ] 🤖 Initializing shared DSPy configuration for test session...
-2025-08-08 21:20:26 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:20:26 [info     ] ✅ Shared DSPy configured. Default model: deepseek-r1
-2025-08-08 21:20:26 [info     ] 🧪 Testing patient profile validity
-2025-08-08 21:20:26 [info     ] ✅ All patient profiles valid   cities=8 conditions=8 patients=8
+src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_all_patient_profiles_valid 2025-08-08 23:56:47 [info     ] 🤖 Initializing shared DSPy configuration for test session...
+2025-08-08 23:56:47 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:56:47 [info     ] ✅ Shared DSPy configured. Default model: mistral
+2025-08-08 23:56:47 [info     ] 🔥 Pre-warming LLM models for test session...
+2025-08-08 23:56:47 [info     ] 🔥 Starting LLM warmup          method=rest_api model=mistral:7b
+2025-08-08 23:56:47 [info     ] 🌐 Warming up via REST API
+2025-08-08 23:56:47 [info     ] ✅ LLM warmup completed successfully method=rest_api model=mistral:7b time_seconds=0.26418256759643555
+2025-08-08 23:56:47 [info     ] ✅ Model 'mistral:7b' warmed up successfully in 0.26s
+2025-08-08 23:56:47 [info     ] 🎯 1/1 models warmed up successfully
+2025-08-08 23:56:47 [info     ] 🧪 Testing patient profile validity
+2025-08-08 23:56:47 [info     ] ✅ All patient profiles valid   cities=8 conditions=8 patients=8
 PASSED                                                                                                                                                                                 [ 11%]
-src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_medical_conditions_comprehensive 2025-08-08 21:20:26 [info     ] 🧪 Testing medical condition coverage
-2025-08-08 21:20:26 [info     ] ✅ Medical conditions comprehensive conditions=8 outcomes=3 severities=4
+src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_medical_conditions_comprehensive 2025-08-08 23:56:47 [info     ] 🧪 Testing medical condition coverage
+2025-08-08 23:56:47 [info     ] ✅ Medical conditions comprehensive conditions=8 outcomes=3 severities=4
 PASSED                                                                                                                                                                           [ 22%]
-src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_dspy_patient_agent_creation 2025-08-08 21:20:26 [info     ] 🧪 Testing DSPy patient agent creation
-2025-08-08 21:20:26 [info     ] 🤖 DSPy Patient Agent initialized condition='ST-Elevation Myocardial Infarction' emotion=anxious patient_id=mumbai_tech_male
-2025-08-08 21:20:47 [info     ] 💬 Patient response generated   emotion=worried patient_id=mumbai_tech_male turn=1 urgency=high
-2025-08-08 21:20:47 [info     ] 🤖 DSPy Patient Agent initialized condition='Breast Lump Evaluation' emotion=worried patient_id=bangalore_professional
-2025-08-08 21:21:15 [info     ] 💬 Patient response generated   emotion=worried patient_id=bangalore_professional turn=1 urgency=medium-high
-2025-08-08 21:21:15 [info     ] 🤖 DSPy Patient Agent initialized condition='Postpartum Depression' emotion=sad patient_id=delhi_housewife
-2025-08-08 21:21:44 [info     ] 💬 Patient response generated   emotion=sad patient_id=delhi_housewife turn=1 urgency=medium
-2025-08-08 21:21:44 [info     ] ✅ DSPy patient agents working  tested=3
+src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_dspy_patient_agent_creation 2025-08-08 23:56:47 [info     ] 🧪 Testing DSPy patient agent creation
+2025-08-08 23:56:47 [info     ] 🤖 DSPy Patient Agent initialized condition='ST-Elevation Myocardial Infarction' emotion=anxious patient_id=mumbai_tech_male
+2025-08-08 23:57:02 [info     ] 💬 Patient response generated   emotion="The patient's emotional state is currently very anxious." patient_id=mumbai_tech_male turn=1 urgency="The urgency level is critical due to the nature of Arjun's medical condition."
+2025-08-08 23:57:02 [info     ] 🤖 DSPy Patient Agent initialized condition='Breast Lump Evaluation' emotion=worried patient_id=bangalore_professional
+2025-08-08 23:57:10 [info     ] 💬 Patient response generated   emotion=anxious patient_id=bangalore_professional turn=1 urgency=high
+2025-08-08 23:57:10 [info     ] 🤖 DSPy Patient Agent initialized condition='Postpartum Depression' emotion=sad patient_id=delhi_housewife
+2025-08-08 23:57:20 [info     ] 💬 Patient response generated   emotion='The emotional state remains sad due to ongoing symptoms.' patient_id=delhi_housewife turn=1 urgency=medium
+2025-08-08 23:57:20 [info     ] ✅ DSPy patient agents working  tested=3
 PASSED                                                                                                                                                                                [ 33%]
-src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_dspy_module_individual_evaluation 2025-08-08 21:21:44 [info     ] 🧪 Testing individual DSPy modules
-2025-08-08 21:21:44 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] ✅ Question Generator DSPy configured via centralized provider: deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] ✅ Few-shot optimizer configured with medical examples
-2025-08-08 21:21:44 [info     ] 📊 Emergency-pattern DataFrame prepared patterns=102
-2025-08-08 21:21:44 [info     ] ❓ Medical Question Generator initialised model=deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] 🩺 Medical Triage Agent initialized model=deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] ✅ Question Generator DSPy configured via centralized provider: deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] ✅ Few-shot optimizer configured with medical examples
-2025-08-08 21:21:44 [info     ] 📊 Emergency-pattern DataFrame prepared patterns=102
-2025-08-08 21:21:44 [info     ] ❓ Medical Question Generator initialised model=deepseek-r1:8b
-2025-08-08 21:21:44 [debug    ] NICE indices built             categories=12 symptoms=159
-2025-08-08 21:21:44 [info     ] Enhanced NICE Lookup Service initialized protocol_count=120
-2025-08-08 21:21:44 [info     ] Legacy NICE Lookup Service initialized with enhanced backend
-2025-08-08 21:21:44 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] ✅ Question Generator DSPy configured via centralized provider: deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] ✅ Few-shot optimizer configured with medical examples
-2025-08-08 21:21:44 [info     ] 📊 Emergency-pattern DataFrame prepared patterns=102
-2025-08-08 21:21:44 [info     ] ❓ Medical Question Generator initialised model=deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] 🩺 Medical Triage Agent initialized model=deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] 📊 DSPy Evaluation Optimizer initialized model=deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] 📊 DSPy Evaluation Optimizer initialized model=deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] ✅ DSPy Module Evaluator using centralized configuration
-2025-08-08 21:21:44 [info     ] 🧪 Testing DSPy Question Generator
-2025-08-08 21:21:44 [error    ] ❌ Question generation error    error='"[\'\'] not in index"'
-2025-08-08 21:22:10 [info     ] ❓ Questions generated          emergency_indicators=0 questions_count=3 symptom_keywords='I have a dull headache like a tight band around my' urgency_level=low
-2025-08-08 21:22:45 [info     ] ❓ Questions generated          emergency_indicators=0 questions_count=3 symptom_keywords="I'm having trouble breathing and feel very tired" urgency_level=low
-2025-08-08 21:22:45 [info     ] ✅ Question generator evaluation completed performance=6.185185185185186
+src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_dspy_module_individual_evaluation 2025-08-08 23:57:20 [info     ] 🧪 Testing individual DSPy modules
+2025-08-08 23:57:20 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:57:20 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:57:20 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:57:20 [info     ] ✅ Question Generator DSPy configured via centralized provider: mistral:7b
+2025-08-08 23:57:20 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:57:20 [info     ] ✅ Few-shot optimizer configured with medical examples
+2025-08-08 23:57:20 [info     ] 📊 Emergency-pattern DataFrame prepared patterns=102
+2025-08-08 23:57:20 [info     ] ❓ Medical Question Generator initialised model=mistral:7b
+2025-08-08 23:57:20 [info     ] 🩺 Medical Triage Agent initialized model=mistral:7b
+2025-08-08 23:57:20 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:57:20 [info     ] ✅ Question Generator DSPy configured via centralized provider: mistral:7b
+2025-08-08 23:57:20 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:57:20 [info     ] ✅ Few-shot optimizer configured with medical examples
+2025-08-08 23:57:20 [info     ] 📊 Emergency-pattern DataFrame prepared patterns=102
+2025-08-08 23:57:20 [info     ] ❓ Medical Question Generator initialised model=mistral:7b
+2025-08-08 23:57:20 [debug    ] NICE indices built             categories=12 symptoms=159
+2025-08-08 23:57:20 [info     ] Enhanced NICE Lookup Service initialized protocol_count=120
+2025-08-08 23:57:20 [info     ] Legacy NICE Lookup Service initialized with enhanced backend
+2025-08-08 23:57:20 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:57:20 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:57:20 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:57:20 [info     ] ✅ Question Generator DSPy configured via centralized provider: mistral:7b
+2025-08-08 23:57:20 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:57:20 [info     ] ✅ Few-shot optimizer configured with medical examples
+2025-08-08 23:57:20 [info     ] 📊 Emergency-pattern DataFrame prepared patterns=102
+2025-08-08 23:57:20 [info     ] ❓ Medical Question Generator initialised model=mistral:7b
+2025-08-08 23:57:20 [info     ] 🩺 Medical Triage Agent initialized model=mistral:7b
+2025-08-08 23:57:20 [info     ] 📊 DSPy Evaluation Optimizer initialized model=mistral:7b
+2025-08-08 23:57:20 [info     ] 📊 DSPy Evaluation Optimizer initialized model=mistral:7b
+2025-08-08 23:57:20 [info     ] ✅ DSPy Module Evaluator using centralized configuration
+2025-08-08 23:57:20 [info     ] 🧪 Testing DSPy Question Generator
+2025-08-08 23:57:20 [error    ] ❌ Question generation error    error='"[\'\'] not in index"'
+2025-08-08 23:57:35 [info     ] ❓ Questions generated          emergency_indicators=0 questions_count=3 symptom_keywords='I have a dull headache like a tight band around my' urgency_level=low
+2025-08-08 23:57:47 [info     ] ❓ Questions generated          emergency_indicators=0 questions_count=1 symptom_keywords="I'm having trouble breathing and feel very tired" urgency_level=low
+2025-08-08 23:57:47 [info     ] ✅ Question generator evaluation completed performance=6.481481481481482
 FAILED                                                                                                                                                                          [ 44%]
-src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_single_conversation_e2e 2025-08-08 21:22:45 [info     ] 🧪 Testing single E2E conversation
-2025-08-08 21:22:45 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:22:45 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:22:45 [info     ] ✅ Question Generator DSPy configured via centralized provider: deepseek-r1:8b
-2025-08-08 21:22:45 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:22:45 [info     ] ✅ Few-shot optimizer configured with medical examples
-2025-08-08 21:22:45 [info     ] 📊 Emergency-pattern DataFrame prepared patterns=102
-2025-08-08 21:22:45 [info     ] ❓ Medical Question Generator initialised model=deepseek-r1:8b
-2025-08-08 21:22:45 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:22:45 [info     ] 🩺 Medical Triage Agent initialized model=deepseek-r1:8b
-2025-08-08 21:22:45 [debug    ] NICE indices built             categories=12 symptoms=159
-2025-08-08 21:22:45 [info     ] Enhanced NICE Lookup Service initialized protocol_count=120
-2025-08-08 21:22:45 [info     ] Legacy NICE Lookup Service initialized with enhanced backend
-2025-08-08 21:22:45 [info     ] 🏥 Chat Orchestrator initialized
-2025-08-08 21:22:45 [info     ] ✅ V2 Conversation Queue initialized
-2025-08-08 21:22:45 [info     ] ✅ Chat Orchestrator ready
-2025-08-08 21:22:45 [info     ] ✅ DSPy already configured with default model: deepseek-r1
-2025-08-08 21:22:45 [info     ] 🎭 Starting single E2E conversation max_turns=8 patient_id=pune_working_male
-2025-08-08 21:22:45 [info     ] 🤖 DSPy Patient Agent initialized condition='Tension-Type Headache' emotion=calm patient_id=pune_working_male
-2025-08-08 21:23:04 [info     ] 💬 Patient response generated   emotion=anxious patient_id=pune_working_male turn=1 urgency=medium
-2025-08-08 21:23:04 [info     ] 💬 Conversation turn            patient_id=pune_working_male turn=1
-2025-08-08 21:23:04 [info     ] 🩺 Processing conversation turn conversation_id=UUID('fc9c9cb1-08da-4534-bd19-e24f428f9df7') stakeholder=patient user_id=pune_working_male
-2025-08-08 21:23:04 [info     ] 🔄 Started new conversation     conversation_id=conv_pune_working_male_1754668384 user_id=pune_working_male
-2025-08-08 21:23:04 [info     ] Protocol matched               confidence=0.7 protocol_code=NG127_HEADACHE
-2025/08/08 21:24:13 WARNING dspy.adapters.json_adapter: Failed to use structured output format, falling back to JSON mode.
-2025-08-08 21:24:17 [info     ] 🔄 Medical turn processed       confidence=90 outcome=emergency thinking_captured=True turn=1
-2025-08-08 21:24:17 [info     ] 📨 Message routed               conversation_id=fc9c9cb1-08da-4534-bd19-e24f428f9df7 from_stakeholder=patient medical_outcome=emergency routes_count=2
-2025-08-08 21:24:17 [info     ] ✅ Conversation turn processed  context_turns=1 conversation_id=fc9c9cb1-08da-4534-bd19-e24f428f9df7 outcome=emergency turn=2
-2025-08-08 21:24:17 [info     ] 🚨 Emergency detected, ending conversation patient_id=pune_working_male turn=1
-2025-08-08 21:24:17 [info     ] ✅ Single conversation completed outcome=emergency passed=False patient_id=pune_working_male score=40.0 turns=0
-FAILED                                                                                                                                                                                    [ 55%]
-src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_batch_conversations_e2e 2025-08-08 21:24:17 [info     ] 🧪 Testing batch E2E conversations
-2025-08-08 21:24:17 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:24:17 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:24:17 [info     ] ✅ Question Generator DSPy configured via centralized provider: deepseek-r1:8b
-2025-08-08 21:24:17 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:24:17 [info     ] ✅ Few-shot optimizer configured with medical examples
-2025-08-08 21:24:17 [info     ] 📊 Emergency-pattern DataFrame prepared patterns=102
-2025-08-08 21:24:17 [info     ] ❓ Medical Question Generator initialised model=deepseek-r1:8b
-2025-08-08 21:24:17 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:24:17 [info     ] 🩺 Medical Triage Agent initialized model=deepseek-r1:8b
-2025-08-08 21:24:17 [debug    ] NICE indices built             categories=12 symptoms=159
-2025-08-08 21:24:17 [info     ] Enhanced NICE Lookup Service initialized protocol_count=120
-2025-08-08 21:24:17 [info     ] Legacy NICE Lookup Service initialized with enhanced backend
-2025-08-08 21:24:17 [info     ] 🏥 Chat Orchestrator initialized
-2025-08-08 21:24:17 [info     ] ✅ V2 Conversation Queue initialized
-2025-08-08 21:24:17 [info     ] ✅ Chat Orchestrator ready
-2025-08-08 21:24:17 [info     ] ✅ DSPy already configured with default model: deepseek-r1
-2025-08-08 21:24:17 [info     ] 🎭 Starting batch conversations max_concurrent=2 total_patients=4
-2025-08-08 21:24:17 [info     ] 🎭 Starting single E2E conversation max_turns=8 patient_id=mumbai_tech_male
-2025-08-08 21:24:17 [info     ] 🤖 DSPy Patient Agent initialized condition='ST-Elevation Myocardial Infarction' emotion=anxious patient_id=mumbai_tech_male
-2025-08-08 21:24:36 [info     ] 🎭 Starting single E2E conversation max_turns=8 patient_id=kolkata_student
-2025-08-08 21:24:36 [info     ] 🤖 DSPy Patient Agent initialized condition='Acute Appendicitis' emotion=fearful patient_id=kolkata_student
-2025-08-08 21:24:55 [info     ] 💬 Patient response generated   emotion=anxious patient_id=mumbai_tech_male turn=1 urgency=high
-2025-08-08 21:24:55 [info     ] 💬 Conversation turn            patient_id=mumbai_tech_male turn=1
-2025-08-08 21:24:55 [info     ] 🩺 Processing conversation turn conversation_id=UUID('0b219312-c3e9-4a62-8087-4e4c4914b3a3') stakeholder=patient user_id=mumbai_tech_male
-2025-08-08 21:24:55 [info     ] 🔄 Started new conversation     conversation_id=conv_mumbai_tech_male_1754668495 user_id=mumbai_tech_male
-2025-08-08 21:24:55 [info     ] Protocol matched               confidence=0.8 protocol_code=PE_EMERGENCY
-2025-08-08 21:25:16 [info     ] 🔄 Medical turn processed       confidence=95 outcome=emergency thinking_captured=True turn=1
-2025-08-08 21:25:16 [info     ] 💬 Patient response generated   emotion=Anxious patient_id=kolkata_student turn=1 urgency=Medium-high
-2025-08-08 21:25:16 [info     ] 💬 Conversation turn            patient_id=kolkata_student turn=1
-2025-08-08 21:25:16 [info     ] 🩺 Processing conversation turn conversation_id=UUID('23202307-dd42-46e7-9ea3-a1546d7524ea') stakeholder=patient user_id=kolkata_student
-2025-08-08 21:25:16 [info     ] 📨 Message routed               conversation_id=0b219312-c3e9-4a62-8087-4e4c4914b3a3 from_stakeholder=patient medical_outcome=emergency routes_count=2
-2025-08-08 21:25:16 [info     ] ✅ Conversation turn processed  context_turns=1 conversation_id=0b219312-c3e9-4a62-8087-4e4c4914b3a3 outcome=emergency turn=2
-2025-08-08 21:25:16 [info     ] 🚨 Emergency detected, ending conversation patient_id=mumbai_tech_male turn=1
-2025-08-08 21:25:16 [info     ] ✅ Single conversation completed outcome=emergency passed=False patient_id=mumbai_tech_male score=15.0 turns=0
-2025-08-08 21:25:16 [info     ] 🎭 Starting single E2E conversation max_turns=8 patient_id=pune_working_male
-2025-08-08 21:25:16 [info     ] 🤖 DSPy Patient Agent initialized condition='Tension-Type Headache' emotion=calm patient_id=pune_working_male
-2025-08-08 21:25:16 [info     ] 🔄 Started new conversation     conversation_id=conv_kolkata_student_1754668516 user_id=kolkata_student
-2025-08-08 21:25:16 [info     ] Protocol matched               confidence=0.8 protocol_code=ACUTE_PANCREATITIS
-2025-08-08 21:26:35 [info     ] ❓ Questions generated          emergency_indicators=0 questions_count=2 symptom_keywords='I am feeling very unwell di-di. I have this ekta s' urgency_level=low
-2025-08-08 21:26:35 [info     ] 🔄 Medical turn processed       confidence=70 outcome=inconclusive thinking_captured=True turn=2
-2025-08-08 21:26:35 [info     ] 💬 Patient response generated   emotion=anxious patient_id=pune_working_male turn=1 urgency=medium
-2025-08-08 21:26:35 [info     ] 💬 Conversation turn            patient_id=pune_working_male turn=1
-2025-08-08 21:26:35 [info     ] 🩺 Processing conversation turn conversation_id=UUID('d452443f-4406-41bc-ba46-32f6279a947a') stakeholder=patient user_id=pune_working_male
-2025-08-08 21:26:35 [info     ] 📨 Message routed               conversation_id=23202307-dd42-46e7-9ea3-a1546d7524ea from_stakeholder=patient medical_outcome=inconclusive routes_count=1
-2025-08-08 21:26:35 [info     ] ✅ Conversation turn processed  context_turns=1 conversation_id=23202307-dd42-46e7-9ea3-a1546d7524ea outcome=inconclusive turn=2
-2025-08-08 21:26:54 [info     ] 🔄 Started new conversation     conversation_id=conv_pune_working_male_1754668595 user_id=pune_working_male
-2025-08-08 21:26:54 [info     ] Protocol matched               confidence=0.7 protocol_code=NG127_HEADACHE
-2025/08/08 21:26:54 WARNING dspy.adapters.json_adapter: Failed to use structured output format, falling back to JSON mode.
-2025-08-08 21:26:54 [info     ] 🔄 Medical turn processed       confidence=90 outcome=emergency thinking_captured=True turn=3
-2025-08-08 21:26:54 [info     ] 📨 Message routed               conversation_id=d452443f-4406-41bc-ba46-32f6279a947a from_stakeholder=patient medical_outcome=emergency routes_count=2
-2025-08-08 21:26:54 [info     ] ✅ Conversation turn processed  context_turns=1 conversation_id=d452443f-4406-41bc-ba46-32f6279a947a outcome=emergency turn=2
-2025-08-08 21:26:54 [info     ] 🚨 Emergency detected, ending conversation patient_id=pune_working_male turn=1
-2025-08-08 21:26:54 [info     ] ✅ Single conversation completed outcome=emergency passed=False patient_id=pune_working_male score=40.0 turns=0
-2025-08-08 21:26:54 [info     ] 🎭 Starting single E2E conversation max_turns=8 patient_id=delhi_housewife
-2025-08-08 21:26:54 [info     ] 🤖 DSPy Patient Agent initialized condition='Postpartum Depression' emotion=sad patient_id=delhi_housewife
-2025-08-08 21:27:21 [info     ] 💬 Patient response generated   emotion=worried patient_id=kolkata_student turn=2 urgency=medium
-2025-08-08 21:27:21 [info     ] 💬 Conversation turn            patient_id=kolkata_student turn=2
-2025-08-08 21:27:21 [info     ] 🩺 Processing conversation turn conversation_id=UUID('23202307-dd42-46e7-9ea3-a1546d7524ea') stakeholder=patient user_id=kolkata_student
-2025-08-08 21:27:21 [info     ] Protocol matched               confidence=0.7 protocol_code=ACUTE_PANCREATITIS
-2025-08-08 21:28:25 [info     ] 🔄 Medical turn processed       confidence=90 outcome=emergency thinking_captured=True turn=4
-2025-08-08 21:28:25 [info     ] 💬 Patient response generated   emotion=sad patient_id=delhi_housewife turn=1 urgency=medium-high
-2025-08-08 21:28:25 [info     ] 💬 Conversation turn            patient_id=delhi_housewife turn=1
-2025-08-08 21:28:25 [info     ] 🩺 Processing conversation turn conversation_id=UUID('f078a952-6b7a-4724-8cd2-243728e642ce') stakeholder=patient user_id=delhi_housewife
-2025-08-08 21:28:25 [info     ] 📨 Message routed               conversation_id=23202307-dd42-46e7-9ea3-a1546d7524ea from_stakeholder=patient medical_outcome=emergency routes_count=2
-2025-08-08 21:28:25 [info     ] ✅ Conversation turn processed  context_turns=2 conversation_id=23202307-dd42-46e7-9ea3-a1546d7524ea outcome=emergency turn=3
-2025-08-08 21:28:25 [info     ] 🚨 Emergency detected, ending conversation patient_id=kolkata_student turn=2
-2025-08-08 21:28:25 [info     ] ✅ Single conversation completed outcome=emergency passed=False patient_id=kolkata_student score=20.0 turns=1
-2025-08-08 21:28:25 [info     ] 🔄 Started new conversation     conversation_id=conv_delhi_housewife_1754668705 user_id=delhi_housewife
-2025-08-08 21:28:25 [warning  ] No protocol candidates found   symptom_text="I am feeling really down, ji. Like I don't have mu"
-2025-08-08 21:28:44 [info     ] 🔄 Medical turn processed       confidence=90 outcome=routine thinking_captured=True turn=5
-2025-08-08 21:28:44 [info     ] 📨 Message routed               conversation_id=f078a952-6b7a-4724-8cd2-243728e642ce from_stakeholder=patient medical_outcome=routine routes_count=1
-2025-08-08 21:28:44 [info     ] ✅ Conversation turn processed  context_turns=1 conversation_id=f078a952-6b7a-4724-8cd2-243728e642ce outcome=routine turn=2
-2025-08-08 21:29:07 [info     ] 💬 Patient response generated   emotion=sad patient_id=delhi_housewife turn=2 urgency=medium-high
-2025-08-08 21:29:07 [info     ] 💬 Conversation turn            patient_id=delhi_housewife turn=2
-2025-08-08 21:29:07 [info     ] 🩺 Processing conversation turn conversation_id=UUID('f078a952-6b7a-4724-8cd2-243728e642ce') stakeholder=patient user_id=delhi_housewife
-2025-08-08 21:29:07 [warning  ] No protocol candidates found   symptom_text='Hmm... well, I think maybe since around 2 months a'
-2025-08-08 21:29:27 [info     ] 🔄 Medical turn processed       confidence=75 outcome=routine thinking_captured=True turn=6
-2025-08-08 21:29:27 [info     ] 📨 Message routed               conversation_id=f078a952-6b7a-4724-8cd2-243728e642ce from_stakeholder=patient medical_outcome=routine routes_count=1
-2025-08-08 21:29:27 [info     ] ✅ Conversation turn processed  context_turns=2 conversation_id=f078a952-6b7a-4724-8cd2-243728e642ce outcome=routine turn=3
-2025-08-08 21:29:55 [info     ] 💬 Patient response generated   emotion=sad patient_id=delhi_housewife turn=3 urgency=low
-2025-08-08 21:29:55 [warning  ] ⏰ Conversation timeout         actual_turns_completed=2 patient_id=delhi_housewife turn=3
-2025-08-08 21:29:55 [info     ] ✅ Single conversation completed outcome=routine_doctor passed=False patient_id=delhi_housewife score=45.0 turns=2
-2025-08-08 21:29:55 [info     ] ✅ Batch conversations completed failed=0 successful=4 total=4
+src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_single_conversation_e2e 2025-08-08 23:57:47 [info     ] 🧪 Testing single E2E conversation
+2025-08-08 23:57:47 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:57:47 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:57:47 [info     ] ✅ Question Generator DSPy configured via centralized provider: mistral:7b
+2025-08-08 23:57:47 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:57:47 [info     ] ✅ Few-shot optimizer configured with medical examples
+2025-08-08 23:57:47 [info     ] 📊 Emergency-pattern DataFrame prepared patterns=102
+2025-08-08 23:57:47 [info     ] ❓ Medical Question Generator initialised model=mistral:7b
+2025-08-08 23:57:47 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:57:47 [info     ] 🩺 Medical Triage Agent initialized model=mistral:7b
+2025-08-08 23:57:47 [debug    ] NICE indices built             categories=12 symptoms=159
+2025-08-08 23:57:47 [info     ] Enhanced NICE Lookup Service initialized protocol_count=120
+2025-08-08 23:57:47 [info     ] Legacy NICE Lookup Service initialized with enhanced backend
+2025-08-08 23:57:47 [info     ] 🏥 Chat Orchestrator initialized
+2025-08-08 23:57:47 [info     ] ✅ V2 Conversation Queue initialized
+2025-08-08 23:57:47 [info     ] ✅ Chat Orchestrator ready
+2025-08-08 23:57:47 [info     ] ✅ DSPy already configured with default model: mistral
+2025-08-08 23:57:47 [info     ] 🎭 Starting single E2E conversation max_turns=8 patient_id=pune_working_male
+2025-08-08 23:57:47 [info     ] 🤖 DSPy Patient Agent initialized condition='Tension-Type Headache' emotion=calm patient_id=pune_working_male
+2025-08-08 23:57:58 [info     ] 💬 Patient response generated   emotion=Anxious patient_id=pune_working_male turn=1 urgency=High
+2025-08-08 23:57:58 [info     ] 💬 Conversation turn            patient_id=pune_working_male turn=1
+2025-08-08 23:57:58 [info     ] 🩺 Processing conversation turn conversation_id=UUID('76103b39-37c9-4088-a08f-08d1e2de4d59') stakeholder=patient user_id=pune_working_male
+2025-08-08 23:57:58 [info     ] 🔄 Started new conversation     conversation_id=conv_pune_working_male_1754677678 user_id=pune_working_male
+2025-08-08 23:57:58 [info     ] Protocol matched               confidence=0.7 protocol_code=NG127_HEADACHE
+2025-08-08 23:58:07 [info     ] 🔄 Medical turn processed       confidence=70 outcome=routine thinking_captured=True turn=1
+2025-08-08 23:58:07 [info     ] 📨 Message routed               conversation_id=76103b39-37c9-4088-a08f-08d1e2de4d59 from_stakeholder=patient medical_outcome=routine routes_count=1
+2025-08-08 23:58:07 [info     ] ✅ Conversation turn processed  context_turns=1 conversation_id=76103b39-37c9-4088-a08f-08d1e2de4d59 outcome=routine turn=2
+2025-08-08 23:58:15 [info     ] 💬 Patient response generated   emotion='Anxious (slightly more)' patient_id=pune_working_male turn=2 urgency=Medium
+2025-08-08 23:58:15 [info     ] 💬 Conversation turn            patient_id=pune_working_male turn=2
+2025-08-08 23:58:15 [info     ] 🩺 Processing conversation turn conversation_id=UUID('76103b39-37c9-4088-a08f-08d1e2de4d59') stakeholder=patient user_id=pune_working_male
+2025-08-08 23:58:15 [info     ] Protocol matched               confidence=0.7 protocol_code=NG127_HEADACHE
+2025-08-08 23:58:33 [info     ] 🔄 Medical turn processed       confidence=80 outcome=routine thinking_captured=True turn=2
+2025-08-08 23:58:33 [info     ] 📨 Message routed               conversation_id=76103b39-37c9-4088-a08f-08d1e2de4d59 from_stakeholder=patient medical_outcome=routine routes_count=1
+2025-08-08 23:58:33 [info     ] ✅ Conversation turn processed  context_turns=2 conversation_id=76103b39-37c9-4088-a08f-08d1e2de4d59 outcome=routine turn=3
+2025-08-08 23:58:42 [info     ] 💬 Patient response generated   emotion='Anxious (slightly more)' patient_id=pune_working_male turn=3 urgency=Medium
+2025-08-08 23:58:43 [info     ] 💬 Conversation turn            patient_id=pune_working_male turn=3
+2025-08-08 23:58:43 [info     ] 🩺 Processing conversation turn conversation_id=UUID('76103b39-37c9-4088-a08f-08d1e2de4d59') stakeholder=patient user_id=pune_working_male
+2025-08-08 23:58:43 [info     ] Protocol matched               confidence=0.7 protocol_code=NG127_HEADACHE
+2025-08-08 23:58:56 [info     ] 🔄 Medical turn processed       confidence=90 outcome=routine thinking_captured=True turn=3
+2025-08-08 23:58:56 [info     ] 📨 Message routed               conversation_id=76103b39-37c9-4088-a08f-08d1e2de4d59 from_stakeholder=patient medical_outcome=routine routes_count=1
+2025-08-08 23:58:56 [info     ] ✅ Conversation turn processed  context_turns=3 conversation_id=76103b39-37c9-4088-a08f-08d1e2de4d59 outcome=routine turn=4
+2025-08-08 23:59:04 [info     ] 💬 Patient response generated   emotion='Anxious (slightly more)' patient_id=pune_working_male turn=4 urgency=Medium
+2025-08-08 23:59:04 [info     ] 👤 Patient ended conversation   patient_id=pune_working_male turn=3
+2025-08-08 23:59:04 [info     ] ✅ Single conversation completed outcome=routine_doctor passed=False patient_id=pune_working_male score=85.0 turns=2
+2025-08-08 23:59:04 [info     ] ✅ Single E2E conversation successful outcome=routine_doctor patient=pune_working_male score=85.0 turns=2
+PASSED                                                                                                                                                                                    [ 55%]
+src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_batch_conversations_e2e 2025-08-08 23:59:05 [info     ] 🧪 Testing batch E2E conversations
+2025-08-08 23:59:05 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:59:05 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:59:05 [info     ] ✅ Question Generator DSPy configured via centralized provider: mistral:7b
+2025-08-08 23:59:05 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:59:05 [info     ] ✅ Few-shot optimizer configured with medical examples
+2025-08-08 23:59:05 [info     ] 📊 Emergency-pattern DataFrame prepared patterns=102
+2025-08-08 23:59:05 [info     ] ❓ Medical Question Generator initialised model=mistral:7b
+2025-08-08 23:59:05 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:59:05 [info     ] 🩺 Medical Triage Agent initialized model=mistral:7b
+2025-08-08 23:59:05 [debug    ] NICE indices built             categories=12 symptoms=159
+2025-08-08 23:59:05 [info     ] Enhanced NICE Lookup Service initialized protocol_count=120
+2025-08-08 23:59:05 [info     ] Legacy NICE Lookup Service initialized with enhanced backend
+2025-08-08 23:59:05 [info     ] 🏥 Chat Orchestrator initialized
+2025-08-08 23:59:05 [info     ] ✅ V2 Conversation Queue initialized
+2025-08-08 23:59:05 [info     ] ✅ Chat Orchestrator ready
+2025-08-08 23:59:05 [info     ] ✅ DSPy already configured with default model: mistral
+2025-08-08 23:59:05 [info     ] 🎭 Starting batch conversations max_concurrent=2 total_patients=4
+2025-08-08 23:59:05 [info     ] 🎭 Starting single E2E conversation max_turns=8 patient_id=mumbai_tech_male
+2025-08-08 23:59:05 [info     ] 🤖 DSPy Patient Agent initialized condition='ST-Elevation Myocardial Infarction' emotion=anxious patient_id=mumbai_tech_male
+2025-08-08 23:59:14 [info     ] 🎭 Starting single E2E conversation max_turns=8 patient_id=kolkata_student
+2025-08-08 23:59:14 [info     ] 🤖 DSPy Patient Agent initialized condition='Acute Appendicitis' emotion=fearful patient_id=kolkata_student
+2025-08-08 23:59:25 [info     ] 💬 Patient response generated   emotion=anxious patient_id=mumbai_tech_male turn=1 urgency=high
+2025-08-08 23:59:25 [info     ] 💬 Conversation turn            patient_id=mumbai_tech_male turn=1
+2025-08-08 23:59:25 [info     ] 🩺 Processing conversation turn conversation_id=UUID('4334b651-1bef-42cd-b28c-06752d10722f') stakeholder=patient user_id=mumbai_tech_male
+2025-08-08 23:59:25 [info     ] 🔄 Started new conversation     conversation_id=conv_mumbai_tech_male_1754677765 user_id=mumbai_tech_male
+2025-08-08 23:59:25 [info     ] Protocol matched               confidence=0.8 protocol_code=PE_EMERGENCY
+2025-08-08 23:59:39 [info     ] 🔄 Medical turn processed       confidence=95 outcome=emergency thinking_captured=True turn=1
+2025-08-08 23:59:39 [info     ] 💬 Patient response generated   emotion='Anxious but slightly less fearful' patient_id=kolkata_student turn=1 urgency=Medium
+2025-08-08 23:59:39 [info     ] 💬 Conversation turn            patient_id=kolkata_student turn=1
+2025-08-08 23:59:39 [info     ] 🩺 Processing conversation turn conversation_id=UUID('7d0c4286-56d4-431a-b2ee-a931dc7c36bd') stakeholder=patient user_id=kolkata_student
+2025-08-08 23:59:39 [info     ] 📨 Message routed               conversation_id=4334b651-1bef-42cd-b28c-06752d10722f from_stakeholder=patient medical_outcome=emergency routes_count=2
+2025-08-08 23:59:39 [info     ] ✅ Conversation turn processed  context_turns=1 conversation_id=4334b651-1bef-42cd-b28c-06752d10722f outcome=emergency turn=2
+2025-08-08 23:59:39 [info     ] 🚨 Emergency detected, ending conversation patient_id=mumbai_tech_male turn=1
+2025-08-08 23:59:39 [info     ] ✅ Single conversation completed outcome=emergency passed=False patient_id=mumbai_tech_male score=15.0 turns=0
+2025-08-08 23:59:39 [info     ] 🎭 Starting single E2E conversation max_turns=8 patient_id=pune_working_male
+2025-08-08 23:59:39 [info     ] 🤖 DSPy Patient Agent initialized condition='Tension-Type Headache' emotion=calm patient_id=pune_working_male
+2025-08-08 23:59:39 [info     ] 🔄 Started new conversation     conversation_id=conv_kolkata_student_1754677779 user_id=kolkata_student
+2025-08-08 23:59:39 [info     ] Protocol matched               confidence=0.7 protocol_code=ACUTE_PANCREATITIS
+2025-08-08 23:59:50 [info     ] 🔄 Medical turn processed       confidence=70 outcome=routine thinking_captured=True turn=2
+2025-08-08 23:59:50 [info     ] 💬 Patient response generated   emotion=Anxious patient_id=pune_working_male turn=1 urgency=High
+2025-08-08 23:59:50 [info     ] 💬 Conversation turn            patient_id=pune_working_male turn=1
+2025-08-08 23:59:50 [info     ] 🩺 Processing conversation turn conversation_id=UUID('faa2a794-9795-48bc-8ef8-b5bb520e2455') stakeholder=patient user_id=pune_working_male
+2025-08-08 23:59:50 [info     ] 📨 Message routed               conversation_id=7d0c4286-56d4-431a-b2ee-a931dc7c36bd from_stakeholder=patient medical_outcome=routine routes_count=1
+2025-08-08 23:59:50 [info     ] ✅ Conversation turn processed  context_turns=1 conversation_id=7d0c4286-56d4-431a-b2ee-a931dc7c36bd outcome=routine turn=2
+2025-08-09 00:00:03 [info     ] 🔄 Started new conversation     conversation_id=conv_pune_working_male_1754677790 user_id=pune_working_male
+2025-08-09 00:00:03 [info     ] Protocol matched               confidence=0.7 protocol_code=NG127_HEADACHE
+2025-08-09 00:00:03 [info     ] 🔄 Medical turn processed       confidence=70 outcome=routine thinking_captured=True turn=3
+2025-08-09 00:00:03 [info     ] 📨 Message routed               conversation_id=faa2a794-9795-48bc-8ef8-b5bb520e2455 from_stakeholder=patient medical_outcome=routine routes_count=1
+2025-08-09 00:00:03 [info     ] ✅ Conversation turn processed  context_turns=1 conversation_id=faa2a794-9795-48bc-8ef8-b5bb520e2455 outcome=routine turn=2
+2025-08-09 00:00:04 [info     ] 💬 Patient response generated   emotion='Anxious but slightly less fearful (slight improvement in fear level)' patient_id=kolkata_student turn=2 urgency=High
+2025-08-09 00:00:04 [info     ] 💬 Conversation turn            patient_id=kolkata_student turn=2
+2025-08-09 00:00:04 [info     ] 🩺 Processing conversation turn conversation_id=UUID('7d0c4286-56d4-431a-b2ee-a931dc7c36bd') stakeholder=patient user_id=kolkata_student
+2025-08-09 00:00:04 [info     ] Protocol matched               confidence=0.7 protocol_code=ACUTE_PANCREATITIS
+2025-08-09 00:00:19 [info     ] 🔄 Medical turn processed       confidence=90 outcome=emergency thinking_captured=True turn=4
+2025-08-09 00:00:19 [info     ] 💬 Patient response generated   emotion='Anxious (slightly more)' patient_id=pune_working_male turn=2 urgency=Medium
+2025-08-09 00:00:19 [info     ] 📨 Message routed               conversation_id=7d0c4286-56d4-431a-b2ee-a931dc7c36bd from_stakeholder=patient medical_outcome=emergency routes_count=2
+2025-08-09 00:00:19 [info     ] ✅ Conversation turn processed  context_turns=2 conversation_id=7d0c4286-56d4-431a-b2ee-a931dc7c36bd outcome=emergency turn=3
+2025-08-09 00:00:19 [info     ] 🚨 Emergency detected, ending conversation patient_id=kolkata_student turn=2
+2025-08-09 00:00:19 [info     ] ✅ Single conversation completed outcome=emergency passed=False patient_id=kolkata_student score=20.0 turns=1
+2025-08-09 00:00:19 [info     ] 🎭 Starting single E2E conversation max_turns=8 patient_id=delhi_housewife
+2025-08-09 00:00:19 [info     ] 🤖 DSPy Patient Agent initialized condition='Postpartum Depression' emotion=sad patient_id=delhi_housewife
+2025-08-09 00:00:30 [info     ] 💬 Conversation turn            patient_id=pune_working_male turn=2
+2025-08-09 00:00:30 [info     ] 🩺 Processing conversation turn conversation_id=UUID('faa2a794-9795-48bc-8ef8-b5bb520e2455') stakeholder=patient user_id=pune_working_male
+2025-08-09 00:00:30 [info     ] Protocol matched               confidence=0.7 protocol_code=NG127_HEADACHE
+2025-08-09 00:00:30 [info     ] 🔄 Medical turn processed       confidence=80 outcome=routine thinking_captured=True turn=5
+2025-08-09 00:00:30 [info     ] 📨 Message routed               conversation_id=faa2a794-9795-48bc-8ef8-b5bb520e2455 from_stakeholder=patient medical_outcome=routine routes_count=1
+2025-08-09 00:00:30 [info     ] ✅ Conversation turn processed  context_turns=2 conversation_id=faa2a794-9795-48bc-8ef8-b5bb520e2455 outcome=routine turn=3
+2025-08-09 00:00:30 [info     ] 💬 Patient response generated   emotion="The patient's emotional state remains sad due to their ongoing symptoms, but acknowledging their feelings to the medical agent may provide some relief and validation." patient_id=delhi_housewife turn=1 urgency='The urgency level is high as postpartum depression can have serious consequences for both the mother and baby if left untreated.'
+2025-08-09 00:00:30 [info     ] 💬 Conversation turn            patient_id=delhi_housewife turn=1
+2025-08-09 00:00:30 [info     ] 🩺 Processing conversation turn conversation_id=UUID('b77d7e1d-48f3-493a-9132-10756cdc37b6') stakeholder=patient user_id=delhi_housewife
+2025-08-09 00:00:30 [info     ] 🔄 Started new conversation     conversation_id=conv_delhi_housewife_1754677830 user_id=delhi_housewife
+2025-08-09 00:00:30 [warning  ] No protocol candidates found   symptom_text='I have been feeling very low and sad most of the t'
+2025-08-09 00:00:40 [info     ] 🔄 Medical turn processed       confidence=80 outcome=routine thinking_captured=True turn=6
+2025-08-09 00:00:40 [info     ] 💬 Patient response generated   emotion='Anxious (slightly more)' patient_id=pune_working_male turn=3 urgency=Medium
+2025-08-09 00:00:40 [info     ] 📨 Message routed               conversation_id=b77d7e1d-48f3-493a-9132-10756cdc37b6 from_stakeholder=patient medical_outcome=routine routes_count=1
+2025-08-09 00:00:40 [info     ] ✅ Conversation turn processed  context_turns=1 conversation_id=b77d7e1d-48f3-493a-9132-10756cdc37b6 outcome=routine turn=2
+2025-08-09 00:00:49 [info     ] 💬 Conversation turn            patient_id=pune_working_male turn=3
+2025-08-09 00:00:49 [info     ] 🩺 Processing conversation turn conversation_id=UUID('faa2a794-9795-48bc-8ef8-b5bb520e2455') stakeholder=patient user_id=pune_working_male
+2025-08-09 00:00:49 [info     ] Protocol matched               confidence=0.7 protocol_code=NG127_HEADACHE
+2025-08-09 00:00:49 [info     ] 🔄 Medical turn processed       confidence=90 outcome=routine thinking_captured=True turn=7
+2025-08-09 00:00:49 [info     ] 📨 Message routed               conversation_id=faa2a794-9795-48bc-8ef8-b5bb520e2455 from_stakeholder=patient medical_outcome=routine routes_count=1
+2025-08-09 00:00:49 [info     ] ✅ Conversation turn processed  context_turns=3 conversation_id=faa2a794-9795-48bc-8ef8-b5bb520e2455 outcome=routine turn=4
+2025-08-09 00:00:49 [info     ] ✅ Conversation completed by medical agent patient_id=pune_working_male turn=3
+2025-08-09 00:00:49 [info     ] ✅ Single conversation completed outcome=routine_doctor passed=False patient_id=pune_working_male score=85.0 turns=2
+2025-08-09 00:00:50 [info     ] 💬 Patient response generated   emotion="The patient's emotional state remains sad due to her ongoing symptoms and thoughts of self-harm, but she is also experiencing a slight increase in anxiety as she discusses these sensitive topics with the medical agent." patient_id=delhi_housewife turn=2 urgency=high
+2025-08-09 00:00:50 [info     ] 💬 Conversation turn            patient_id=delhi_housewife turn=2
+2025-08-09 00:00:50 [info     ] 🩺 Processing conversation turn conversation_id=UUID('b77d7e1d-48f3-493a-9132-10756cdc37b6') stakeholder=patient user_id=delhi_housewife
+2025-08-09 00:00:50 [info     ] Protocol matched               confidence=0.5 protocol_code=CRUSH_RHABDO
+2025-08-09 00:00:59 [info     ] 🔄 Medical turn processed       confidence=80 outcome=routine thinking_captured=True turn=8
+2025-08-09 00:00:59 [info     ] 📨 Message routed               conversation_id=b77d7e1d-48f3-493a-9132-10756cdc37b6 from_stakeholder=patient medical_outcome=routine routes_count=1
+2025-08-09 00:00:59 [info     ] ✅ Conversation turn processed  context_turns=2 conversation_id=b77d7e1d-48f3-493a-9132-10756cdc37b6 outcome=routine turn=3
+2025-08-09 00:01:09 [info     ] 💬 Patient response generated   emotion="The patient's emotional state remains sad but may experience an increase in anxiety as she discusses her thoughts of self-harm." patient_id=delhi_housewife turn=3 urgency=high
+2025-08-09 00:01:09 [info     ] 💬 Conversation turn            patient_id=delhi_housewife turn=3
+2025-08-09 00:01:09 [info     ] 🩺 Processing conversation turn conversation_id=UUID('b77d7e1d-48f3-493a-9132-10756cdc37b6') stakeholder=patient user_id=delhi_housewife
+2025-08-09 00:01:09 [warning  ] No protocol candidates found   symptom_text="Priya: I've been feeling really low and sad for a "
+2025-08-09 00:01:19 [info     ] 🔄 Medical turn processed       confidence=100 outcome=emergency thinking_captured=True turn=9
+2025-08-09 00:01:19 [info     ] 📨 Message routed               conversation_id=b77d7e1d-48f3-493a-9132-10756cdc37b6 from_stakeholder=patient medical_outcome=emergency routes_count=2
+2025-08-09 00:01:19 [info     ] ✅ Conversation turn processed  context_turns=3 conversation_id=b77d7e1d-48f3-493a-9132-10756cdc37b6 outcome=emergency turn=4
+2025-08-09 00:01:19 [info     ] 🚨 Emergency detected, ending conversation patient_id=delhi_housewife turn=3
+2025-08-09 00:01:19 [info     ] ✅ Single conversation completed outcome=emergency passed=False patient_id=delhi_housewife score=15.0 turns=2
+2025-08-09 00:01:19 [info     ] ✅ Batch conversations completed failed=0 successful=4 total=4
 FAILED                                                                                                                                                                                    [ 66%]
-src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_emergency_detection_accuracy 2025-08-08 21:29:55 [info     ] 🧪 Testing emergency detection accuracy
-2025-08-08 21:29:55 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:29:55 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:29:55 [info     ] ✅ Question Generator DSPy configured via centralized provider: deepseek-r1:8b
-2025-08-08 21:29:55 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:29:55 [info     ] ✅ Few-shot optimizer configured with medical examples
-2025-08-08 21:29:55 [info     ] 📊 Emergency-pattern DataFrame prepared patterns=102
-2025-08-08 21:29:55 [info     ] ❓ Medical Question Generator initialised model=deepseek-r1:8b
-2025-08-08 21:29:55 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:29:55 [info     ] 🩺 Medical Triage Agent initialized model=deepseek-r1:8b
-2025-08-08 21:29:55 [debug    ] NICE indices built             categories=12 symptoms=159
-2025-08-08 21:29:55 [info     ] Enhanced NICE Lookup Service initialized protocol_count=120
-2025-08-08 21:29:55 [info     ] Legacy NICE Lookup Service initialized with enhanced backend
-2025-08-08 21:29:55 [info     ] 🏥 Chat Orchestrator initialized
-2025-08-08 21:29:55 [info     ] ✅ V2 Conversation Queue initialized
-2025-08-08 21:29:55 [info     ] ✅ Chat Orchestrator ready
-2025-08-08 21:29:55 [info     ] ✅ DSPy already configured with default model: deepseek-r1
-2025-08-08 21:29:55 [info     ] 🎭 Starting single E2E conversation max_turns=6 patient_id=mumbai_tech_male
-2025-08-08 21:29:55 [info     ] 🤖 DSPy Patient Agent initialized condition='ST-Elevation Myocardial Infarction' emotion=anxious patient_id=mumbai_tech_male
-2025-08-08 21:29:56 [info     ] 💬 Patient response generated   emotion=anxious patient_id=mumbai_tech_male turn=1 urgency=high
-2025-08-08 21:29:56 [info     ] 💬 Conversation turn            patient_id=mumbai_tech_male turn=1
-2025-08-08 21:29:56 [info     ] 🩺 Processing conversation turn conversation_id=UUID('38a7ccce-b7ff-4d2c-9dd7-08a85bea7387') stakeholder=patient user_id=mumbai_tech_male
-2025-08-08 21:29:56 [info     ] 🔄 Started new conversation     conversation_id=conv_mumbai_tech_male_1754668796 user_id=mumbai_tech_male
-2025-08-08 21:29:56 [info     ] Protocol matched               confidence=0.8 protocol_code=PE_EMERGENCY
-2025-08-08 21:31:22 [info     ] 🔄 Medical turn processed       confidence=90 outcome=emergency thinking_captured=True turn=1
-2025-08-08 21:31:22 [info     ] 📨 Message routed               conversation_id=38a7ccce-b7ff-4d2c-9dd7-08a85bea7387 from_stakeholder=patient medical_outcome=emergency routes_count=2
-2025-08-08 21:31:22 [info     ] ✅ Conversation turn processed  context_turns=1 conversation_id=38a7ccce-b7ff-4d2c-9dd7-08a85bea7387 outcome=emergency turn=2
-2025-08-08 21:31:22 [info     ] 🚨 Emergency detected, ending conversation patient_id=mumbai_tech_male turn=1
-2025-08-08 21:31:22 [info     ] ✅ Single conversation completed outcome=emergency passed=False patient_id=mumbai_tech_male score=15.0 turns=0
-2025-08-08 21:31:22 [info     ] 🎭 Starting single E2E conversation max_turns=6 patient_id=kolkata_student
-2025-08-08 21:31:22 [info     ] 🤖 DSPy Patient Agent initialized condition='Acute Appendicitis' emotion=fearful patient_id=kolkata_student
-2025-08-08 21:31:23 [info     ] 💬 Patient response generated   emotion=Anxious patient_id=kolkata_student turn=1 urgency=Medium-high
-2025-08-08 21:31:23 [info     ] 💬 Conversation turn            patient_id=kolkata_student turn=1
-2025-08-08 21:31:23 [info     ] 🩺 Processing conversation turn conversation_id=UUID('647256b7-31e7-49c9-8327-e715d10b2433') stakeholder=patient user_id=kolkata_student
-2025-08-08 21:31:23 [info     ] 🔄 Started new conversation     conversation_id=conv_kolkata_student_1754668883 user_id=kolkata_student
-2025-08-08 21:31:23 [info     ] Protocol matched               confidence=0.8 protocol_code=ACUTE_PANCREATITIS
-2025-08-08 21:31:23 [info     ] ❓ Questions generated          emergency_indicators=0 questions_count=2 symptom_keywords='I am feeling very unwell di-di. I have this ekta s' urgency_level=low
-2025-08-08 21:31:23 [info     ] 🔄 Medical turn processed       confidence=70 outcome=inconclusive thinking_captured=True turn=2
-2025-08-08 21:31:23 [info     ] 📨 Message routed               conversation_id=647256b7-31e7-49c9-8327-e715d10b2433 from_stakeholder=patient medical_outcome=inconclusive routes_count=1
-2025-08-08 21:31:23 [info     ] ✅ Conversation turn processed  context_turns=1 conversation_id=647256b7-31e7-49c9-8327-e715d10b2433 outcome=inconclusive turn=2
-2025-08-08 21:31:23 [info     ] 💬 Patient response generated   emotion=worried patient_id=kolkata_student turn=2 urgency=medium
-2025-08-08 21:31:23 [info     ] 💬 Conversation turn            patient_id=kolkata_student turn=2
-2025-08-08 21:31:23 [info     ] 🩺 Processing conversation turn conversation_id=UUID('647256b7-31e7-49c9-8327-e715d10b2433') stakeholder=patient user_id=kolkata_student
-2025-08-08 21:31:23 [info     ] Protocol matched               confidence=0.7 protocol_code=ACUTE_PANCREATITIS
-2025-08-08 21:31:23 [info     ] 🔄 Medical turn processed       confidence=90 outcome=emergency thinking_captured=True turn=3
-2025-08-08 21:31:23 [info     ] 📨 Message routed               conversation_id=647256b7-31e7-49c9-8327-e715d10b2433 from_stakeholder=patient medical_outcome=emergency routes_count=2
-2025-08-08 21:31:23 [info     ] ✅ Conversation turn processed  context_turns=2 conversation_id=647256b7-31e7-49c9-8327-e715d10b2433 outcome=emergency turn=3
-2025-08-08 21:31:23 [info     ] 🚨 Emergency detected, ending conversation patient_id=kolkata_student turn=2
-2025-08-08 21:31:23 [info     ] ✅ Single conversation completed outcome=emergency passed=False patient_id=kolkata_student score=20.0 turns=1
-2025-08-08 21:31:23 [info     ] ✅ Emergency detection accuracy acceptable detected=2 rate=100.0 total=2
+src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_emergency_detection_accuracy 2025-08-09 00:01:19 [info     ] 🧪 Testing emergency detection accuracy
+2025-08-09 00:01:19 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-09 00:01:19 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-09 00:01:19 [info     ] ✅ Question Generator DSPy configured via centralized provider: mistral:7b
+2025-08-09 00:01:19 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-09 00:01:19 [info     ] ✅ Few-shot optimizer configured with medical examples
+2025-08-09 00:01:19 [info     ] 📊 Emergency-pattern DataFrame prepared patterns=102
+2025-08-09 00:01:19 [info     ] ❓ Medical Question Generator initialised model=mistral:7b
+2025-08-09 00:01:19 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-09 00:01:19 [info     ] 🩺 Medical Triage Agent initialized model=mistral:7b
+2025-08-09 00:01:19 [debug    ] NICE indices built             categories=12 symptoms=159
+2025-08-09 00:01:19 [info     ] Enhanced NICE Lookup Service initialized protocol_count=120
+2025-08-09 00:01:19 [info     ] Legacy NICE Lookup Service initialized with enhanced backend
+2025-08-09 00:01:19 [info     ] 🏥 Chat Orchestrator initialized
+2025-08-09 00:01:19 [info     ] ✅ V2 Conversation Queue initialized
+2025-08-09 00:01:19 [info     ] ✅ Chat Orchestrator ready
+2025-08-09 00:01:19 [info     ] ✅ DSPy already configured with default model: mistral
+2025-08-09 00:01:19 [info     ] 🎭 Starting single E2E conversation max_turns=6 patient_id=mumbai_tech_male
+2025-08-09 00:01:19 [info     ] 🤖 DSPy Patient Agent initialized condition='ST-Elevation Myocardial Infarction' emotion=anxious patient_id=mumbai_tech_male
+2025-08-09 00:01:20 [info     ] 💬 Patient response generated   emotion=anxious patient_id=mumbai_tech_male turn=1 urgency=high
+2025-08-09 00:01:20 [info     ] 💬 Conversation turn            patient_id=mumbai_tech_male turn=1
+2025-08-09 00:01:20 [info     ] 🩺 Processing conversation turn conversation_id=UUID('3d1b3188-fb06-4cce-b4f9-1cfc094aab47') stakeholder=patient user_id=mumbai_tech_male
+2025-08-09 00:01:20 [info     ] 🔄 Started new conversation     conversation_id=conv_mumbai_tech_male_1754677880 user_id=mumbai_tech_male
+2025-08-09 00:01:20 [info     ] Protocol matched               confidence=0.8 protocol_code=PE_EMERGENCY
+2025-08-09 00:01:20 [info     ] 🔄 Medical turn processed       confidence=95 outcome=emergency thinking_captured=True turn=1
+2025-08-09 00:01:20 [info     ] 📨 Message routed               conversation_id=3d1b3188-fb06-4cce-b4f9-1cfc094aab47 from_stakeholder=patient medical_outcome=emergency routes_count=2
+2025-08-09 00:01:20 [info     ] ✅ Conversation turn processed  context_turns=1 conversation_id=3d1b3188-fb06-4cce-b4f9-1cfc094aab47 outcome=emergency turn=2
+2025-08-09 00:01:20 [info     ] 🚨 Emergency detected, ending conversation patient_id=mumbai_tech_male turn=1
+2025-08-09 00:01:20 [info     ] ✅ Single conversation completed outcome=emergency passed=False patient_id=mumbai_tech_male score=15.0 turns=0
+2025-08-09 00:01:20 [info     ] 🎭 Starting single E2E conversation max_turns=6 patient_id=kolkata_student
+2025-08-09 00:01:20 [info     ] 🤖 DSPy Patient Agent initialized condition='Acute Appendicitis' emotion=fearful patient_id=kolkata_student
+2025-08-09 00:01:20 [info     ] 💬 Patient response generated   emotion='Anxious but slightly less fearful' patient_id=kolkata_student turn=1 urgency=Medium
+2025-08-09 00:01:20 [info     ] 💬 Conversation turn            patient_id=kolkata_student turn=1
+2025-08-09 00:01:20 [info     ] 🩺 Processing conversation turn conversation_id=UUID('96f87b80-4c91-4157-8630-60a0b5f2b05b') stakeholder=patient user_id=kolkata_student
+2025-08-09 00:01:20 [info     ] 🔄 Started new conversation     conversation_id=conv_kolkata_student_1754677880 user_id=kolkata_student
+2025-08-09 00:01:20 [info     ] Protocol matched               confidence=0.7 protocol_code=ACUTE_PANCREATITIS
+2025-08-09 00:01:20 [info     ] 🔄 Medical turn processed       confidence=70 outcome=routine thinking_captured=True turn=2
+2025-08-09 00:01:20 [info     ] 📨 Message routed               conversation_id=96f87b80-4c91-4157-8630-60a0b5f2b05b from_stakeholder=patient medical_outcome=routine routes_count=1
+2025-08-09 00:01:20 [info     ] ✅ Conversation turn processed  context_turns=1 conversation_id=96f87b80-4c91-4157-8630-60a0b5f2b05b outcome=routine turn=2
+2025-08-09 00:01:21 [info     ] 💬 Patient response generated   emotion='Anxious but slightly less fearful (slight improvement in fear level)' patient_id=kolkata_student turn=2 urgency=High
+2025-08-09 00:01:21 [info     ] 💬 Conversation turn            patient_id=kolkata_student turn=2
+2025-08-09 00:01:21 [info     ] 🩺 Processing conversation turn conversation_id=UUID('96f87b80-4c91-4157-8630-60a0b5f2b05b') stakeholder=patient user_id=kolkata_student
+2025-08-09 00:01:21 [info     ] Protocol matched               confidence=0.7 protocol_code=ACUTE_PANCREATITIS
+2025-08-09 00:01:21 [info     ] 🔄 Medical turn processed       confidence=90 outcome=emergency thinking_captured=True turn=3
+2025-08-09 00:01:21 [info     ] 📨 Message routed               conversation_id=96f87b80-4c91-4157-8630-60a0b5f2b05b from_stakeholder=patient medical_outcome=emergency routes_count=2
+2025-08-09 00:01:21 [info     ] ✅ Conversation turn processed  context_turns=2 conversation_id=96f87b80-4c91-4157-8630-60a0b5f2b05b outcome=emergency turn=3
+2025-08-09 00:01:21 [info     ] 🚨 Emergency detected, ending conversation patient_id=kolkata_student turn=2
+2025-08-09 00:01:21 [info     ] ✅ Single conversation completed outcome=emergency passed=False patient_id=kolkata_student score=20.0 turns=1
+2025-08-09 00:01:21 [info     ] ✅ Emergency detection accuracy acceptable detected=2 rate=100.0 total=2
 PASSED                                                                                                                                                                               [ 77%]
-src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_conversation_quality_metrics 2025-08-08 21:31:23 [info     ] 🧪 Testing conversation quality metrics
-2025-08-08 21:31:23 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:31:23 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:31:23 [info     ] ✅ Question Generator DSPy configured via centralized provider: deepseek-r1:8b
-2025-08-08 21:31:23 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:31:23 [info     ] ✅ Few-shot optimizer configured with medical examples
-2025-08-08 21:31:23 [info     ] 📊 Emergency-pattern DataFrame prepared patterns=102
-2025-08-08 21:31:23 [info     ] ❓ Medical Question Generator initialised model=deepseek-r1:8b
-2025-08-08 21:31:23 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:31:23 [info     ] 🩺 Medical Triage Agent initialized model=deepseek-r1:8b
-2025-08-08 21:31:23 [debug    ] NICE indices built             categories=12 symptoms=159
-2025-08-08 21:31:23 [info     ] Enhanced NICE Lookup Service initialized protocol_count=120
-2025-08-08 21:31:23 [info     ] Legacy NICE Lookup Service initialized with enhanced backend
-2025-08-08 21:31:23 [info     ] 🏥 Chat Orchestrator initialized
-2025-08-08 21:31:23 [info     ] ✅ V2 Conversation Queue initialized
-2025-08-08 21:31:23 [info     ] ✅ Chat Orchestrator ready
-2025-08-08 21:31:23 [info     ] ✅ DSPy already configured with default model: deepseek-r1
-2025-08-08 21:31:23 [info     ] 🎭 Starting single E2E conversation max_turns=6 patient_id=mumbai_tech_male
-2025-08-08 21:31:23 [info     ] 🤖 DSPy Patient Agent initialized condition='ST-Elevation Myocardial Infarction' emotion=anxious patient_id=mumbai_tech_male
-2025-08-08 21:31:24 [info     ] 💬 Patient response generated   emotion=anxious patient_id=mumbai_tech_male turn=1 urgency=high
-2025-08-08 21:31:24 [info     ] 💬 Conversation turn            patient_id=mumbai_tech_male turn=1
-2025-08-08 21:31:24 [info     ] 🩺 Processing conversation turn conversation_id=UUID('0c20d8e8-1552-4a27-92d8-e3a72e0cfe09') stakeholder=patient user_id=mumbai_tech_male
-2025-08-08 21:31:24 [info     ] 🔄 Started new conversation     conversation_id=conv_mumbai_tech_male_1754668884 user_id=mumbai_tech_male
-2025-08-08 21:31:24 [info     ] Protocol matched               confidence=0.8 protocol_code=PE_EMERGENCY
-2025-08-08 21:32:46 [info     ] 🔄 Medical turn processed       confidence=90 outcome=emergency thinking_captured=True turn=1
-2025-08-08 21:32:46 [info     ] 📨 Message routed               conversation_id=0c20d8e8-1552-4a27-92d8-e3a72e0cfe09 from_stakeholder=patient medical_outcome=emergency routes_count=2
-2025-08-08 21:32:46 [info     ] ✅ Conversation turn processed  context_turns=1 conversation_id=0c20d8e8-1552-4a27-92d8-e3a72e0cfe09 outcome=emergency turn=2
-2025-08-08 21:32:46 [info     ] 🚨 Emergency detected, ending conversation patient_id=mumbai_tech_male turn=1
-2025-08-08 21:32:46 [info     ] ✅ Single conversation completed outcome=emergency passed=False patient_id=mumbai_tech_male score=15.0 turns=0
-2025-08-08 21:32:46 [info     ] 📊 Quality metrics for mumbai_tech_male duration=82.84826016426086 outcome=emergency score=15.0 turns=0
-2025-08-08 21:32:46 [info     ] 🎭 Starting single E2E conversation max_turns=6 patient_id=kolkata_student
-2025-08-08 21:32:46 [info     ] 🤖 DSPy Patient Agent initialized condition='Acute Appendicitis' emotion=fearful patient_id=kolkata_student
-2025-08-08 21:32:47 [info     ] 💬 Patient response generated   emotion=Anxious patient_id=kolkata_student turn=1 urgency=Medium-high
-2025-08-08 21:32:47 [info     ] 💬 Conversation turn            patient_id=kolkata_student turn=1
-2025-08-08 21:32:47 [info     ] 🩺 Processing conversation turn conversation_id=UUID('4b2120a6-b917-407d-bdc7-0ece5f3d92e5') stakeholder=patient user_id=kolkata_student
-2025-08-08 21:32:47 [info     ] 🔄 Started new conversation     conversation_id=conv_kolkata_student_1754668967 user_id=kolkata_student
-2025-08-08 21:32:47 [info     ] Protocol matched               confidence=0.8 protocol_code=ACUTE_PANCREATITIS
-2025-08-08 21:32:47 [info     ] ❓ Questions generated          emergency_indicators=0 questions_count=2 symptom_keywords='I am feeling very unwell di-di. I have this ekta s' urgency_level=low
-2025-08-08 21:32:47 [info     ] 🔄 Medical turn processed       confidence=70 outcome=inconclusive thinking_captured=True turn=2
-2025-08-08 21:32:47 [info     ] 📨 Message routed               conversation_id=4b2120a6-b917-407d-bdc7-0ece5f3d92e5 from_stakeholder=patient medical_outcome=inconclusive routes_count=1
-2025-08-08 21:32:47 [info     ] ✅ Conversation turn processed  context_turns=1 conversation_id=4b2120a6-b917-407d-bdc7-0ece5f3d92e5 outcome=inconclusive turn=2
-2025-08-08 21:32:47 [info     ] 💬 Patient response generated   emotion=worried patient_id=kolkata_student turn=2 urgency=medium
-2025-08-08 21:32:47 [info     ] 💬 Conversation turn            patient_id=kolkata_student turn=2
-2025-08-08 21:32:47 [info     ] 🩺 Processing conversation turn conversation_id=UUID('4b2120a6-b917-407d-bdc7-0ece5f3d92e5') stakeholder=patient user_id=kolkata_student
-2025-08-08 21:32:47 [info     ] Protocol matched               confidence=0.7 protocol_code=ACUTE_PANCREATITIS
-2025-08-08 21:32:47 [info     ] 🔄 Medical turn processed       confidence=90 outcome=emergency thinking_captured=True turn=3
-2025-08-08 21:32:47 [info     ] 📨 Message routed               conversation_id=4b2120a6-b917-407d-bdc7-0ece5f3d92e5 from_stakeholder=patient medical_outcome=emergency routes_count=2
-2025-08-08 21:32:47 [info     ] ✅ Conversation turn processed  context_turns=2 conversation_id=4b2120a6-b917-407d-bdc7-0ece5f3d92e5 outcome=emergency turn=3
-2025-08-08 21:32:47 [info     ] 🚨 Emergency detected, ending conversation patient_id=kolkata_student turn=2
-2025-08-08 21:32:47 [info     ] ✅ Single conversation completed outcome=emergency passed=False patient_id=kolkata_student score=20.0 turns=1
-2025-08-08 21:32:47 [info     ] 📊 Quality metrics for kolkata_student duration=0.9170758724212646 outcome=emergency score=20.0 turns=1
-2025-08-08 21:32:47 [info     ] 🎭 Starting single E2E conversation max_turns=6 patient_id=pune_working_male
-2025-08-08 21:32:47 [info     ] 🤖 DSPy Patient Agent initialized condition='Tension-Type Headache' emotion=calm patient_id=pune_working_male
-2025-08-08 21:32:49 [info     ] 💬 Patient response generated   emotion=anxious patient_id=pune_working_male turn=1 urgency=medium
-2025-08-08 21:32:49 [info     ] 💬 Conversation turn            patient_id=pune_working_male turn=1
-2025-08-08 21:32:49 [info     ] 🩺 Processing conversation turn conversation_id=UUID('465d1565-1327-44c4-be00-8dfa06cd54be') stakeholder=patient user_id=pune_working_male
-2025-08-08 21:32:49 [info     ] 🔄 Started new conversation     conversation_id=conv_pune_working_male_1754668969 user_id=pune_working_male
-2025-08-08 21:32:49 [info     ] Protocol matched               confidence=0.7 protocol_code=NG127_HEADACHE
-2025/08/08 21:32:49 WARNING dspy.adapters.json_adapter: Failed to use structured output format, falling back to JSON mode.
-2025-08-08 21:32:49 [info     ] 🔄 Medical turn processed       confidence=90 outcome=emergency thinking_captured=True turn=4
-2025-08-08 21:32:49 [info     ] 📨 Message routed               conversation_id=465d1565-1327-44c4-be00-8dfa06cd54be from_stakeholder=patient medical_outcome=emergency routes_count=2
-2025-08-08 21:32:49 [info     ] ✅ Conversation turn processed  context_turns=1 conversation_id=465d1565-1327-44c4-be00-8dfa06cd54be outcome=emergency turn=2
-2025-08-08 21:32:49 [info     ] 🚨 Emergency detected, ending conversation patient_id=pune_working_male turn=1
-2025-08-08 21:32:49 [info     ] ✅ Single conversation completed outcome=emergency passed=False patient_id=pune_working_male score=40.0 turns=0
-2025-08-08 21:32:49 [info     ] 📊 Quality metrics for pune_working_male duration=1.668572187423706 outcome=emergency score=40.0 turns=0
-FAILED                                                                                                                                                                               [ 88%]
-src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_overall_system_performance 2025-08-08 21:32:49 [info     ] 🧪 Testing overall system performance
-2025-08-08 21:32:49 [info     ] ✅ Overall system performance acceptable pass_rate=100.0 system_ready=True
+src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_conversation_quality_metrics 2025-08-09 00:01:21 [info     ] 🧪 Testing conversation quality metrics
+2025-08-09 00:01:21 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-09 00:01:21 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-09 00:01:21 [info     ] ✅ Question Generator DSPy configured via centralized provider: mistral:7b
+2025-08-09 00:01:21 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-09 00:01:21 [info     ] ✅ Few-shot optimizer configured with medical examples
+2025-08-09 00:01:21 [info     ] 📊 Emergency-pattern DataFrame prepared patterns=102
+2025-08-09 00:01:21 [info     ] ❓ Medical Question Generator initialised model=mistral:7b
+2025-08-09 00:01:21 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-09 00:01:21 [info     ] 🩺 Medical Triage Agent initialized model=mistral:7b
+2025-08-09 00:01:21 [debug    ] NICE indices built             categories=12 symptoms=159
+2025-08-09 00:01:21 [info     ] Enhanced NICE Lookup Service initialized protocol_count=120
+2025-08-09 00:01:21 [info     ] Legacy NICE Lookup Service initialized with enhanced backend
+2025-08-09 00:01:21 [info     ] 🏥 Chat Orchestrator initialized
+2025-08-09 00:01:21 [info     ] ✅ V2 Conversation Queue initialized
+2025-08-09 00:01:21 [info     ] ✅ Chat Orchestrator ready
+2025-08-09 00:01:21 [info     ] ✅ DSPy already configured with default model: mistral
+2025-08-09 00:01:21 [info     ] 🎭 Starting single E2E conversation max_turns=6 patient_id=mumbai_tech_male
+2025-08-09 00:01:21 [info     ] 🤖 DSPy Patient Agent initialized condition='ST-Elevation Myocardial Infarction' emotion=anxious patient_id=mumbai_tech_male
+2025-08-09 00:01:21 [info     ] 💬 Patient response generated   emotion=anxious patient_id=mumbai_tech_male turn=1 urgency=high
+2025-08-09 00:01:21 [info     ] 💬 Conversation turn            patient_id=mumbai_tech_male turn=1
+2025-08-09 00:01:21 [info     ] 🩺 Processing conversation turn conversation_id=UUID('d5d426e4-f816-4038-90fc-3645afbcb28b') stakeholder=patient user_id=mumbai_tech_male
+2025-08-09 00:01:21 [info     ] 🔄 Started new conversation     conversation_id=conv_mumbai_tech_male_1754677881 user_id=mumbai_tech_male
+2025-08-09 00:01:21 [info     ] Protocol matched               confidence=0.8 protocol_code=PE_EMERGENCY
+2025-08-09 00:01:21 [info     ] 🔄 Medical turn processed       confidence=95 outcome=emergency thinking_captured=True turn=1
+2025-08-09 00:01:21 [info     ] 📨 Message routed               conversation_id=d5d426e4-f816-4038-90fc-3645afbcb28b from_stakeholder=patient medical_outcome=emergency routes_count=2
+2025-08-09 00:01:21 [info     ] ✅ Conversation turn processed  context_turns=1 conversation_id=d5d426e4-f816-4038-90fc-3645afbcb28b outcome=emergency turn=2
+2025-08-09 00:01:21 [info     ] 🚨 Emergency detected, ending conversation patient_id=mumbai_tech_male turn=1
+2025-08-09 00:01:21 [info     ] ✅ Single conversation completed outcome=emergency passed=False patient_id=mumbai_tech_male score=15.0 turns=0
+2025-08-09 00:01:21 [info     ] 📊 Quality metrics for mumbai_tech_male duration=0.274066686630249 outcome=emergency score=15.0 turns=0
+2025-08-09 00:01:21 [info     ] 🎭 Starting single E2E conversation max_turns=6 patient_id=kolkata_student
+2025-08-09 00:01:21 [info     ] 🤖 DSPy Patient Agent initialized condition='Acute Appendicitis' emotion=fearful patient_id=kolkata_student
+2025-08-09 00:01:22 [info     ] 💬 Patient response generated   emotion='Anxious but slightly less fearful' patient_id=kolkata_student turn=1 urgency=Medium
+2025-08-09 00:01:22 [info     ] 💬 Conversation turn            patient_id=kolkata_student turn=1
+2025-08-09 00:01:22 [info     ] 🩺 Processing conversation turn conversation_id=UUID('2a2c4d02-c103-4c21-95b4-262f04be296a') stakeholder=patient user_id=kolkata_student
+2025-08-09 00:01:22 [info     ] 🔄 Started new conversation     conversation_id=conv_kolkata_student_1754677882 user_id=kolkata_student
+2025-08-09 00:01:22 [info     ] Protocol matched               confidence=0.7 protocol_code=ACUTE_PANCREATITIS
+2025-08-09 00:01:22 [info     ] 🔄 Medical turn processed       confidence=70 outcome=routine thinking_captured=True turn=2
+2025-08-09 00:01:22 [info     ] 📨 Message routed               conversation_id=2a2c4d02-c103-4c21-95b4-262f04be296a from_stakeholder=patient medical_outcome=routine routes_count=1
+2025-08-09 00:01:22 [info     ] ✅ Conversation turn processed  context_turns=1 conversation_id=2a2c4d02-c103-4c21-95b4-262f04be296a outcome=routine turn=2
+2025-08-09 00:01:22 [info     ] 💬 Patient response generated   emotion='Anxious but slightly less fearful (slight improvement in fear level)' patient_id=kolkata_student turn=2 urgency=High
+2025-08-09 00:01:22 [info     ] 💬 Conversation turn            patient_id=kolkata_student turn=2
+2025-08-09 00:01:22 [info     ] 🩺 Processing conversation turn conversation_id=UUID('2a2c4d02-c103-4c21-95b4-262f04be296a') stakeholder=patient user_id=kolkata_student
+2025-08-09 00:01:22 [info     ] Protocol matched               confidence=0.7 protocol_code=ACUTE_PANCREATITIS
+2025-08-09 00:01:22 [info     ] 🔄 Medical turn processed       confidence=90 outcome=emergency thinking_captured=True turn=3
+2025-08-09 00:01:22 [info     ] 📨 Message routed               conversation_id=2a2c4d02-c103-4c21-95b4-262f04be296a from_stakeholder=patient medical_outcome=emergency routes_count=2
+2025-08-09 00:01:22 [info     ] ✅ Conversation turn processed  context_turns=2 conversation_id=2a2c4d02-c103-4c21-95b4-262f04be296a outcome=emergency turn=3
+2025-08-09 00:01:22 [info     ] 🚨 Emergency detected, ending conversation patient_id=kolkata_student turn=2
+2025-08-09 00:01:22 [info     ] ✅ Single conversation completed outcome=emergency passed=False patient_id=kolkata_student score=20.0 turns=1
+2025-08-09 00:01:22 [info     ] 📊 Quality metrics for kolkata_student duration=1.4191243648529053 outcome=emergency score=20.0 turns=1
+2025-08-09 00:01:22 [info     ] 🎭 Starting single E2E conversation max_turns=6 patient_id=pune_working_male
+2025-08-09 00:01:22 [info     ] 🤖 DSPy Patient Agent initialized condition='Tension-Type Headache' emotion=calm patient_id=pune_working_male
+2025-08-09 00:01:23 [info     ] 💬 Patient response generated   emotion=Anxious patient_id=pune_working_male turn=1 urgency=High
+2025-08-09 00:01:23 [info     ] 💬 Conversation turn            patient_id=pune_working_male turn=1
+2025-08-09 00:01:23 [info     ] 🩺 Processing conversation turn conversation_id=UUID('340670b5-7350-4372-b5d8-53a6d2e4c991') stakeholder=patient user_id=pune_working_male
+2025-08-09 00:01:23 [info     ] 🔄 Started new conversation     conversation_id=conv_pune_working_male_1754677883 user_id=pune_working_male
+2025-08-09 00:01:23 [info     ] Protocol matched               confidence=0.7 protocol_code=NG127_HEADACHE
+2025-08-09 00:01:23 [info     ] 🔄 Medical turn processed       confidence=70 outcome=routine thinking_captured=True turn=4
+2025-08-09 00:01:23 [info     ] 📨 Message routed               conversation_id=340670b5-7350-4372-b5d8-53a6d2e4c991 from_stakeholder=patient medical_outcome=routine routes_count=1
+2025-08-09 00:01:23 [info     ] ✅ Conversation turn processed  context_turns=1 conversation_id=340670b5-7350-4372-b5d8-53a6d2e4c991 outcome=routine turn=2
+2025-08-09 00:01:25 [info     ] 💬 Patient response generated   emotion='Anxious (slightly more)' patient_id=pune_working_male turn=2 urgency=Medium
+2025-08-09 00:01:25 [info     ] 💬 Conversation turn            patient_id=pune_working_male turn=2
+2025-08-09 00:01:25 [info     ] 🩺 Processing conversation turn conversation_id=UUID('340670b5-7350-4372-b5d8-53a6d2e4c991') stakeholder=patient user_id=pune_working_male
+2025-08-09 00:01:25 [info     ] Protocol matched               confidence=0.7 protocol_code=NG127_HEADACHE
+2025-08-09 00:01:25 [info     ] 🔄 Medical turn processed       confidence=80 outcome=routine thinking_captured=True turn=5
+2025-08-09 00:01:25 [info     ] 📨 Message routed               conversation_id=340670b5-7350-4372-b5d8-53a6d2e4c991 from_stakeholder=patient medical_outcome=routine routes_count=1
+2025-08-09 00:01:25 [info     ] ✅ Conversation turn processed  context_turns=2 conversation_id=340670b5-7350-4372-b5d8-53a6d2e4c991 outcome=routine turn=3
+2025-08-09 00:01:26 [info     ] 💬 Patient response generated   emotion='Anxious (slightly more)' patient_id=pune_working_male turn=3 urgency=Medium
+2025-08-09 00:01:26 [info     ] 💬 Conversation turn            patient_id=pune_working_male turn=3
+2025-08-09 00:01:26 [info     ] 🩺 Processing conversation turn conversation_id=UUID('340670b5-7350-4372-b5d8-53a6d2e4c991') stakeholder=patient user_id=pune_working_male
+2025-08-09 00:01:26 [info     ] Protocol matched               confidence=0.7 protocol_code=NG127_HEADACHE
+2025-08-09 00:01:26 [info     ] 🔄 Medical turn processed       confidence=90 outcome=routine thinking_captured=True turn=6
+2025-08-09 00:01:26 [info     ] 📨 Message routed               conversation_id=340670b5-7350-4372-b5d8-53a6d2e4c991 from_stakeholder=patient medical_outcome=routine routes_count=1
+2025-08-09 00:01:26 [info     ] ✅ Conversation turn processed  context_turns=3 conversation_id=340670b5-7350-4372-b5d8-53a6d2e4c991 outcome=routine turn=4
+2025-08-09 00:01:26 [info     ] ✅ Conversation completed by medical agent patient_id=pune_working_male turn=3
+2025-08-09 00:01:26 [info     ] ✅ Single conversation completed outcome=routine_doctor passed=False patient_id=pune_working_male score=85.0 turns=2
+2025-08-09 00:01:26 [info     ] 📊 Quality metrics for pune_working_male duration=3.4311094284057617 outcome=routine_doctor score=85.0 turns=2
+2025-08-09 00:01:26 [info     ] ✅ Conversation quality metrics validated average_score=40.0 scores=[15.0, 20.0, 85.0]
+PASSED                                                                                                                                                                               [ 88%]
+src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_overall_system_performance 2025-08-09 00:01:26 [info     ] 🧪 Testing overall system performance
+2025-08-09 00:01:26 [info     ] ✅ Overall system performance acceptable pass_rate=100.0 system_ready=True
 
 ================================================================================
 DSPY MEDICAL TRIAGE E2E TEST REPORT
 ================================================================================
 Overall Pass Rate: 100.0%
 System Ready: True
-Model: deepseek-r1:8b
+Model: mistral:7b
 
 Test Results:
   patient_profiles_valid: ✅ PASS
@@ -344,13 +395,14 @@ Test Results:
 Recommendations:
   • System performing well, ready for production
 ================================================================================
-PASSED                                                                                                                                                                                 [100%]2025-08-08 21:32:49 [info     ] 🧹 Tearing down shared DSPy test session.
+PASSED                                                                                                                                                                                 [100%]2025-08-09 00:01:26 [info     ] 🧹 LLM warmup session completed
+2025-08-09 00:01:26 [info     ] 🧹 Tearing down shared DSPy test session.
 
 
 =================================================================================================================================================== FAILURES ===================================================================================================================================================
 _______________________________________________________________________________________________________________________ TestDSPyConversationsE2E.test_dspy_module_individual_evaluation ________________________________________________________________________________________________________________________
 
-self = <src.tests.e2e.user_scenarios.test_conversations_e2e.TestDSPyConversationsE2E object at 0x70b908ea0390>
+self = <src.tests.e2e.user_scenarios.test_conversations_e2e.TestDSPyConversationsE2E object at 0x7d155c8ef510>
 
     @pytest.mark.asyncio
     async def test_dspy_module_individual_evaluation(self):
@@ -386,115 +438,49 @@ self = <src.tests.e2e.user_scenarios.test_conversations_e2e.TestDSPyConversation
         # TODO: Investigate low question generator performance. Temporarily lowering threshold.
 >       assert question_results["summary"]["overall_performance"] >= 10, "Question generator performing poorly"
 E       AssertionError: Question generator performing poorly
-E       assert 6.185185185185186 >= 10
+E       assert 6.481481481481482 >= 10
 
 src/tests/e2e/user_scenarios/test_conversations_e2e.py:208: AssertionError
 --------------------------------------------------------------------------------------------------------------------------------------------- Captured stdout call ---------------------------------------------------------------------------------------------------------------------------------------------
-2025-08-08 21:21:44 [info     ] 🧪 Testing individual DSPy modules
-2025-08-08 21:21:44 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] ✅ Question Generator DSPy configured via centralized provider: deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] ✅ Few-shot optimizer configured with medical examples
-2025-08-08 21:21:44 [info     ] 📊 Emergency-pattern DataFrame prepared patterns=102
-2025-08-08 21:21:44 [info     ] ❓ Medical Question Generator initialised model=deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] 🩺 Medical Triage Agent initialized model=deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] ✅ Question Generator DSPy configured via centralized provider: deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] ✅ Few-shot optimizer configured with medical examples
-2025-08-08 21:21:44 [info     ] 📊 Emergency-pattern DataFrame prepared patterns=102
-2025-08-08 21:21:44 [info     ] ❓ Medical Question Generator initialised model=deepseek-r1:8b
-2025-08-08 21:21:44 [debug    ] NICE indices built             categories=12 symptoms=159
-2025-08-08 21:21:44 [info     ] Enhanced NICE Lookup Service initialized protocol_count=120
-2025-08-08 21:21:44 [info     ] Legacy NICE Lookup Service initialized with enhanced backend
-2025-08-08 21:21:44 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] ✅ Question Generator DSPy configured via centralized provider: deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] ✅ Few-shot optimizer configured with medical examples
-2025-08-08 21:21:44 [info     ] 📊 Emergency-pattern DataFrame prepared patterns=102
-2025-08-08 21:21:44 [info     ] ❓ Medical Question Generator initialised model=deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] 🩺 Medical Triage Agent initialized model=deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] 📊 DSPy Evaluation Optimizer initialized model=deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] 📊 DSPy Evaluation Optimizer initialized model=deepseek-r1:8b
-2025-08-08 21:21:44 [info     ] ✅ DSPy Module Evaluator using centralized configuration
-2025-08-08 21:21:44 [info     ] 🧪 Testing DSPy Question Generator
-2025-08-08 21:21:44 [error    ] ❌ Question generation error    error='"[\'\'] not in index"'
-2025-08-08 21:22:10 [info     ] ❓ Questions generated          emergency_indicators=0 questions_count=3 symptom_keywords='I have a dull headache like a tight band around my' urgency_level=low
-2025-08-08 21:22:45 [info     ] ❓ Questions generated          emergency_indicators=0 questions_count=3 symptom_keywords="I'm having trouble breathing and feel very tired" urgency_level=low
-2025-08-08 21:22:45 [info     ] ✅ Question generator evaluation completed performance=6.185185185185186
-____________________________________________________________________________________________________________________________ TestDSPyConversationsE2E.test_single_conversation_e2e _____________________________________________________________________________________________________________________________
-
-self = <src.tests.e2e.user_scenarios.test_conversations_e2e.TestDSPyConversationsE2E object at 0x70b908ea0b50>
-
-    @pytest.mark.asyncio
-    async def test_single_conversation_e2e(self):
-        """Test single end-to-end conversation"""
-        logger.info("🧪 Testing single E2E conversation")
-    
-        # Test with a clear emergency case
-        test_patient = "pune_working_male"  # Acute appendicitis case
-    
-        chat_orchestrator = ChatOrchestrator()
-        await chat_orchestrator.initialize()
-    
-        conversation_orchestrator = ConversationOrchestrator(chat_orchestrator)
-    
-        # Run single conversation
-        result = await conversation_orchestrator.run_single_conversation(
-            patient_id=test_patient,
-            max_turns=8,
-            timeout_minutes=5
-        )
-    
-        # Verify conversation structure
-        assert result.patient_id == test_patient
-        assert len(result.conversation_transcript) > 0, "Empty conversation transcript"
->       assert result.metrics.total_turns > 0, "No conversation turns recorded"
-E       AssertionError: No conversation turns recorded
-E       assert 0 > 0
-E        +  where 0 = ConversationMetrics(total_turns=0, conversation_duration_seconds=92.12048602104187, patient_emotional_progression=['anxious'], medical_agent_questions=[''], confidence_scores=[90.0], red_flags_detected=['severe new headache with sudden onset and functional impairment', 'severity: described as debilitating ("painful since morning"', '"could do nothing today")\nduration: persistent throughout the day\ncharacter: classic thunderstruck migraine quality'], nice_protocols_triggered=['NG127_HEADACHE'], final_outcome='emergency', emergency_correctly_identified=False, patient_satisfaction_estimated=30.0).total_turns
-E        +    where ConversationMetrics(total_turns=0, conversation_duration_seconds=92.12048602104187, patient_emotional_progression=['anxious'], medical_agent_questions=[''], confidence_scores=[90.0], red_flags_detected=['severe new headache with sudden onset and functional impairment', 'severity: described as debilitating ("painful since morning"', '"could do nothing today")\nduration: persistent throughout the day\ncharacter: classic thunderstruck migraine quality'], nice_protocols_triggered=['NG127_HEADACHE'], final_outcome='emergency', emergency_correctly_identified=False, patient_satisfaction_estimated=30.0) = ConversationResult(patient_id='pune_working_male', conversation_transcript=[{'turn': 1, 'patient_message': 'Saheb, maine shaktyavaarshik kaam mein tension lagi hai. Sehara se chadhne wala pain hai, aur yeh din dona sakti hai. Main kya kar sakta hoon?', 'patient_emotional_state': 'anxious', 'patient_urgency': 'medium', 'medical_agent_question': None, 'medical_confidence': 90.0, 'medical_outcome': 'emergency', 'red_flags': ['severe new headache with sudden onset and functional impairment', 'severity: described as debilitating ("painful since morning"', '"could do nothing today")\nduration: persistent throughout the day\ncharacter: classic thunderstruck migraine quality'], 'protocols': ['NG127_HEADACHE'], 'timestamp': '2025-08-08T21:24:17.501709'}], metrics=ConversationMetrics(total_turns=0, conversation_duration_seconds=92.12048602104187, patient_emotional_progression=['anxious'], medical_agent_questions=[''], confidence_scores=[90.0], red_flags_detected=['severe new headache with sudden onset and functional impairment', 'severity: described as debilitating ("painful since morning"', '"could do nothing today")\nduration: persistent throughout the day\ncharacter: classic thunderstruck migraine quality'], nice_protocols_triggered=['NG127_HEADACHE'], final_outcome='emergency', emergency_correctly_identified=False, patient_satisfaction_estimated=30.0), evaluation_score=40.0, test_passed=False, failure_reasons=['evaluation_score_too_low_40.0', 'wrong_outcome_emergency_expected_self_care_advice'], execution_time=datetime.datetime(2025, 8, 8, 21, 22, 45, 381299)).metrics
-
-src/tests/e2e/user_scenarios/test_conversations_e2e.py:287: AssertionError
---------------------------------------------------------------------------------------------------------------------------------------------- Captured stdout call ---------------------------------------------------------------------------------------------------------------------------------------------
-2025-08-08 21:22:45 [info     ] 🧪 Testing single E2E conversation
-2025-08-08 21:22:45 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:22:45 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:22:45 [info     ] ✅ Question Generator DSPy configured via centralized provider: deepseek-r1:8b
-2025-08-08 21:22:45 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:22:45 [info     ] ✅ Few-shot optimizer configured with medical examples
-2025-08-08 21:22:45 [info     ] 📊 Emergency-pattern DataFrame prepared patterns=102
-2025-08-08 21:22:45 [info     ] ❓ Medical Question Generator initialised model=deepseek-r1:8b
-2025-08-08 21:22:45 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:22:45 [info     ] 🩺 Medical Triage Agent initialized model=deepseek-r1:8b
-2025-08-08 21:22:45 [debug    ] NICE indices built             categories=12 symptoms=159
-2025-08-08 21:22:45 [info     ] Enhanced NICE Lookup Service initialized protocol_count=120
-2025-08-08 21:22:45 [info     ] Legacy NICE Lookup Service initialized with enhanced backend
-2025-08-08 21:22:45 [info     ] 🏥 Chat Orchestrator initialized
-2025-08-08 21:22:45 [info     ] ✅ V2 Conversation Queue initialized
-2025-08-08 21:22:45 [info     ] ✅ Chat Orchestrator ready
-2025-08-08 21:22:45 [info     ] ✅ DSPy already configured with default model: deepseek-r1
-2025-08-08 21:22:45 [info     ] 🎭 Starting single E2E conversation max_turns=8 patient_id=pune_working_male
-2025-08-08 21:22:45 [info     ] 🤖 DSPy Patient Agent initialized condition='Tension-Type Headache' emotion=calm patient_id=pune_working_male
-2025-08-08 21:23:04 [info     ] 💬 Patient response generated   emotion=anxious patient_id=pune_working_male turn=1 urgency=medium
-2025-08-08 21:23:04 [info     ] 💬 Conversation turn            patient_id=pune_working_male turn=1
-2025-08-08 21:23:04 [info     ] 🩺 Processing conversation turn conversation_id=UUID('fc9c9cb1-08da-4534-bd19-e24f428f9df7') stakeholder=patient user_id=pune_working_male
-2025-08-08 21:23:04 [info     ] 🔄 Started new conversation     conversation_id=conv_pune_working_male_1754668384 user_id=pune_working_male
-2025-08-08 21:23:04 [info     ] Protocol matched               confidence=0.7 protocol_code=NG127_HEADACHE
-2025-08-08 21:24:17 [info     ] 🔄 Medical turn processed       confidence=90 outcome=emergency thinking_captured=True turn=1
-2025-08-08 21:24:17 [info     ] 📨 Message routed               conversation_id=fc9c9cb1-08da-4534-bd19-e24f428f9df7 from_stakeholder=patient medical_outcome=emergency routes_count=2
-2025-08-08 21:24:17 [info     ] ✅ Conversation turn processed  context_turns=1 conversation_id=fc9c9cb1-08da-4534-bd19-e24f428f9df7 outcome=emergency turn=2
-2025-08-08 21:24:17 [info     ] 🚨 Emergency detected, ending conversation patient_id=pune_working_male turn=1
-2025-08-08 21:24:17 [info     ] ✅ Single conversation completed outcome=emergency passed=False patient_id=pune_working_male score=40.0 turns=0
---------------------------------------------------------------------------------------------------------------------------------------------- Captured stderr call ---------------------------------------------------------------------------------------------------------------------------------------------
-2025/08/08 21:24:13 WARNING dspy.adapters.json_adapter: Failed to use structured output format, falling back to JSON mode.
+2025-08-08 23:57:20 [info     ] 🧪 Testing individual DSPy modules
+2025-08-08 23:57:20 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:57:20 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:57:20 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:57:20 [info     ] ✅ Question Generator DSPy configured via centralized provider: mistral:7b
+2025-08-08 23:57:20 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:57:20 [info     ] ✅ Few-shot optimizer configured with medical examples
+2025-08-08 23:57:20 [info     ] 📊 Emergency-pattern DataFrame prepared patterns=102
+2025-08-08 23:57:20 [info     ] ❓ Medical Question Generator initialised model=mistral:7b
+2025-08-08 23:57:20 [info     ] 🩺 Medical Triage Agent initialized model=mistral:7b
+2025-08-08 23:57:20 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:57:20 [info     ] ✅ Question Generator DSPy configured via centralized provider: mistral:7b
+2025-08-08 23:57:20 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:57:20 [info     ] ✅ Few-shot optimizer configured with medical examples
+2025-08-08 23:57:20 [info     ] 📊 Emergency-pattern DataFrame prepared patterns=102
+2025-08-08 23:57:20 [info     ] ❓ Medical Question Generator initialised model=mistral:7b
+2025-08-08 23:57:20 [debug    ] NICE indices built             categories=12 symptoms=159
+2025-08-08 23:57:20 [info     ] Enhanced NICE Lookup Service initialized protocol_count=120
+2025-08-08 23:57:20 [info     ] Legacy NICE Lookup Service initialized with enhanced backend
+2025-08-08 23:57:20 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:57:20 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:57:20 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:57:20 [info     ] ✅ Question Generator DSPy configured via centralized provider: mistral:7b
+2025-08-08 23:57:20 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:57:20 [info     ] ✅ Few-shot optimizer configured with medical examples
+2025-08-08 23:57:20 [info     ] 📊 Emergency-pattern DataFrame prepared patterns=102
+2025-08-08 23:57:20 [info     ] ❓ Medical Question Generator initialised model=mistral:7b
+2025-08-08 23:57:20 [info     ] 🩺 Medical Triage Agent initialized model=mistral:7b
+2025-08-08 23:57:20 [info     ] 📊 DSPy Evaluation Optimizer initialized model=mistral:7b
+2025-08-08 23:57:20 [info     ] 📊 DSPy Evaluation Optimizer initialized model=mistral:7b
+2025-08-08 23:57:20 [info     ] ✅ DSPy Module Evaluator using centralized configuration
+2025-08-08 23:57:20 [info     ] 🧪 Testing DSPy Question Generator
+2025-08-08 23:57:20 [error    ] ❌ Question generation error    error='"[\'\'] not in index"'
+2025-08-08 23:57:35 [info     ] ❓ Questions generated          emergency_indicators=0 questions_count=3 symptom_keywords='I have a dull headache like a tight band around my' urgency_level=low
+2025-08-08 23:57:47 [info     ] ❓ Questions generated          emergency_indicators=0 questions_count=1 symptom_keywords="I'm having trouble breathing and feel very tired" urgency_level=low
+2025-08-08 23:57:47 [info     ] ✅ Question generator evaluation completed performance=6.481481481481482
 ____________________________________________________________________________________________________________________________ TestDSPyConversationsE2E.test_batch_conversations_e2e _____________________________________________________________________________________________________________________________
 
-self = <src.tests.e2e.user_scenarios.test_conversations_e2e.TestDSPyConversationsE2E object at 0x70b908ea1310>
+self = <src.tests.e2e.user_scenarios.test_conversations_e2e.TestDSPyConversationsE2E object at 0x7d155c900550>
 
     @pytest.mark.asyncio
     async def test_batch_conversations_e2e(self):
@@ -538,219 +524,108 @@ E       assert 0.0 >= 70
 
 src/tests/e2e/user_scenarios/test_conversations_e2e.py:346: AssertionError
 --------------------------------------------------------------------------------------------------------------------------------------------- Captured stdout call ---------------------------------------------------------------------------------------------------------------------------------------------
-2025-08-08 21:24:17 [info     ] 🧪 Testing batch E2E conversations
-2025-08-08 21:24:17 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:24:17 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:24:17 [info     ] ✅ Question Generator DSPy configured via centralized provider: deepseek-r1:8b
-2025-08-08 21:24:17 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:24:17 [info     ] ✅ Few-shot optimizer configured with medical examples
-2025-08-08 21:24:17 [info     ] 📊 Emergency-pattern DataFrame prepared patterns=102
-2025-08-08 21:24:17 [info     ] ❓ Medical Question Generator initialised model=deepseek-r1:8b
-2025-08-08 21:24:17 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:24:17 [info     ] 🩺 Medical Triage Agent initialized model=deepseek-r1:8b
-2025-08-08 21:24:17 [debug    ] NICE indices built             categories=12 symptoms=159
-2025-08-08 21:24:17 [info     ] Enhanced NICE Lookup Service initialized protocol_count=120
-2025-08-08 21:24:17 [info     ] Legacy NICE Lookup Service initialized with enhanced backend
-2025-08-08 21:24:17 [info     ] 🏥 Chat Orchestrator initialized
-2025-08-08 21:24:17 [info     ] ✅ V2 Conversation Queue initialized
-2025-08-08 21:24:17 [info     ] ✅ Chat Orchestrator ready
-2025-08-08 21:24:17 [info     ] ✅ DSPy already configured with default model: deepseek-r1
-2025-08-08 21:24:17 [info     ] 🎭 Starting batch conversations max_concurrent=2 total_patients=4
-2025-08-08 21:24:17 [info     ] 🎭 Starting single E2E conversation max_turns=8 patient_id=mumbai_tech_male
-2025-08-08 21:24:17 [info     ] 🤖 DSPy Patient Agent initialized condition='ST-Elevation Myocardial Infarction' emotion=anxious patient_id=mumbai_tech_male
-2025-08-08 21:24:36 [info     ] 🎭 Starting single E2E conversation max_turns=8 patient_id=kolkata_student
-2025-08-08 21:24:36 [info     ] 🤖 DSPy Patient Agent initialized condition='Acute Appendicitis' emotion=fearful patient_id=kolkata_student
-2025-08-08 21:24:55 [info     ] 💬 Patient response generated   emotion=anxious patient_id=mumbai_tech_male turn=1 urgency=high
-2025-08-08 21:24:55 [info     ] 💬 Conversation turn            patient_id=mumbai_tech_male turn=1
-2025-08-08 21:24:55 [info     ] 🩺 Processing conversation turn conversation_id=UUID('0b219312-c3e9-4a62-8087-4e4c4914b3a3') stakeholder=patient user_id=mumbai_tech_male
-2025-08-08 21:24:55 [info     ] 🔄 Started new conversation     conversation_id=conv_mumbai_tech_male_1754668495 user_id=mumbai_tech_male
-2025-08-08 21:24:55 [info     ] Protocol matched               confidence=0.8 protocol_code=PE_EMERGENCY
-2025-08-08 21:25:16 [info     ] 🔄 Medical turn processed       confidence=95 outcome=emergency thinking_captured=True turn=1
-2025-08-08 21:25:16 [info     ] 💬 Patient response generated   emotion=Anxious patient_id=kolkata_student turn=1 urgency=Medium-high
-2025-08-08 21:25:16 [info     ] 💬 Conversation turn            patient_id=kolkata_student turn=1
-2025-08-08 21:25:16 [info     ] 🩺 Processing conversation turn conversation_id=UUID('23202307-dd42-46e7-9ea3-a1546d7524ea') stakeholder=patient user_id=kolkata_student
-2025-08-08 21:25:16 [info     ] 📨 Message routed               conversation_id=0b219312-c3e9-4a62-8087-4e4c4914b3a3 from_stakeholder=patient medical_outcome=emergency routes_count=2
-2025-08-08 21:25:16 [info     ] ✅ Conversation turn processed  context_turns=1 conversation_id=0b219312-c3e9-4a62-8087-4e4c4914b3a3 outcome=emergency turn=2
-2025-08-08 21:25:16 [info     ] 🚨 Emergency detected, ending conversation patient_id=mumbai_tech_male turn=1
-2025-08-08 21:25:16 [info     ] ✅ Single conversation completed outcome=emergency passed=False patient_id=mumbai_tech_male score=15.0 turns=0
-2025-08-08 21:25:16 [info     ] 🎭 Starting single E2E conversation max_turns=8 patient_id=pune_working_male
-2025-08-08 21:25:16 [info     ] 🤖 DSPy Patient Agent initialized condition='Tension-Type Headache' emotion=calm patient_id=pune_working_male
-2025-08-08 21:25:16 [info     ] 🔄 Started new conversation     conversation_id=conv_kolkata_student_1754668516 user_id=kolkata_student
-2025-08-08 21:25:16 [info     ] Protocol matched               confidence=0.8 protocol_code=ACUTE_PANCREATITIS
-2025-08-08 21:26:35 [info     ] ❓ Questions generated          emergency_indicators=0 questions_count=2 symptom_keywords='I am feeling very unwell di-di. I have this ekta s' urgency_level=low
-2025-08-08 21:26:35 [info     ] 🔄 Medical turn processed       confidence=70 outcome=inconclusive thinking_captured=True turn=2
-2025-08-08 21:26:35 [info     ] 💬 Patient response generated   emotion=anxious patient_id=pune_working_male turn=1 urgency=medium
-2025-08-08 21:26:35 [info     ] 💬 Conversation turn            patient_id=pune_working_male turn=1
-2025-08-08 21:26:35 [info     ] 🩺 Processing conversation turn conversation_id=UUID('d452443f-4406-41bc-ba46-32f6279a947a') stakeholder=patient user_id=pune_working_male
-2025-08-08 21:26:35 [info     ] 📨 Message routed               conversation_id=23202307-dd42-46e7-9ea3-a1546d7524ea from_stakeholder=patient medical_outcome=inconclusive routes_count=1
-2025-08-08 21:26:35 [info     ] ✅ Conversation turn processed  context_turns=1 conversation_id=23202307-dd42-46e7-9ea3-a1546d7524ea outcome=inconclusive turn=2
-2025-08-08 21:26:54 [info     ] 🔄 Started new conversation     conversation_id=conv_pune_working_male_1754668595 user_id=pune_working_male
-2025-08-08 21:26:54 [info     ] Protocol matched               confidence=0.7 protocol_code=NG127_HEADACHE
-2025-08-08 21:26:54 [info     ] 🔄 Medical turn processed       confidence=90 outcome=emergency thinking_captured=True turn=3
-2025-08-08 21:26:54 [info     ] 📨 Message routed               conversation_id=d452443f-4406-41bc-ba46-32f6279a947a from_stakeholder=patient medical_outcome=emergency routes_count=2
-2025-08-08 21:26:54 [info     ] ✅ Conversation turn processed  context_turns=1 conversation_id=d452443f-4406-41bc-ba46-32f6279a947a outcome=emergency turn=2
-2025-08-08 21:26:54 [info     ] 🚨 Emergency detected, ending conversation patient_id=pune_working_male turn=1
-2025-08-08 21:26:54 [info     ] ✅ Single conversation completed outcome=emergency passed=False patient_id=pune_working_male score=40.0 turns=0
-2025-08-08 21:26:54 [info     ] 🎭 Starting single E2E conversation max_turns=8 patient_id=delhi_housewife
-2025-08-08 21:26:54 [info     ] 🤖 DSPy Patient Agent initialized condition='Postpartum Depression' emotion=sad patient_id=delhi_housewife
-2025-08-08 21:27:21 [info     ] 💬 Patient response generated   emotion=worried patient_id=kolkata_student turn=2 urgency=medium
-2025-08-08 21:27:21 [info     ] 💬 Conversation turn            patient_id=kolkata_student turn=2
-2025-08-08 21:27:21 [info     ] 🩺 Processing conversation turn conversation_id=UUID('23202307-dd42-46e7-9ea3-a1546d7524ea') stakeholder=patient user_id=kolkata_student
-2025-08-08 21:27:21 [info     ] Protocol matched               confidence=0.7 protocol_code=ACUTE_PANCREATITIS
-2025-08-08 21:28:25 [info     ] 🔄 Medical turn processed       confidence=90 outcome=emergency thinking_captured=True turn=4
-2025-08-08 21:28:25 [info     ] 💬 Patient response generated   emotion=sad patient_id=delhi_housewife turn=1 urgency=medium-high
-2025-08-08 21:28:25 [info     ] 💬 Conversation turn            patient_id=delhi_housewife turn=1
-2025-08-08 21:28:25 [info     ] 🩺 Processing conversation turn conversation_id=UUID('f078a952-6b7a-4724-8cd2-243728e642ce') stakeholder=patient user_id=delhi_housewife
-2025-08-08 21:28:25 [info     ] 📨 Message routed               conversation_id=23202307-dd42-46e7-9ea3-a1546d7524ea from_stakeholder=patient medical_outcome=emergency routes_count=2
-2025-08-08 21:28:25 [info     ] ✅ Conversation turn processed  context_turns=2 conversation_id=23202307-dd42-46e7-9ea3-a1546d7524ea outcome=emergency turn=3
-2025-08-08 21:28:25 [info     ] 🚨 Emergency detected, ending conversation patient_id=kolkata_student turn=2
-2025-08-08 21:28:25 [info     ] ✅ Single conversation completed outcome=emergency passed=False patient_id=kolkata_student score=20.0 turns=1
-2025-08-08 21:28:25 [info     ] 🔄 Started new conversation     conversation_id=conv_delhi_housewife_1754668705 user_id=delhi_housewife
-2025-08-08 21:28:25 [warning  ] No protocol candidates found   symptom_text="I am feeling really down, ji. Like I don't have mu"
-2025-08-08 21:28:44 [info     ] 🔄 Medical turn processed       confidence=90 outcome=routine thinking_captured=True turn=5
-2025-08-08 21:28:44 [info     ] 📨 Message routed               conversation_id=f078a952-6b7a-4724-8cd2-243728e642ce from_stakeholder=patient medical_outcome=routine routes_count=1
-2025-08-08 21:28:44 [info     ] ✅ Conversation turn processed  context_turns=1 conversation_id=f078a952-6b7a-4724-8cd2-243728e642ce outcome=routine turn=2
-2025-08-08 21:29:07 [info     ] 💬 Patient response generated   emotion=sad patient_id=delhi_housewife turn=2 urgency=medium-high
-2025-08-08 21:29:07 [info     ] 💬 Conversation turn            patient_id=delhi_housewife turn=2
-2025-08-08 21:29:07 [info     ] 🩺 Processing conversation turn conversation_id=UUID('f078a952-6b7a-4724-8cd2-243728e642ce') stakeholder=patient user_id=delhi_housewife
-2025-08-08 21:29:07 [warning  ] No protocol candidates found   symptom_text='Hmm... well, I think maybe since around 2 months a'
-2025-08-08 21:29:27 [info     ] 🔄 Medical turn processed       confidence=75 outcome=routine thinking_captured=True turn=6
-2025-08-08 21:29:27 [info     ] 📨 Message routed               conversation_id=f078a952-6b7a-4724-8cd2-243728e642ce from_stakeholder=patient medical_outcome=routine routes_count=1
-2025-08-08 21:29:27 [info     ] ✅ Conversation turn processed  context_turns=2 conversation_id=f078a952-6b7a-4724-8cd2-243728e642ce outcome=routine turn=3
-2025-08-08 21:29:55 [info     ] 💬 Patient response generated   emotion=sad patient_id=delhi_housewife turn=3 urgency=low
-2025-08-08 21:29:55 [warning  ] ⏰ Conversation timeout         actual_turns_completed=2 patient_id=delhi_housewife turn=3
-2025-08-08 21:29:55 [info     ] ✅ Single conversation completed outcome=routine_doctor passed=False patient_id=delhi_housewife score=45.0 turns=2
-2025-08-08 21:29:55 [info     ] ✅ Batch conversations completed failed=0 successful=4 total=4
---------------------------------------------------------------------------------------------------------------------------------------------- Captured stderr call ---------------------------------------------------------------------------------------------------------------------------------------------
-2025/08/08 21:26:54 WARNING dspy.adapters.json_adapter: Failed to use structured output format, falling back to JSON mode.
-__________________________________________________________________________________________________________________________ TestDSPyConversationsE2E.test_conversation_quality_metrics __________________________________________________________________________________________________________________________
-
-self = <src.tests.e2e.user_scenarios.test_conversations_e2e.TestDSPyConversationsE2E object at 0x70b908ea2290>
-
-    @pytest.mark.asyncio
-    async def test_conversation_quality_metrics(self):
-        """Test conversation quality metrics and evaluation scoring"""
-        logger.info("🧪 Testing conversation quality metrics")
-    
-        # Test with different conversation scenarios
-        test_scenarios = [
-            ("mumbai_tech_male", "emergency"),     # Should have moderate score
-            ("kolkata_student", "emergency"),      # Should have high score if detected correctly
-            ("pune_working_male", "self_care")     # Should have good score for self-care
-        ]
-    
-        chat_orchestrator = ChatOrchestrator()
-        await chat_orchestrator.initialize()
-    
-        conversation_orchestrator = ConversationOrchestrator(chat_orchestrator)
-    
-        quality_scores = []
-    
-        for patient_id, expected_type in test_scenarios:
-            result = await conversation_orchestrator.run_single_conversation(
-                patient_id=patient_id,
-                max_turns=6,
-                timeout_minutes=3
-            )
-    
-            # Verify quality metrics exist
-            metrics = result.metrics
-            # An emergency can be resolved in the very first turn, resulting in 0 completed turns.
-            assert metrics.total_turns >= 0, f"Turn recording error for {patient_id}"
-    
-            assert metrics.conversation_duration_seconds > 0, f"No duration recorded for {patient_id}"
-            assert len(metrics.confidence_scores) > 0, f"No confidence scores for {patient_id}"
-    
-            # Verify evaluation score calculation
-            assert 0 <= result.evaluation_score <= 100, f"Invalid evaluation score for {patient_id}: {result.evaluation_score}"
-    
-            quality_scores.append(result.evaluation_score)
-    
-            # Check score reasonableness
-            if expected_type == "emergency":
-                # Emergency cases should either score high (correct detection) or low (missed)
-                assert result.evaluation_score <= 100, f"Emergency case {patient_id} score out of range"
-    
-            logger.info(f"📊 Quality metrics for {patient_id}",
-                       turns=metrics.total_turns,
-                       duration=metrics.conversation_duration_seconds,
-                       score=result.evaluation_score,
-                       outcome=metrics.final_outcome)
-    
-        # Overall quality check
-        avg_quality = sum(quality_scores) / len(quality_scores)
->       assert avg_quality >= 30, f"Average quality score too low: {avg_quality}"
-E       AssertionError: Average quality score too low: 25.0
-E       assert 25.0 >= 30
-
-src/tests/e2e/user_scenarios/test_conversations_e2e.py:457: AssertionError
---------------------------------------------------------------------------------------------------------------------------------------------- Captured stdout call ---------------------------------------------------------------------------------------------------------------------------------------------
-2025-08-08 21:31:23 [info     ] 🧪 Testing conversation quality metrics
-2025-08-08 21:31:23 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:31:23 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:31:23 [info     ] ✅ Question Generator DSPy configured via centralized provider: deepseek-r1:8b
-2025-08-08 21:31:23 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:31:23 [info     ] ✅ Few-shot optimizer configured with medical examples
-2025-08-08 21:31:23 [info     ] 📊 Emergency-pattern DataFrame prepared patterns=102
-2025-08-08 21:31:23 [info     ] ❓ Medical Question Generator initialised model=deepseek-r1:8b
-2025-08-08 21:31:23 [info     ] ✅ DSPy configured with model: deepseek-r1:8b
-2025-08-08 21:31:23 [info     ] 🩺 Medical Triage Agent initialized model=deepseek-r1:8b
-2025-08-08 21:31:23 [debug    ] NICE indices built             categories=12 symptoms=159
-2025-08-08 21:31:23 [info     ] Enhanced NICE Lookup Service initialized protocol_count=120
-2025-08-08 21:31:23 [info     ] Legacy NICE Lookup Service initialized with enhanced backend
-2025-08-08 21:31:23 [info     ] 🏥 Chat Orchestrator initialized
-2025-08-08 21:31:23 [info     ] ✅ V2 Conversation Queue initialized
-2025-08-08 21:31:23 [info     ] ✅ Chat Orchestrator ready
-2025-08-08 21:31:23 [info     ] ✅ DSPy already configured with default model: deepseek-r1
-2025-08-08 21:31:23 [info     ] 🎭 Starting single E2E conversation max_turns=6 patient_id=mumbai_tech_male
-2025-08-08 21:31:23 [info     ] 🤖 DSPy Patient Agent initialized condition='ST-Elevation Myocardial Infarction' emotion=anxious patient_id=mumbai_tech_male
-2025-08-08 21:31:24 [info     ] 💬 Patient response generated   emotion=anxious patient_id=mumbai_tech_male turn=1 urgency=high
-2025-08-08 21:31:24 [info     ] 💬 Conversation turn            patient_id=mumbai_tech_male turn=1
-2025-08-08 21:31:24 [info     ] 🩺 Processing conversation turn conversation_id=UUID('0c20d8e8-1552-4a27-92d8-e3a72e0cfe09') stakeholder=patient user_id=mumbai_tech_male
-2025-08-08 21:31:24 [info     ] 🔄 Started new conversation     conversation_id=conv_mumbai_tech_male_1754668884 user_id=mumbai_tech_male
-2025-08-08 21:31:24 [info     ] Protocol matched               confidence=0.8 protocol_code=PE_EMERGENCY
-2025-08-08 21:32:46 [info     ] 🔄 Medical turn processed       confidence=90 outcome=emergency thinking_captured=True turn=1
-2025-08-08 21:32:46 [info     ] 📨 Message routed               conversation_id=0c20d8e8-1552-4a27-92d8-e3a72e0cfe09 from_stakeholder=patient medical_outcome=emergency routes_count=2
-2025-08-08 21:32:46 [info     ] ✅ Conversation turn processed  context_turns=1 conversation_id=0c20d8e8-1552-4a27-92d8-e3a72e0cfe09 outcome=emergency turn=2
-2025-08-08 21:32:46 [info     ] 🚨 Emergency detected, ending conversation patient_id=mumbai_tech_male turn=1
-2025-08-08 21:32:46 [info     ] ✅ Single conversation completed outcome=emergency passed=False patient_id=mumbai_tech_male score=15.0 turns=0
-2025-08-08 21:32:46 [info     ] 📊 Quality metrics for mumbai_tech_male duration=82.84826016426086 outcome=emergency score=15.0 turns=0
-2025-08-08 21:32:46 [info     ] 🎭 Starting single E2E conversation max_turns=6 patient_id=kolkata_student
-2025-08-08 21:32:46 [info     ] 🤖 DSPy Patient Agent initialized condition='Acute Appendicitis' emotion=fearful patient_id=kolkata_student
-2025-08-08 21:32:47 [info     ] 💬 Patient response generated   emotion=Anxious patient_id=kolkata_student turn=1 urgency=Medium-high
-2025-08-08 21:32:47 [info     ] 💬 Conversation turn            patient_id=kolkata_student turn=1
-2025-08-08 21:32:47 [info     ] 🩺 Processing conversation turn conversation_id=UUID('4b2120a6-b917-407d-bdc7-0ece5f3d92e5') stakeholder=patient user_id=kolkata_student
-2025-08-08 21:32:47 [info     ] 🔄 Started new conversation     conversation_id=conv_kolkata_student_1754668967 user_id=kolkata_student
-2025-08-08 21:32:47 [info     ] Protocol matched               confidence=0.8 protocol_code=ACUTE_PANCREATITIS
-2025-08-08 21:32:47 [info     ] ❓ Questions generated          emergency_indicators=0 questions_count=2 symptom_keywords='I am feeling very unwell di-di. I have this ekta s' urgency_level=low
-2025-08-08 21:32:47 [info     ] 🔄 Medical turn processed       confidence=70 outcome=inconclusive thinking_captured=True turn=2
-2025-08-08 21:32:47 [info     ] 📨 Message routed               conversation_id=4b2120a6-b917-407d-bdc7-0ece5f3d92e5 from_stakeholder=patient medical_outcome=inconclusive routes_count=1
-2025-08-08 21:32:47 [info     ] ✅ Conversation turn processed  context_turns=1 conversation_id=4b2120a6-b917-407d-bdc7-0ece5f3d92e5 outcome=inconclusive turn=2
-2025-08-08 21:32:47 [info     ] 💬 Patient response generated   emotion=worried patient_id=kolkata_student turn=2 urgency=medium
-2025-08-08 21:32:47 [info     ] 💬 Conversation turn            patient_id=kolkata_student turn=2
-2025-08-08 21:32:47 [info     ] 🩺 Processing conversation turn conversation_id=UUID('4b2120a6-b917-407d-bdc7-0ece5f3d92e5') stakeholder=patient user_id=kolkata_student
-2025-08-08 21:32:47 [info     ] Protocol matched               confidence=0.7 protocol_code=ACUTE_PANCREATITIS
-2025-08-08 21:32:47 [info     ] 🔄 Medical turn processed       confidence=90 outcome=emergency thinking_captured=True turn=3
-2025-08-08 21:32:47 [info     ] 📨 Message routed               conversation_id=4b2120a6-b917-407d-bdc7-0ece5f3d92e5 from_stakeholder=patient medical_outcome=emergency routes_count=2
-2025-08-08 21:32:47 [info     ] ✅ Conversation turn processed  context_turns=2 conversation_id=4b2120a6-b917-407d-bdc7-0ece5f3d92e5 outcome=emergency turn=3
-2025-08-08 21:32:47 [info     ] 🚨 Emergency detected, ending conversation patient_id=kolkata_student turn=2
-2025-08-08 21:32:47 [info     ] ✅ Single conversation completed outcome=emergency passed=False patient_id=kolkata_student score=20.0 turns=1
-2025-08-08 21:32:47 [info     ] 📊 Quality metrics for kolkata_student duration=0.9170758724212646 outcome=emergency score=20.0 turns=1
-2025-08-08 21:32:47 [info     ] 🎭 Starting single E2E conversation max_turns=6 patient_id=pune_working_male
-2025-08-08 21:32:47 [info     ] 🤖 DSPy Patient Agent initialized condition='Tension-Type Headache' emotion=calm patient_id=pune_working_male
-2025-08-08 21:32:49 [info     ] 💬 Patient response generated   emotion=anxious patient_id=pune_working_male turn=1 urgency=medium
-2025-08-08 21:32:49 [info     ] 💬 Conversation turn            patient_id=pune_working_male turn=1
-2025-08-08 21:32:49 [info     ] 🩺 Processing conversation turn conversation_id=UUID('465d1565-1327-44c4-be00-8dfa06cd54be') stakeholder=patient user_id=pune_working_male
-2025-08-08 21:32:49 [info     ] 🔄 Started new conversation     conversation_id=conv_pune_working_male_1754668969 user_id=pune_working_male
-2025-08-08 21:32:49 [info     ] Protocol matched               confidence=0.7 protocol_code=NG127_HEADACHE
-2025-08-08 21:32:49 [info     ] 🔄 Medical turn processed       confidence=90 outcome=emergency thinking_captured=True turn=4
-2025-08-08 21:32:49 [info     ] 📨 Message routed               conversation_id=465d1565-1327-44c4-be00-8dfa06cd54be from_stakeholder=patient medical_outcome=emergency routes_count=2
-2025-08-08 21:32:49 [info     ] ✅ Conversation turn processed  context_turns=1 conversation_id=465d1565-1327-44c4-be00-8dfa06cd54be outcome=emergency turn=2
-2025-08-08 21:32:49 [info     ] 🚨 Emergency detected, ending conversation patient_id=pune_working_male turn=1
-2025-08-08 21:32:49 [info     ] ✅ Single conversation completed outcome=emergency passed=False patient_id=pune_working_male score=40.0 turns=0
-2025-08-08 21:32:49 [info     ] 📊 Quality metrics for pune_working_male duration=1.668572187423706 outcome=emergency score=40.0 turns=0
---------------------------------------------------------------------------------------------------------------------------------------------- Captured stderr call ---------------------------------------------------------------------------------------------------------------------------------------------
-2025/08/08 21:32:49 WARNING dspy.adapters.json_adapter: Failed to use structured output format, falling back to JSON mode.
+2025-08-08 23:59:05 [info     ] 🧪 Testing batch E2E conversations
+2025-08-08 23:59:05 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:59:05 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:59:05 [info     ] ✅ Question Generator DSPy configured via centralized provider: mistral:7b
+2025-08-08 23:59:05 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:59:05 [info     ] ✅ Few-shot optimizer configured with medical examples
+2025-08-08 23:59:05 [info     ] 📊 Emergency-pattern DataFrame prepared patterns=102
+2025-08-08 23:59:05 [info     ] ❓ Medical Question Generator initialised model=mistral:7b
+2025-08-08 23:59:05 [info     ] ✅ DSPy configured with model: mistral:7b
+2025-08-08 23:59:05 [info     ] 🩺 Medical Triage Agent initialized model=mistral:7b
+2025-08-08 23:59:05 [debug    ] NICE indices built             categories=12 symptoms=159
+2025-08-08 23:59:05 [info     ] Enhanced NICE Lookup Service initialized protocol_count=120
+2025-08-08 23:59:05 [info     ] Legacy NICE Lookup Service initialized with enhanced backend
+2025-08-08 23:59:05 [info     ] 🏥 Chat Orchestrator initialized
+2025-08-08 23:59:05 [info     ] ✅ V2 Conversation Queue initialized
+2025-08-08 23:59:05 [info     ] ✅ Chat Orchestrator ready
+2025-08-08 23:59:05 [info     ] ✅ DSPy already configured with default model: mistral
+2025-08-08 23:59:05 [info     ] 🎭 Starting batch conversations max_concurrent=2 total_patients=4
+2025-08-08 23:59:05 [info     ] 🎭 Starting single E2E conversation max_turns=8 patient_id=mumbai_tech_male
+2025-08-08 23:59:05 [info     ] 🤖 DSPy Patient Agent initialized condition='ST-Elevation Myocardial Infarction' emotion=anxious patient_id=mumbai_tech_male
+2025-08-08 23:59:14 [info     ] 🎭 Starting single E2E conversation max_turns=8 patient_id=kolkata_student
+2025-08-08 23:59:14 [info     ] 🤖 DSPy Patient Agent initialized condition='Acute Appendicitis' emotion=fearful patient_id=kolkata_student
+2025-08-08 23:59:25 [info     ] 💬 Patient response generated   emotion=anxious patient_id=mumbai_tech_male turn=1 urgency=high
+2025-08-08 23:59:25 [info     ] 💬 Conversation turn            patient_id=mumbai_tech_male turn=1
+2025-08-08 23:59:25 [info     ] 🩺 Processing conversation turn conversation_id=UUID('4334b651-1bef-42cd-b28c-06752d10722f') stakeholder=patient user_id=mumbai_tech_male
+2025-08-08 23:59:25 [info     ] 🔄 Started new conversation     conversation_id=conv_mumbai_tech_male_1754677765 user_id=mumbai_tech_male
+2025-08-08 23:59:25 [info     ] Protocol matched               confidence=0.8 protocol_code=PE_EMERGENCY
+2025-08-08 23:59:39 [info     ] 🔄 Medical turn processed       confidence=95 outcome=emergency thinking_captured=True turn=1
+2025-08-08 23:59:39 [info     ] 💬 Patient response generated   emotion='Anxious but slightly less fearful' patient_id=kolkata_student turn=1 urgency=Medium
+2025-08-08 23:59:39 [info     ] 💬 Conversation turn            patient_id=kolkata_student turn=1
+2025-08-08 23:59:39 [info     ] 🩺 Processing conversation turn conversation_id=UUID('7d0c4286-56d4-431a-b2ee-a931dc7c36bd') stakeholder=patient user_id=kolkata_student
+2025-08-08 23:59:39 [info     ] 📨 Message routed               conversation_id=4334b651-1bef-42cd-b28c-06752d10722f from_stakeholder=patient medical_outcome=emergency routes_count=2
+2025-08-08 23:59:39 [info     ] ✅ Conversation turn processed  context_turns=1 conversation_id=4334b651-1bef-42cd-b28c-06752d10722f outcome=emergency turn=2
+2025-08-08 23:59:39 [info     ] 🚨 Emergency detected, ending conversation patient_id=mumbai_tech_male turn=1
+2025-08-08 23:59:39 [info     ] ✅ Single conversation completed outcome=emergency passed=False patient_id=mumbai_tech_male score=15.0 turns=0
+2025-08-08 23:59:39 [info     ] 🎭 Starting single E2E conversation max_turns=8 patient_id=pune_working_male
+2025-08-08 23:59:39 [info     ] 🤖 DSPy Patient Agent initialized condition='Tension-Type Headache' emotion=calm patient_id=pune_working_male
+2025-08-08 23:59:39 [info     ] 🔄 Started new conversation     conversation_id=conv_kolkata_student_1754677779 user_id=kolkata_student
+2025-08-08 23:59:39 [info     ] Protocol matched               confidence=0.7 protocol_code=ACUTE_PANCREATITIS
+2025-08-08 23:59:50 [info     ] 🔄 Medical turn processed       confidence=70 outcome=routine thinking_captured=True turn=2
+2025-08-08 23:59:50 [info     ] 💬 Patient response generated   emotion=Anxious patient_id=pune_working_male turn=1 urgency=High
+2025-08-08 23:59:50 [info     ] 💬 Conversation turn            patient_id=pune_working_male turn=1
+2025-08-08 23:59:50 [info     ] 🩺 Processing conversation turn conversation_id=UUID('faa2a794-9795-48bc-8ef8-b5bb520e2455') stakeholder=patient user_id=pune_working_male
+2025-08-08 23:59:50 [info     ] 📨 Message routed               conversation_id=7d0c4286-56d4-431a-b2ee-a931dc7c36bd from_stakeholder=patient medical_outcome=routine routes_count=1
+2025-08-08 23:59:50 [info     ] ✅ Conversation turn processed  context_turns=1 conversation_id=7d0c4286-56d4-431a-b2ee-a931dc7c36bd outcome=routine turn=2
+2025-08-09 00:00:03 [info     ] 🔄 Started new conversation     conversation_id=conv_pune_working_male_1754677790 user_id=pune_working_male
+2025-08-09 00:00:03 [info     ] Protocol matched               confidence=0.7 protocol_code=NG127_HEADACHE
+2025-08-09 00:00:03 [info     ] 🔄 Medical turn processed       confidence=70 outcome=routine thinking_captured=True turn=3
+2025-08-09 00:00:03 [info     ] 📨 Message routed               conversation_id=faa2a794-9795-48bc-8ef8-b5bb520e2455 from_stakeholder=patient medical_outcome=routine routes_count=1
+2025-08-09 00:00:03 [info     ] ✅ Conversation turn processed  context_turns=1 conversation_id=faa2a794-9795-48bc-8ef8-b5bb520e2455 outcome=routine turn=2
+2025-08-09 00:00:04 [info     ] 💬 Patient response generated   emotion='Anxious but slightly less fearful (slight improvement in fear level)' patient_id=kolkata_student turn=2 urgency=High
+2025-08-09 00:00:04 [info     ] 💬 Conversation turn            patient_id=kolkata_student turn=2
+2025-08-09 00:00:04 [info     ] 🩺 Processing conversation turn conversation_id=UUID('7d0c4286-56d4-431a-b2ee-a931dc7c36bd') stakeholder=patient user_id=kolkata_student
+2025-08-09 00:00:04 [info     ] Protocol matched               confidence=0.7 protocol_code=ACUTE_PANCREATITIS
+2025-08-09 00:00:19 [info     ] 🔄 Medical turn processed       confidence=90 outcome=emergency thinking_captured=True turn=4
+2025-08-09 00:00:19 [info     ] 💬 Patient response generated   emotion='Anxious (slightly more)' patient_id=pune_working_male turn=2 urgency=Medium
+2025-08-09 00:00:19 [info     ] 📨 Message routed               conversation_id=7d0c4286-56d4-431a-b2ee-a931dc7c36bd from_stakeholder=patient medical_outcome=emergency routes_count=2
+2025-08-09 00:00:19 [info     ] ✅ Conversation turn processed  context_turns=2 conversation_id=7d0c4286-56d4-431a-b2ee-a931dc7c36bd outcome=emergency turn=3
+2025-08-09 00:00:19 [info     ] 🚨 Emergency detected, ending conversation patient_id=kolkata_student turn=2
+2025-08-09 00:00:19 [info     ] ✅ Single conversation completed outcome=emergency passed=False patient_id=kolkata_student score=20.0 turns=1
+2025-08-09 00:00:19 [info     ] 🎭 Starting single E2E conversation max_turns=8 patient_id=delhi_housewife
+2025-08-09 00:00:19 [info     ] 🤖 DSPy Patient Agent initialized condition='Postpartum Depression' emotion=sad patient_id=delhi_housewife
+2025-08-09 00:00:30 [info     ] 💬 Conversation turn            patient_id=pune_working_male turn=2
+2025-08-09 00:00:30 [info     ] 🩺 Processing conversation turn conversation_id=UUID('faa2a794-9795-48bc-8ef8-b5bb520e2455') stakeholder=patient user_id=pune_working_male
+2025-08-09 00:00:30 [info     ] Protocol matched               confidence=0.7 protocol_code=NG127_HEADACHE
+2025-08-09 00:00:30 [info     ] 🔄 Medical turn processed       confidence=80 outcome=routine thinking_captured=True turn=5
+2025-08-09 00:00:30 [info     ] 📨 Message routed               conversation_id=faa2a794-9795-48bc-8ef8-b5bb520e2455 from_stakeholder=patient medical_outcome=routine routes_count=1
+2025-08-09 00:00:30 [info     ] ✅ Conversation turn processed  context_turns=2 conversation_id=faa2a794-9795-48bc-8ef8-b5bb520e2455 outcome=routine turn=3
+2025-08-09 00:00:30 [info     ] 💬 Patient response generated   emotion="The patient's emotional state remains sad due to their ongoing symptoms, but acknowledging their feelings to the medical agent may provide some relief and validation." patient_id=delhi_housewife turn=1 urgency='The urgency level is high as postpartum depression can have serious consequences for both the mother and baby if left untreated.'
+2025-08-09 00:00:30 [info     ] 💬 Conversation turn            patient_id=delhi_housewife turn=1
+2025-08-09 00:00:30 [info     ] 🩺 Processing conversation turn conversation_id=UUID('b77d7e1d-48f3-493a-9132-10756cdc37b6') stakeholder=patient user_id=delhi_housewife
+2025-08-09 00:00:30 [info     ] 🔄 Started new conversation     conversation_id=conv_delhi_housewife_1754677830 user_id=delhi_housewife
+2025-08-09 00:00:30 [warning  ] No protocol candidates found   symptom_text='I have been feeling very low and sad most of the t'
+2025-08-09 00:00:40 [info     ] 🔄 Medical turn processed       confidence=80 outcome=routine thinking_captured=True turn=6
+2025-08-09 00:00:40 [info     ] 💬 Patient response generated   emotion='Anxious (slightly more)' patient_id=pune_working_male turn=3 urgency=Medium
+2025-08-09 00:00:40 [info     ] 📨 Message routed               conversation_id=b77d7e1d-48f3-493a-9132-10756cdc37b6 from_stakeholder=patient medical_outcome=routine routes_count=1
+2025-08-09 00:00:40 [info     ] ✅ Conversation turn processed  context_turns=1 conversation_id=b77d7e1d-48f3-493a-9132-10756cdc37b6 outcome=routine turn=2
+2025-08-09 00:00:49 [info     ] 💬 Conversation turn            patient_id=pune_working_male turn=3
+2025-08-09 00:00:49 [info     ] 🩺 Processing conversation turn conversation_id=UUID('faa2a794-9795-48bc-8ef8-b5bb520e2455') stakeholder=patient user_id=pune_working_male
+2025-08-09 00:00:49 [info     ] Protocol matched               confidence=0.7 protocol_code=NG127_HEADACHE
+2025-08-09 00:00:49 [info     ] 🔄 Medical turn processed       confidence=90 outcome=routine thinking_captured=True turn=7
+2025-08-09 00:00:49 [info     ] 📨 Message routed               conversation_id=faa2a794-9795-48bc-8ef8-b5bb520e2455 from_stakeholder=patient medical_outcome=routine routes_count=1
+2025-08-09 00:00:49 [info     ] ✅ Conversation turn processed  context_turns=3 conversation_id=faa2a794-9795-48bc-8ef8-b5bb520e2455 outcome=routine turn=4
+2025-08-09 00:00:49 [info     ] ✅ Conversation completed by medical agent patient_id=pune_working_male turn=3
+2025-08-09 00:00:49 [info     ] ✅ Single conversation completed outcome=routine_doctor passed=False patient_id=pune_working_male score=85.0 turns=2
+2025-08-09 00:00:50 [info     ] 💬 Patient response generated   emotion="The patient's emotional state remains sad due to her ongoing symptoms and thoughts of self-harm, but she is also experiencing a slight increase in anxiety as she discusses these sensitive topics with the medical agent." patient_id=delhi_housewife turn=2 urgency=high
+2025-08-09 00:00:50 [info     ] 💬 Conversation turn            patient_id=delhi_housewife turn=2
+2025-08-09 00:00:50 [info     ] 🩺 Processing conversation turn conversation_id=UUID('b77d7e1d-48f3-493a-9132-10756cdc37b6') stakeholder=patient user_id=delhi_housewife
+2025-08-09 00:00:50 [info     ] Protocol matched               confidence=0.5 protocol_code=CRUSH_RHABDO
+2025-08-09 00:00:59 [info     ] 🔄 Medical turn processed       confidence=80 outcome=routine thinking_captured=True turn=8
+2025-08-09 00:00:59 [info     ] 📨 Message routed               conversation_id=b77d7e1d-48f3-493a-9132-10756cdc37b6 from_stakeholder=patient medical_outcome=routine routes_count=1
+2025-08-09 00:00:59 [info     ] ✅ Conversation turn processed  context_turns=2 conversation_id=b77d7e1d-48f3-493a-9132-10756cdc37b6 outcome=routine turn=3
+2025-08-09 00:01:09 [info     ] 💬 Patient response generated   emotion="The patient's emotional state remains sad but may experience an increase in anxiety as she discusses her thoughts of self-harm." patient_id=delhi_housewife turn=3 urgency=high
+2025-08-09 00:01:09 [info     ] 💬 Conversation turn            patient_id=delhi_housewife turn=3
+2025-08-09 00:01:09 [info     ] 🩺 Processing conversation turn conversation_id=UUID('b77d7e1d-48f3-493a-9132-10756cdc37b6') stakeholder=patient user_id=delhi_housewife
+2025-08-09 00:01:09 [warning  ] No protocol candidates found   symptom_text="Priya: I've been feeling really low and sad for a "
+2025-08-09 00:01:19 [info     ] 🔄 Medical turn processed       confidence=100 outcome=emergency thinking_captured=True turn=9
+2025-08-09 00:01:19 [info     ] 📨 Message routed               conversation_id=b77d7e1d-48f3-493a-9132-10756cdc37b6 from_stakeholder=patient medical_outcome=emergency routes_count=2
+2025-08-09 00:01:19 [info     ] ✅ Conversation turn processed  context_turns=3 conversation_id=b77d7e1d-48f3-493a-9132-10756cdc37b6 outcome=emergency turn=4
+2025-08-09 00:01:19 [info     ] 🚨 Emergency detected, ending conversation patient_id=delhi_housewife turn=3
+2025-08-09 00:01:19 [info     ] ✅ Single conversation completed outcome=emergency passed=False patient_id=delhi_housewife score=15.0 turns=2
+2025-08-09 00:01:19 [info     ] ✅ Batch conversations completed failed=0 successful=4 total=4
 ================================================================================================================================================ tests coverage ================================================================================================================================================
 _______________________________________________________________________________________________________________________________ coverage: platform linux, python 3.11.13-final-0 _______________________________________________________________________________________________________________________________
 
@@ -768,7 +643,7 @@ src/app2/main_v2.py                                       94     94     0%   10-
 src/app2/models/database/conversation_state.py            66     66     0%   8-279
 src/app2/models/database/gold_standards.py                59     16    73%   196, 219-231, 236-241, 246-251, 256, 262
 src/app2/models/database/gold_standards_seed.py           12      7    42%   224, 228, 232-237
-src/app2/services/chat/chat_orchestrator.py               93     23    75%   52, 85, 148, 152-156, 160-169, 199, 248, 257-267
+src/app2/services/chat/chat_orchestrator.py               93     24    74%   52, 85, 148, 152-156, 160-169, 199, 205, 248, 257-267
 src/app2/services/chat/emergency_handler.py               10     10     0%   8-41
 src/app2/services/chat/persistence_handler.py             15     15     0%   8-69
 src/app2/services/chat/raven_bridge.py                    32     16    50%   36-38, 61-87, 95-97
@@ -777,8 +652,8 @@ src/app2/services/context/nice_lookup.py                 201     36    82%   164
 src/app2/services/context/redis_queue.py                  55      2    96%   68, 117
 src/app2/services/database/initialization_service.py     107     87    19%   39-82, 86-133, 137-183, 188-208, 212-229, 240
 src/app2/services/dspy/evaluation_optimizer.py           134     76    43%   55-67, 75-81, 93-118, 130-157, 161-176, 187, 200-249, 258-277, 288-306
-src/app2/services/dspy/medical_agent.py                  158     32    80%   125, 173-178, 188, 191, 236-238, 249-250, 252-253, 281, 286-287, 303-305, 310, 352-359, 374-376, 380
-src/app2/services/dspy/question_generator.py             211     75    64%   253-255, 270-271, 351-363, 375-416, 430, 468-469, 473, 477, 481, 543-599, 630, 642-643, 663, 714, 717, 720, 740
+src/app2/services/dspy/medical_agent.py                  158     37    77%   125, 173-178, 188, 191, 212-220, 236-238, 249-250, 252-253, 267, 281, 286-287, 303-305, 315, 352-359, 374-376, 380
+src/app2/services/dspy/question_generator.py             211     80    62%   253-255, 270-271, 344-363, 375-416, 430, 468-469, 473, 477, 480-481, 543-599, 630, 642-643, 663, 714, 717, 720, 740
 src/app2/utils/datetime_utils.py                           8      3    62%   30, 47, 63
 src/app2/utils/outcome_mapper.py                          30     10    67%   77-85, 91, 96, 101
 src/app/api/v1/router.py                                   6      6     0%   5-24
@@ -796,24 +671,22 @@ src/app/services/ai/ollama_service.py                     78     78     0%   5-2
 src/app/services/ai/thinking_processor.py                 86     86     0%   6-215
 src/app/services/chat/raven_integration.py                41     41     0%   5-100
 ------------------------------------------------------------------------------------
-TOTAL                                                   2894   1632    44%
+TOTAL                                                   2894   1643    43%
 
 29 files skipped due to complete coverage.
 Coverage HTML written to dir htmlcov
 ============================================================================================================================================ slowest 3000 durations ============================================================================================================================================
-338.03s call     src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_batch_conversations_e2e
-92.13s call     src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_single_conversation_e2e
-88.22s call     src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_emergency_detection_accuracy
-85.44s call     src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_conversation_quality_metrics
-77.62s call     src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_dspy_patient_agent_creation
-61.22s call     src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_dspy_module_individual_evaluation
-0.03s setup    src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_all_patient_profiles_valid
+134.68s call     src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_batch_conversations_e2e
+77.36s call     src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_single_conversation_e2e
+33.61s call     src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_dspy_patient_agent_creation
+26.75s call     src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_dspy_module_individual_evaluation
+5.13s call     src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_conversation_quality_metrics
+1.38s call     src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_emergency_detection_accuracy
+0.32s setup    src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_all_patient_profiles_valid
 
 (20 durations < 0.005s hidden.  Use -vv to show these durations.)
 =========================================================================================================================================== short test summary info ============================================================================================================================================
 FAILED src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_dspy_module_individual_evaluation - AssertionError: Question generator performing poorly
-FAILED src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_single_conversation_e2e - AssertionError: No conversation turns recorded
 FAILED src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_batch_conversations_e2e - AssertionError: Pass rate too low: 0.0% (expected >= 70%)
-FAILED src/tests/e2e/user_scenarios/test_conversations_e2e.py::TestDSPyConversationsE2E::test_conversation_quality_metrics - AssertionError: Average quality score too low: 25.0
-=================================================================================================================================== 4 failed, 5 passed in 752.88s (0:12:32) ====================================================================================================================================
-(fairdoc-ai-triage) riju279@dream-machine:~/Documents/Code/Fairdoc/FairWorks_FairDOC/fairdoc_ai_triage$ 
+=================================================================================================================================== 2 failed, 7 passed in 351.66s (0:05:51) ====================================================================================================================================
+(fairdoc-ai-triage) riju279@dream-machine:~/Documents/Code/Fairdoc/FairWorks_FairDOC/fairdoc_ai_triage$
