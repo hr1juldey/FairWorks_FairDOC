@@ -296,6 +296,35 @@ def get_llm_provider() -> DSPyLLMProvider:
         _provider = DSPyLLMProvider()
     return _provider
 
+def ensure_dspy_configured(model_name: str = None) -> bool:
+    """
+    Ensure DSPy is configured with the specified model
+    
+    Args:
+        model_name: Optional model name to use
+        
+    Returns:
+        bool: True if configuration was successful
+    """
+    try:
+        provider = get_llm_provider()
+        
+        # If model_name specified, try to get that specific model
+        if model_name:
+            # Try to create LLM instance to verify it works
+            llm_instance = provider.get_llm(model_name)
+            dspy.configure(lm=llm_instance)
+            logger.info(f"✅ DSPy configured with model: {model_name}")
+        else:
+            # Use default configuration (already done in provider init)
+            logger.info(f"✅ DSPy already configured with default model: {provider._default_model}")
+        
+        return True
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to configure DSPy: {e}")
+        return False
+
 # Convenience functions
 def llm(model: str = None, **kwargs) -> dspy.LM:
     """Get LLM instance - main interface"""
