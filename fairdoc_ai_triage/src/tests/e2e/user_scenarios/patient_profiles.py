@@ -92,7 +92,12 @@ class PatientProfile:
             "vocabulary": self.communication_style.vocabulary,
             "sentence_structure": self.communication_style.sentence_structure,
             "cultural_expressions": self.communication_style.cultural_expressions,
-            "tech_comfort": self.communication_style.tech_comfort
+            "tech_comfort": self.communication_style.tech_comfort,
+            # ✅ ALWAYS include pause_patterns in fallback
+            "pause_patterns": (1, 3),  # Default range
+            "typo_rate": 0.02,
+            "repeat_rate": 0.0,
+            "abbreviation_use": 0.1
         }
         
         # ENHANCE: Add persona-based typing patterns
