@@ -64,6 +64,48 @@ def setup_test_environment():
     os.environ.update(original_env)
 
 # Replace this in your conftest.py
+# Add this to conftest.py - LLM Warmup Integration
+
+@pytest.fixture(scope="session", autouse=True)
+def warmup_llm_models():
+    """
+    Warm up LLM models before test session starts
+    Ensures fair timing by pre-loading models
+    """
+    from src.tests.utils.llm_warmup import warmup_models_sync, WarmupMethod
+    from src.app2.core.config_v2 import settings_v2
+    
+    logger.info("🔥 Pre-warming LLM models for test session...")
+    
+    # Models to warm up
+    models_to_warmup = [
+        settings_v2.DSPY_MODEL_NAME,
+        settings_v2.FAIRDOC_V2_DSPy_MODEL
+    ]
+    
+    # Remove duplicates
+    unique_models = list(set(models_to_warmup))
+    
+    # Warm up models
+    warmup_results = warmup_models_sync(unique_models, WarmupMethod.REST_API)
+    
+    # Check results
+    successful_warmups = 0
+    for model_name, result in warmup_results.items():
+        if result.success:
+            successful_warmups += 1
+            logger.info(f"✅ Model '{model_name}' warmed up successfully in {result.warmup_time_seconds:.2f}s")
+        else:
+            logger.warning(f"⚠️ Model '{model_name}' warmup failed: {result.error_message}")
+    
+    if successful_warmups == 0:
+        logger.error("❌ No models warmed up successfully - tests may have unfair timing")
+    else:
+        logger.info(f"🎯 {successful_warmups}/{len(unique_models)} models warmed up successfully")
+    
+    yield
+    
+    logger.info("🧹 LLM warmup session completed")
 
 @pytest.fixture(scope='session')
 def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
