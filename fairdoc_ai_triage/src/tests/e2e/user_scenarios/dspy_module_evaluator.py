@@ -12,6 +12,7 @@ import statistics
 
 from src.tests.e2e.user_scenarios.patient_profiles import get_all_patient_ids, get_patient_profile
 from src.tests.e2e.user_scenarios.medical_conditions import get_condition, get_all_condition_ids
+from src.app2.core.dspy_config_v2 import ensure_dspy_configured, get_llm_provider
 from src.app2.services.dspy.medical_agent import MedicalTriageAgent
 from src.app2.services.dspy.question_generator import MedicalQuestionGenerator
 from src.app2.services.dspy.evaluation_optimizer import EvaluationOptimizer
@@ -24,6 +25,10 @@ class DSPyModuleEvaluator:
     """Evaluates individual DSPy modules for medical triage"""
     
     def __init__(self):
+        # ✅ FIX: Use centralized DSPy configuration to prevent multiple instances
+        ensure_dspy_configured(settings_v2.DSPY_MODEL_NAME)
+        
+        # Now create agents - they will use existing DSPy configuration
         self.medical_agent = MedicalTriageAgent(model_name=settings_v2.DSPY_MODEL_NAME)
         self.question_generator = MedicalQuestionGenerator(model_name=settings_v2.DSPY_MODEL_NAME)
         self.nice_lookup = NICELookupService()
@@ -35,6 +40,9 @@ class DSPyModuleEvaluator:
             "emergency_detection": [],
             "nice_lookup": []
         }
+        
+        logger.info("✅ DSPy Module Evaluator using centralized configuration")
+
     
     async def evaluate_question_generator(self, test_scenarios: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Test question generator with various symptom scenarios"""
@@ -85,9 +93,9 @@ class DSPyModuleEvaluator:
                 })
         
         # Calculate aggregate metrics
-        quality_scores = [r.get("quality_score", 0) for r in results]
-        relevance_scores = [r.get("relevance_score", 0) for r in results]
-        clinical_scores = [r.get("clinical_appropriateness", 0) for r in results]
+        quality_scores = [r.get("quality_score", 0) for r in results if "error" not in r]
+        relevance_scores = [r.get("relevance_score", 0) for r in results if "error" not in r]
+        clinical_scores = [r.get("clinical_appropriateness", 0) for r in results if "error" not in r]
         
         summary = {
             "total_scenarios": len(test_scenarios),

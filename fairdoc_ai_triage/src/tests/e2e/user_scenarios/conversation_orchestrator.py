@@ -16,6 +16,8 @@ from src.tests.e2e.user_scenarios.patient_profiles import get_patient_profile, g
 from src.tests.e2e.user_scenarios.medical_conditions import get_condition
 from src.tests.e2e.user_scenarios.dspy_patient_agent import create_patient_agent
 from src.app2.services.chat.chat_orchestrator import ChatOrchestrator
+# ADD after line 18
+from src.app2.core.dspy_config_v2 import ensure_dspy_configured
 from src.app2.models.schemas.multiturn_chat import MultiTurnChatRequest, StakeholderRole, ChatProvider
 from src.tests.e2e.user_scenarios.medical_conditions import MedicalCondition  # Add MedicalCondition here
 
@@ -51,9 +53,13 @@ class ConversationOrchestrator:
     """Orchestrates E2E conversation testing"""
     
     def __init__(self, chat_orchestrator: ChatOrchestrator):
+        # ✅ Ensure DSPy is configured for conversation orchestration
+        ensure_dspy_configured()
+        
         self.chat_orchestrator = chat_orchestrator
         self.conversation_results: List[ConversationResult] = []
         self.active_conversations: Dict[str, Dict] = {}
+
         
     async def run_single_conversation(
         self,
@@ -116,8 +122,11 @@ class ConversationOrchestrator:
                 # Check timeout
                 if time.time() - start_time > timeout_minutes * 60:
                     logger.warning("⏰ Conversation timeout",
-                                  patient_id=patient_id, turn=turn_number)
+                                patient_id=patient_id, turn=turn_number, 
+                                actual_turns_completed=turn_number - 1)
+                    metrics.total_turns = turn_number - 1  # ✅ Consistent turn counting
                     break
+
                 
                 logger.info("💬 Conversation turn",
                            patient_id=patient_id, turn=turn_number)
@@ -156,7 +165,7 @@ class ConversationOrchestrator:
                 conversation_transcript.append(turn_record)
                 
                 # Update metrics
-                metrics.total_turns = turn_number
+                metrics.total_turns = max(turn_number - 1, 0)  # prevent negative turn counts 
                 metrics.patient_emotional_progression.append(patient_response["emotional_state"])
                 metrics.medical_agent_questions.append(medical_response.agent_message or "")
                 metrics.confidence_scores.append(float(medical_response.confidence_score))

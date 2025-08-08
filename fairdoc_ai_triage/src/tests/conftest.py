@@ -13,10 +13,11 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from unittest.mock import AsyncMock
 from src.app2.core.config_v2 import settings_v2
-
+import structlog
 # Configure pytest-asyncio
 pytest_plugins = ('pytest_asyncio',)
 
+logger = structlog.get_logger(__name__)
 
 
 # Centralized test environment variables
@@ -73,6 +74,21 @@ def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
         loop = asyncio.new_event_loop()
     yield loop
     loop.close()
+@pytest.fixture(scope="session", autouse=True)
+def shared_dspy_config() -> Generator[None, None, None]:
+    """
+    Single DSPy configuration for all tests in session.
+    Prevents multiple LLM instance creation and GPU/CPU switching.
+    """
+    logger.info("🤖 Initializing shared DSPy configuration for tests")
+    
+    # ✅ Import here to avoid circular imports
+    from src.app2.core.dspy_config_v2 import ensure_dspy_configured
+    
+    # Configure DSPy once for entire test session
+    success = ensure_dspy_configured(settings_v2.FAIRDOC_V2_DSPy_MODEL)
+    if not success:
+        raise RuntimeError("Failed to configure DSPy for tests")
 
 @pytest.fixture(autouse=True)
 def reset_dspy_state():
