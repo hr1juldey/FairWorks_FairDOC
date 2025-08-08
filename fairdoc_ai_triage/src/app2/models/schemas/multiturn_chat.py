@@ -11,7 +11,7 @@ from enum import Enum
 from uuid import UUID, uuid4
 from pydantic import BaseModel, Field, ConfigDict
 
-from .medical_triage import (
+from src.app2.models.schemas.medical_triage import (
     RedFlagIndicator, 
     TriageDecision,
     ConversationTurn
