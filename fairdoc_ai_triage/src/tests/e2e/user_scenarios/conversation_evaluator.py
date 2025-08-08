@@ -607,23 +607,30 @@ class ConversationEvaluator:
     
     def is_passing_score(self, evaluation: ConversationEvaluation) -> bool:
         """Determine if evaluation represents a passing test - FIXED LOGIC"""
-        # Must meet minimum overall score
+        # Rule 1: Must meet minimum overall score
         if evaluation.overall_score < self.critical_thresholds["overall_minimum_passing"]:
-            logger.debug(f"❌ Failed: Score {evaluation.overall_score} < {self.critical_thresholds['overall_minimum_passing']}")
+            logger.info(f"❌ Score FAIL: {evaluation.overall_score:.1f} is below minimum {self.critical_thresholds['overall_minimum_passing']}")
             return False
         
-        # Must not have critical issues
+        # Rule 2: Must not have any critical issues logged
         if len(evaluation.critical_issues) > 0:
-            logger.debug(f"❌ Failed: {len(evaluation.critical_issues)} critical issues")
+            logger.info(f"❌ Critical FAIL: Found issues: {evaluation.critical_issues}")
             return False
-        
-        # Emergency detection must be excellent
+
+        # Rule 3: Emergency detection must be near-perfect
         if (evaluation.expected_outcome == MedicalOutcome.EMERGENCY and
             evaluation.scores.get(EvaluationCriteria.EMERGENCY_DETECTION, 0) < self.critical_thresholds["emergency_detection_minimum"]):
-            logger.debug("❌ Failed: Emergency detection below threshold")
+            logger.info("❌ Emergency FAIL: Detection score too low.")
             return False
-        
-        logger.debug(f"✅ Passed: Score {evaluation.overall_score}")
+            
+        # Rule 4: Final outcome must match expected outcome
+        if evaluation.final_outcome != evaluation.expected_outcome:
+            logger.info(f"❌ Outcome FAIL: Got '{evaluation.final_outcome}', expected '{evaluation.expected_outcome}'")
+            # Allow for some flexibility, e.g., self_care vs routine might be acceptable
+            if not (evaluation.expected_outcome == MedicalOutcome.SELF_CARE and evaluation.final_outcome == MedicalOutcome.ROUTINE_DOCTOR):
+                return False
+
+        logger.info(f"✅ PASSED: Score {evaluation.overall_score:.1f}")
         return True
 
 

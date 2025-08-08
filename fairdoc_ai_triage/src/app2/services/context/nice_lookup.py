@@ -362,7 +362,10 @@ class EnhancedNICELookupService:
                                        for word in ['emergency', 'severe', 'shock']):
             confidence += 0.1
         
-        return min(confidence, 1.0)
+        # FIX: Round to 2 decimal places to avoid floating point precision issues
+        final_confidence = min(confidence, 1.0)
+        return round(final_confidence, 2)
+
     
     def _select_best_match(self, candidates: List[Dict[str, Any]], 
                          context: Dict[str, Any]) -> Dict[str, Any]:

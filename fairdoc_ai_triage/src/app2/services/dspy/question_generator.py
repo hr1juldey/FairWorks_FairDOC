@@ -265,8 +265,16 @@ class MedicalQuestionModule(dspy.Module):
                         "context_required": "|".join(cfg["context_required"]),
                     }
                 )
-        self.emergency_df = pd.DataFrame(rows)
-        logger.info("📊 Emergency-pattern DataFrame prepared", patterns=len(self.emergency_df))
+        # FIX: Prevent pandas error on empty pattern lists
+        if not rows or not any(row.get("pattern", "").strip() for row in rows):
+            logger.warning("📊 No valid emergency patterns found, creating empty DataFrame")
+            self.emergency_df = pd.DataFrame()
+        else:
+            # Filter out empty patterns before creating DataFrame
+            valid_rows = [row for row in rows if row.get("pattern", "").strip()]
+            self.emergency_df = pd.DataFrame(valid_rows)
+            logger.info("📊 Emergency-pattern DataFrame prepared", patterns=len(self.emergency_df))
+
 
     # ------------------------------------------------------------------ #
     #                         Public Forward Method                      #
@@ -627,22 +635,8 @@ class MedicalQuestionGenerator:
     # Internal DSPy configuration (unchanged)
     def _configure_dspy_with_thinking(self):
         """Configure DSPy using centralized LLM provider"""
-        # # OLD: Individual DSPy configuration - REPLACED WITH CENTRALIZED CONFIG
-        # try:
-        #     lm = dspy.LM(f"ollama_chat/{self.model_name}", api_base="http://localhost:11434")
-        #     dspy.configure(lm=lm)
-        # except Exception:
-        #     lm = dspy.OpenAI(
-        #         api_base="http://localhost:11434/v1/",
-        #         api_key="ollama",
-        #         model=self.model_name,
-        #         model_type="chat",
-        #     )
-        #     dspy.configure(lm=lm)
-        
-        # NEW: Use centralized DSPy configuration
-        
-        
+
+    
         success = ensure_dspy_configured(self.model_name)
         if not success:
             logger.error("❌ Failed to configure DSPy via centralized provider")

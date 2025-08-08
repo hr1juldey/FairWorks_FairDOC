@@ -77,18 +77,23 @@ def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
 @pytest.fixture(scope="session", autouse=True)
 def shared_dspy_config() -> Generator[None, None, None]:
     """
-    Single DSPy configuration for all tests in session.
-    Prevents multiple LLM instance creation and GPU/CPU switching.
+    Establishes a single DSPy configuration for the entire test session.
+    This is the core fix for the multiple instance creation problem.
+    The 'autouse=True' ensures this fixture runs automatically for the session.
     """
-    logger.info("🤖 Initializing shared DSPy configuration for tests")
-    
-    # ✅ Import here to avoid circular imports
-    from src.app2.core.dspy_config_v2 import ensure_dspy_configured
-    
-    # Configure DSPy once for entire test session
+    logger.info("🤖 Initializing shared DSPy configuration for test session...")
+    from src.app2.core.dspy_config_v2 import ensure_dspy_configured, get_llm_provider
+
     success = ensure_dspy_configured(settings_v2.FAIRDOC_V2_DSPy_MODEL)
     if not success:
-        raise RuntimeError("Failed to configure DSPy for tests")
+        pytest.fail("Critical error: Failed to configure shared DSPy for tests.", pytrace=False)
+    
+    provider = get_llm_provider()
+    logger.info(f"✅ Shared DSPy configured. Default model: {provider._default_model}")
+    
+    yield
+    
+    logger.info("🧹 Tearing down shared DSPy test session.")
 
 @pytest.fixture(autouse=True)
 def reset_dspy_state():
