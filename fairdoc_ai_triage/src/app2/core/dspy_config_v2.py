@@ -140,9 +140,13 @@ class DSPyLLMProvider:
                         if len(parts) >= 1:
                             full_model_name = parts[0]  # e.g., "deepseek-r1:8b"
                             
-                            # Extract key (before colon)
-                            key = full_model_name.split(':')[0]
-                            models[key] = f'ollama/{full_model_name}'
+                            # Keep FULL model name as key (including version)
+                            models[full_model_name] = f'ollama/{full_model_name}'
+                            
+                            # ALSO add short version for backward compatibility
+                            short_name = full_model_name.split(':')[0]
+                            if short_name not in models:
+                                models[short_name] = f'ollama/{full_model_name}'
                 
                 logger.debug(f"Discovered models from ollama: {list(models.keys())}")
             else:
@@ -152,6 +156,7 @@ class DSPyLLMProvider:
             logger.warning(f"Could not run ollama list: {e}")
         
         return models
+
     
     def _get_default_model(self) -> str:
         """Get default model from config, ensuring it exists in available models"""
