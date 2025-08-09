@@ -81,6 +81,6 @@ class SharedSettings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = True
-
+        extra = "ignore"  # Ignore V2-specific env vars not defined in shared settings
 # Global shared instance
 shared_settings = SharedSettings()
