@@ -7,6 +7,7 @@ from functools import lru_cache
 from typing import List, Optional
 from pydantic import BaseModel, field_validator, ConfigDict
 from pydantic_settings import BaseSettings
+from src.shared.config_shared import shared_settings
 
 class Settings(BaseSettings):
     """V1 Application settings - ignores V2-specific environment variables"""
@@ -78,7 +79,12 @@ class Settings(BaseSettings):
     # Celery Configuration
     CELERY_BROKER_URL: str
     CELERY_RESULT_BACKEND: str
-
+    
+    @classmethod
+    def get_shared_setting(cls, key: str):
+        """Access shared settings when needed"""
+        return getattr(shared_settings, key, None)
+    
 class TestSettings(Settings):
     """Test-specific settings for V1"""
     

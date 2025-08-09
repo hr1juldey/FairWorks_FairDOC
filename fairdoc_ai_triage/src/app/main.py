@@ -14,6 +14,7 @@ from fastapi.responses import JSONResponse
 
 from src.app.api.v1.router import api_router
 from src.app.core.config import settings  # V1 settings only
+from src.shared.config_shared import shared_settings  # ← Shared settings
 from src.app.core.context.manager import FairdocContextManager
 from src.app.core.database import init_db
 from src.app.core.logging import configure_logging
@@ -81,7 +82,7 @@ app = FastAPI(
 # Add middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_origins=shared_settings.allowed_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

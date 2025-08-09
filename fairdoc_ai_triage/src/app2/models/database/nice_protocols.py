@@ -5,11 +5,12 @@ from sqlalchemy import Column, String, Text, JSON, Integer, DateTime, Index
 from sqlalchemy.dialects.postgresql import UUID
 from uuid import uuid4
 from datetime import datetime, timezone
-from src.app.core.database import Base
+# FIXED: Use V2 database instead of V1
+from src.app2.core.database_v2 import BaseV2 as Base
 
 class NICEProtocol(Base):
     """NICE clinical guidelines for emergency triage"""
-    __tablename__ = "nice_protocols"
+    __tablename__ = "nice_protocols_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     protocol_code = Column(String(50), nullable=False, unique=True, index=True)

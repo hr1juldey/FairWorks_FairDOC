@@ -5,10 +5,10 @@ Extends V1 config with advanced medical triage features and DSPy LLM management
 """
 
 from functools import lru_cache
-from typing import List, Optional, Literal
 from pydantic import BaseModel, field_validator, ConfigDict
 from pydantic_settings import BaseSettings
-
+from typing import List, Optional, Literal
+from src.shared.config_shared import SharedSettings, shared_settings
 class SettingsV2(BaseSettings):
     """V2 Application settings - includes all V1 + V2 specific features"""
 
@@ -18,22 +18,11 @@ class SettingsV2(BaseSettings):
         extra="ignore"  # Ignore any other environment variables
     )
 
-    # === V1 Core Settings (inherited for compatibility) ===
-    APP_NAME: str = "Fairdoc AI Triage System"
-    ENVIRONMENT: str = "development"
-    DEBUG: bool = True
-    SECRET_KEY: str
-    ALLOWED_HOSTS: List[str] = ["localhost", "127.0.0.1", "0.0.0.0"]
-    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
+    # V2-Specific Features
+    NEXT_GEN: bool = True
+    FAIRDOC_V2_ENABLED: bool = True
 
-    @field_validator('ALLOWED_HOSTS', 'ALLOWED_ORIGINS', mode='before')
-    @classmethod
-    def parse_comma_separated_list(cls, v):
-        """Parse comma-separated strings into lists"""
-        if isinstance(v, str):
-            v = v.strip('[]"\'')
-            return [item.strip(' "\'') for item in v.split(',') if item.strip()]
-        return v
+    # Validation handled by parent SharedSettings class
 
     # Database Configuration (V1 compatible)
     DATABASE_URL: str

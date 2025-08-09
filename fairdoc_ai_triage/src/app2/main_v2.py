@@ -105,7 +105,7 @@ def _configure_middleware(app: FastAPI) -> None:
     # CORS middleware for cross-origin requests
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings_v2.ALLOWED_ORIGINS,
+        allow_origins=settings_v2.allowed_origins_list,
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE"],
         allow_headers=["*"],
