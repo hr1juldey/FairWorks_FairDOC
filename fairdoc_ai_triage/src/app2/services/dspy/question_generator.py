@@ -334,6 +334,8 @@ class MedicalQuestionModule(dspy.Module):
         # Fast path with pandas if available
         if getattr(self, "emergency_df", None) is not None:
             # Step 1: quick pattern presence filter - check both symptoms and nice_context
+            if self.emergency_df.empty:
+                return []  # No patterns to match
             mask = self.emergency_df["pattern"].apply(
                 lambda p: p in symptoms_lower or (nice_context and p in nice_context_lower)
             )

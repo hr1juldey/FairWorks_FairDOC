@@ -287,7 +287,7 @@ class MedicalTriageAgent:
             confidence = 85 if emergency_result.is_emergency else 50
 
 
-        # ✅ ENHANCED CRITICAL FIX: Conversation completion logic
+        # ✅ ENHANCED CRITICAL FIX: Conversation completion logic 
         should_complete = False
         max_turns = getattr(settings_v2, 'FAIRDOC_V2_MAX_CONVERSATION_TURNS', 20)
         
