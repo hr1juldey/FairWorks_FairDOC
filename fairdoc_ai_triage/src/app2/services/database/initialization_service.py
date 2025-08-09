@@ -17,6 +17,7 @@ from src.app2.models.database.gold_standards_seed import (
     validate_gold_standards
 )
 from src.app2.utils.datetime_utils import utcnow
+from src.app2.utils.outcome_mapper import OutcomeMapper
 
 logger = structlog.get_logger(__name__)
 
@@ -102,9 +103,10 @@ class DatabaseInitializationService:
                 
                 # Check if protocol already exists
                 existing = await session.execute(
-                    text("SELECT id FROM nice_protocols WHERE protocol_code = :code"),
-                    {"code": filtered_data["protocol_code"]}
+                        text("SELECT id FROM nice_protocols WHERE protocol_code = :code"),
+                        {"code": filtered_data["protocol_code"]}
                 )
+
                 
                 if existing.fetchone() and not force_reload:
                     results["skipped"] += 1
@@ -151,10 +153,17 @@ class DatabaseInitializationService:
         
         for gs_data in GOLD_STANDARDS_SEED_DATA:
             try:
+                # ADD this conversion BEFORE creating the model:
+                # Convert to enum first, then extract string value for database
+                gs_data_copy = gs_data.copy()  # Don't modify original
+                if "expected_outcome" in gs_data_copy:
+                    enum_outcome = OutcomeMapper.to_triage(gs_data_copy["expected_outcome"])
+                    gs_data_copy["expected_outcome"] = enum_outcome.value  # Store string value
+
                 # Check if standard already exists
                 existing = await session.execute(
                     text("SELECT standard_id FROM gold_standard_dialogues_v2 WHERE title = :title"),
-                    {"title": gs_data["title"]}
+                    {"title": gs_data_copy["title"]}
                 )
                 
                 if existing.fetchone() and not force_reload:
@@ -162,7 +171,7 @@ class DatabaseInitializationService:
                     continue
                 
                 # Create new gold standard
-                gold_standard = GoldStandardDialogue(**gs_data)
+                gold_standard = GoldStandardDialogue(**gs_data_copy)
                 session.add(gold_standard)
                 results["loaded"] += 1
                 

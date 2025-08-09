@@ -13,15 +13,17 @@ from sqlalchemy import (
     Column, String, DateTime, Integer, Float, Boolean,
     Text, Index, CheckConstraint, Enum as SQLEnum
 )
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID, JSONB
-from sqlalchemy.orm import declarative_base
-from sqlalchemy.sql import func
 
+from sqlalchemy.orm import validates  # ✅ Correct import
+
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID, JSONB
+
+from sqlalchemy.sql import func
+from src.app2.core.database_v2 import BaseV2 as Base
 from src.app2.models.schemas.medical_triage import MedicalOutcome, RedFlagIndicator
 from src.app2.models.schemas.multiturn_chat import StakeholderRole
 
-# Base class for all V2 database models
-Base = declarative_base()
+
 
 
 class GoldStandardDialogue(Base):
@@ -60,11 +62,33 @@ class GoldStandardDialogue(Base):
         doc="Main presenting symptom category"
     )
     expected_outcome = Column(
-        SQLEnum(MedicalOutcome, name="medical_outcome_enum"),
+        String(50),  # Store as string instead of enum
         nullable=False,
         index=True,
         doc="Expert-labeled correct triage outcome"
     )
+
+    @validates('expected_outcome')
+    def validate_outcome(self, key, outcome):
+        """Validate and convert outcome to database string value"""
+        valid_values = [
+            'emergency_route_to_doctor',
+            'routine_doctor_consultation', 
+            'self_care_advice',
+            'need_more_questions',
+            'spam_or_irrelevant'
+        ]
+        
+        if isinstance(outcome, MedicalOutcome):
+            value = outcome.value
+        else:
+            value = str(outcome)
+            
+        if value not in valid_values:
+            raise ValueError(f"Invalid medical outcome: {value}")
+            
+        return value
+
     
     # Patient demographics for this scenario
     patient_age = Column(

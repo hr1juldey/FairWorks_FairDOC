@@ -4,6 +4,8 @@ Expert-labeled complete conversations for medical triage model optimization
 """
 
 from src.app2.models.schemas.medical_triage import MedicalOutcome
+# ADD import at top:
+from src.app2.utils.outcome_mapper import OutcomeMapper
 
 GOLD_STANDARDS_SEED_DATA = [
     {
@@ -219,9 +221,11 @@ GOLD_STANDARDS_SEED_DATA = [
 ]
 
 
-def get_gold_standards_by_outcome(outcome :  MedicalOutcome) -> list : 
+# CHANGE this function:
+def get_gold_standards_by_outcome(outcome: MedicalOutcome) -> list:
     """Filter gold standards by expected outcome"""
-    return [gs for gs in GOLD_STANDARDS_SEED_DATA if gs["expected_outcome"] == outcome]
+    return [gs for gs in GOLD_STANDARDS_SEED_DATA 
+            if OutcomeMapper.to_triage(gs["expected_outcome"]).value == outcome.value]
 
 def get_gold_standards_by_symptom(symptom :  str) -> list : 
     """Filter gold standards by primary symptom"""

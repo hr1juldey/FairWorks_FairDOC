@@ -14,14 +14,12 @@ from sqlalchemy import (
     Text, JSON, ForeignKey, Index, CheckConstraint, Enum as SQLEnum
 )
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID, JSONB
-from sqlalchemy.orm import relationship, declarative_base
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+from src.app2.core.database_v2 import BaseV2 as Base
 
 from src.app2.models.schemas.medical_triage import MedicalOutcome, RedFlagIndicator
 from src.app2.models.schemas.multiturn_chat import ConversationStatus, StakeholderRole, ChatProvider
-
-# Base class for all V2 database models
-Base = declarative_base()
 
 
 class ConversationStateV2(Base):

@@ -10,12 +10,15 @@ from src.app2.core.database_v2 import BaseV2 as Base
 
 class NICEProtocol(Base):
     """NICE clinical guidelines for emergency triage"""
-    __tablename__ = "nice_protocols_v2"
+    __tablename__ = "nice_protocols"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     protocol_code = Column(String(50), nullable=False, unique=True, index=True)
     condition_name = Column(String(200), nullable=False, index=True)
     
+    # ADD THIS LINE to accept fhir_code from seed data:
+    fhir_code = Column(String(20), nullable=True, index=True)
+
     # Symptom mapping
     primary_symptoms = Column(JSON, nullable=False)  # ["headache", "chest_pain"]
     red_flag_symptoms = Column(JSON, nullable=False)  # Emergency indicators
@@ -31,7 +34,7 @@ class NICEProtocol(Base):
     
     # Metadata
     evidence_level = Column(String(10), nullable=False)  # A, B, C evidence quality
-    last_updated = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     
     # Database indexes for fast lookup

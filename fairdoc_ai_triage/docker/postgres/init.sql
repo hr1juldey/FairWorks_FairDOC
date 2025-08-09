@@ -86,6 +86,7 @@ CREATE TABLE IF NOT EXISTS nice_protocols (
     routine_criteria TEXT NOT NULL,
     self_care_criteria TEXT NOT NULL,
     evidence_level VARCHAR(10) NOT NULL DEFAULT 'C',
+    fhir_code VARCHAR(20),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -122,7 +123,7 @@ CREATE TABLE IF NOT EXISTS gold_standard_dialogues_v2 (
     title VARCHAR(200) NOT NULL,
     description TEXT NOT NULL,
     primary_symptom VARCHAR(100) NOT NULL,
-    expected_outcome medical_outcome_enum NOT NULL,
+    expected_outcome VARCHAR(50) NOT NULL,
     patient_age INTEGER NOT NULL CHECK (patient_age >= 0 AND patient_age <= 120),
     patient_gender VARCHAR(20) NOT NULL,
     expected_red_flags JSONB NOT NULL DEFAULT '[]',

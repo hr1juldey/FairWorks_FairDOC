@@ -7,7 +7,7 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta, timezone
 from redis.asyncio import Redis
 import structlog
-from src.app.core.config import settings
+from src.app2.core.config_v2 import settings_v2 as settings
 
 logger = structlog.get_logger(__name__)
 

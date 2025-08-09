@@ -23,6 +23,7 @@ from sqlalchemy.pool import NullPool, AsyncAdaptedQueuePool
 
 from src.app2.core.config_v2 import settings_v2
 
+
 logger = structlog.get_logger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -100,28 +101,32 @@ class DatabaseV2:
         return self._session_factory
     
     async def initialize(self) -> None:
-        """Initialize database connection and verify connectivity"""
+        """Initialize database connection, create tables, and verify connectivity"""
         if self._initialized:
             return
-        
+
         try:
             # Create session factory (engine is created internally)
             session_factory = self.create_session_factory()
-            
+
+            # CRITICAL: Create all tables FIRST before any queries
+            await self.create_tables()
+            logger.info("🏗️ V2 Database tables ensured")
+
             # Test database connectivity and verify result
             async with session_factory() as session:
                 result = await session.execute(text("SELECT 1 as connectivity_test"))
                 row = result.fetchone()
-                
+
                 # Verify the test query returned expected result
                 if not row or row[0] != 1:
                     raise RuntimeError("Database connectivity test failed")
-                
+
                 await session.commit()
-            
+
             self._initialized = True
             logger.info("✅ V2 Database initialized successfully")
-            
+
         except Exception as e:
             logger.error("❌ Failed to initialize V2 database", error=str(e))
             raise
@@ -131,16 +136,20 @@ class DatabaseV2:
         """Create all V2 tables (for development/testing)"""
         if self._engine is None:
             self.create_engine()
-        
+
         try:
+            # Import models here to avoid circular imports
+            from src.app2.models.database.nice_protocols import NICEProtocol
+            from src.app2.models.database.gold_standards import GoldStandardDialogue
+            from src.app2.models.database.conversation_state import ConversationStateV2
+
             async with self._engine.begin() as conn:
                 await conn.run_sync(BaseV2.metadata.create_all)
-            
             logger.info("🏗️ V2 Database tables created")
-            
         except Exception as e:
             logger.error("❌ Failed to create V2 tables", error=str(e))
             raise
+
     
     async def drop_tables(self) -> None:
         """Drop all V2 tables (for testing cleanup)"""

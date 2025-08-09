@@ -5,7 +5,7 @@ Exports commonly used utility functions for the application.
 """
 
 from src.app2.utils.datetime_utils import utcnow, utcnow_iso, utcnow_timestamp
-from src.app2.utils.outcome_mapper import *
+from src.app2.utils.outcome_mapper import OutcomeMapper
 
 __all__ = [
     # DateTime utilities
@@ -15,4 +15,6 @@ __all__ = [
     
     # Outcome mapping utilities (from existing module)
     # Add outcome_mapper exports here when needed
+    # Outcome mapping utilities
+    "OutcomeMapper"
 ]
