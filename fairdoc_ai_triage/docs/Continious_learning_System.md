@@ -5,13 +5,24 @@ The loop ❶ mines gold standards + MedVAL, ❷ generates hundreds of synthetic 
 Everything stays within ≤ 200 LOC per file, uses absolute imports, and is test-driven from unit to E2E. The figure below shows the new background flow.
 
 ```mermaid
+---
+config:
+  theme: neo-dark
+  layout: elk
+---
 flowchart LR
-    subgraph FASTAPI runtime
-        A(FastAPI App) -->|idle msg| S[Async Scheduler]
-        S -->|trigger| C[Celery Worker<br/>training.optimize]
-        C -->|new checkpoint| R[Redis pubsub "fairdoc:new_ckpt"]
-        R -->|hot swap| D[dependencies_v2._medical_agent]
-    end
+ subgraph subGraph0["FASTAPI runtime"]
+        S["Async Scheduler"]
+        A("FastAPI App")
+        C["Celery Worker<br>training.optimize"]
+        R["Redis pubsub &quot;fairdoc:new_ckpt&quot;"]
+        D["dependencies_v2._medical_agent"]
+  end
+    A -- idle msg --> S
+    S -- trigger --> C
+    C -- new checkpoint --> R
+    R -- hot swap --> D
+
 ```
 
 ***
