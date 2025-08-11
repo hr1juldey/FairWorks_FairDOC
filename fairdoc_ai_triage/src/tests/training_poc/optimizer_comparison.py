@@ -25,7 +25,7 @@ from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass, asdict
 import dspy
 from dspy.evaluate import Evaluate
-from dspy.optimizers import (
+from dspy.teleprompt import (
     BootstrapFewShot, 
     SIMBA, 
     MIPROv2,

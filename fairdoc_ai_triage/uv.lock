@@ -1056,7 +1056,7 @@ wheels = [
 
 [[package]]
 name = "fairdoc-ai-triage"
-version = "0.1.0"
+version = "0.2.6"
 source = { editable = "." }
 dependencies = [
     { name = "aioredis" },
@@ -1160,7 +1160,7 @@ requires-dist = [
     { name = "celery", specifier = ">=5.3.0" },
     { name = "chromadb", specifier = ">=0.4.15" },
     { name = "click", specifier = ">=8.1.0" },
-    { name = "dspy-ai", specifier = ">=2.4.0" },
+    { name = "dspy-ai", specifier = ">=2.6.0" },
     { name = "factory-boy", marker = "extra == 'dev'", specifier = ">=3.3.0" },
     { name = "faiss-cpu", specifier = ">=1.7.4" },
     { name = "faker", marker = "extra == 'dev'", specifier = ">=28.4.1" },
