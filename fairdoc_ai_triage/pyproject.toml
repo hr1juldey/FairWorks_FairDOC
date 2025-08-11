@@ -23,7 +23,7 @@ dependencies = [
     "aioredis>=2.0.0",
     
     # AI & ML Dependencies
-    "dspy-ai>=2.4.0",
+    "dspy-ai>=2.6.0",
     "langchain>=0.1.0",
     "langchain-community>=0.0.13",
     "langchain-openai>=0.0.5",

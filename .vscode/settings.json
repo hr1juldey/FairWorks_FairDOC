@@ -7,10 +7,12 @@
         "./fairdoc_ai_triage/src/app2/utils/",
         "./fairdoc_ai_triage/src/app2/",
         "./fairdoc_ai_triage/src/tests/e2e/user_scenarios",
+        "fairdoc_ai_triage/src/tests/training_poc/",
         "./fairdoc_ai_triage/src/tests/",
         "./fairdoc_ai_triage/src/",
         "./fairdoc_ai_triage/",
         "fairdoc_ai_triage/death_note_terminal/"
+        
     ],
     "python.analysis.autoSearchPaths": true,
     "python.analysis.autoImportCompletions": true,
