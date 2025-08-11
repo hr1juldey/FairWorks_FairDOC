@@ -164,7 +164,7 @@ class MedicalEvaluationSuite:
         actuals = [self._normalize_outcome(a) for a in actuals]
         
         # Basic accuracy metrics
-        correct = sum(1 for p, a in zip(predictions, actuals) if p == a)
+        correct = sum(1 for p, a in zip(predictions, actuals, strict=True) if p == a)
         overall_accuracy = correct / len(predictions) if predictions else 0.0
         
         # Create confusion matrix
@@ -277,10 +277,10 @@ class MedicalEvaluationSuite:
         actual_emergency = [1 if a == "emergency" else 0 for a in actuals]
         
         # Calculate confusion matrix values
-        tp = sum(1 for p, a in zip(pred_emergency, actual_emergency) if p == 1 and a == 1)
-        fp = sum(1 for p, a in zip(pred_emergency, actual_emergency) if p == 1 and a == 0)
-        fn = sum(1 for p, a in zip(pred_emergency, actual_emergency) if p == 0 and a == 1)
-        tn = sum(1 for p, a in zip(pred_emergency, actual_emergency) if p == 0 and a == 0)
+        tp = sum(1 for p, a in zip(pred_emergency, actual_emergency, strict=True) if p == 1 and a == 1)
+        fp = sum(1 for p, a in zip(pred_emergency, actual_emergency, strict=True) if p == 1 and a == 0)
+        fn = sum(1 for p, a in zip(pred_emergency, actual_emergency, strict=True) if p == 0 and a == 1)
+        tn = sum(1 for p, a in zip(pred_emergency, actual_emergency, strict=True) if p == 0 and a == 0)
         
         # Calculate metrics
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
@@ -307,7 +307,7 @@ class MedicalEvaluationSuite:
         overtriage_cases = 0
         undertriage_cases = 0
         
-        for pred, actual in zip(predictions, actuals):
+        for pred, actual in zip(predictions, actuals, strict=True):
             # Missed emergencies (most critical)
             if actual == "emergency" and pred != "emergency":
                 missed_emergencies += 1
@@ -449,7 +449,7 @@ async def test_evaluation_suite():
     print("🧪 Testing Evaluation Suite...")
     
     # Import required modules
-    from src.app2.core.dspy_config_v2 import ensure_dspy_configured
+    from src.app2.core.dspy_config_v2 import get_llm_provider, ensure_dspy_configured
     ensure_dspy_configured("gemma3n:e4b")
     
     # Create test agent
@@ -471,4 +471,3 @@ async def test_evaluation_suite():
 
 if __name__ == "__main__":
     asyncio.run(test_evaluation_suite())
-    

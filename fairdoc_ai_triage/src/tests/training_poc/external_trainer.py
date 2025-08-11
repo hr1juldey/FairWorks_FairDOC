@@ -31,7 +31,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent / "src"))
 from src.app2.services.dspy.medical_agent import MedicalTriageAgent
 from src.app2.services.dspy.question_generator import MedicalQuestionGenerator
 from src.app2.services.dspy.evaluation_optimizer import EvaluationOptimizer
-from src.app2.core.dspy_config_v2 import ensure_dspy_configured
+from src.app2.core.dspy_config_v2 import get_llm_provider, ensure_dspy_configured
 from src.app2.core.config_v2 import settings_v2
 
 # Import persona generator (will be created)
@@ -261,7 +261,13 @@ class ExternalTrainer:
                 agent=medical_agent,
                 num_examples=validation_examples
             )
-            
+            # Test question generator performance as part of baseline
+            logger.info("    ❓ Evaluating question generation...")
+            qg_metrics = await self._evaluate_question_generator(question_generator, validation_examples // 2)
+            baseline_metrics.update({
+                'question_quality': qg_metrics.get('avg_quality', 0.0),
+                'questions_per_case': qg_metrics.get('avg_questions', 0.0)
+            })            
             run.accuracy_before = baseline_metrics['accuracy']
             run.emergency_f1_before = baseline_metrics['emergency_f1']
             
@@ -311,6 +317,39 @@ class ExternalTrainer:
         
         run.end_time = datetime.now()
         return run
+    
+    async def _evaluate_question_generator(self, question_generator: MedicalQuestionGenerator, num_cases: int) -> Dict[str, float]:
+        """Evaluate question generator performance"""
+        try:
+            total_quality = 0.0
+            total_questions = 0
+            
+            for i in range(num_cases):
+                # Generate test symptoms
+                test_symptoms = f"Test case {i}: chest pain and shortness of breath"
+                
+                # Generate questions
+                questions = await question_generator.suggest_questions(
+                    symptoms=test_symptoms,
+                    nice_context="",
+                    history_context=""
+                )
+                
+                if questions:
+                    total_questions += len(questions)
+                    # Simple quality scoring (1-5 based on question count and relevance)
+                    quality_score = min(5.0, len(questions) * 1.2)  # Max 5.0
+                    total_quality += quality_score
+            
+            return {
+                'avg_quality': total_quality / num_cases if num_cases > 0 else 0.0,
+                'avg_questions': total_questions / num_cases if num_cases > 0 else 0.0
+            }
+            
+        except Exception as e:
+            logger.warning(f"Question generator evaluation failed: {str(e)}")
+            return {'avg_quality': 0.0, 'avg_questions': 0.0}
+            
     
     async def _analyze_costs_and_performance(self) -> Dict[str, Any]:
         """Analyze cost vs performance trade-offs"""

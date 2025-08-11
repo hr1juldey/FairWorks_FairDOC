@@ -37,7 +37,7 @@ from dspy.teleprompt import (
 # Import existing DSPy modules
 from src.app2.services.dspy.medical_agent import MedicalTriageAgent
 from src.app2.services.dspy.question_generator import MedicalQuestionGenerator
-from src.app2.core.dspy_config_v2 import ensure_dspy_configured
+from src.app2.core.dspy_config_v2 import get_llm_provider, ensure_dspy_configured
 
 logger = logging.getLogger(__name__)
 
@@ -191,13 +191,13 @@ class OptimizerBenchmark:
             # Handle different optimizer signatures
             if optimizer_name == "SIMBA":
                 optimizer = optimizer_class(**optimizer_params)
-                optimized_program = optimizer.compile(agent, trainset=trainset)
+                optimized_program = optimizer.compile(agent, trainset=trainset, valset=validset)
             elif optimizer_name == "MIPROv2":
                 optimizer = optimizer_class(**optimizer_params)
-                optimized_program = optimizer.compile(agent, trainset=trainset)
+                optimized_program = optimizer.compile(agent, trainset=trainset, valset=validset)
             else:
                 optimizer = optimizer_class(**optimizer_params)
-                optimized_program = optimizer.compile(agent, trainset=trainset)
+                optimized_program = optimizer.compile(agent, trainset=trainset, valset=validset)
             
             # Create optimized agent
             optimized_agent = MedicalTriageAgent(model_name=agent.model_name)

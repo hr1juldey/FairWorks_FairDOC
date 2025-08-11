@@ -21,11 +21,11 @@ from datetime import datetime
 sys.path.append(str(Path(__file__).parent.parent.parent / "src"))
 
 # Import POC modules
-from external_trainer import ExternalTrainer
-from patient_generator import PersonaGenerator
-from optimizer_comparison import OptimizerBenchmark
-from evaluation_suite import MedicalEvaluationSuite
-from time_cost_analysis import TrainingCostAnalyzer
+from src.tests.training_poc.external_trainer import ExternalTrainer
+from src.tests.training_poc.patient_generator import PersonaGenerator
+from src.tests.training_poc.optimizer_comparison import OptimizerBenchmark
+from src.tests.training_poc.evaluation_suite import MedicalEvaluationSuite
+from src.tests.training_poc.time_cost_analysis import TrainingCostAnalyzer
 
 # Configure logging
 logging.basicConfig(
@@ -155,55 +155,57 @@ async def individual_tests():
         print(f"   ❌ Cost analysis test failed: {str(e)}")
 
 def main():
-    """Main entry point"""
+    """Main entry point with interactive mode if no arguments are given."""
     parser = argparse.ArgumentParser(
         description="Fairdoc AI Training POC - External Trainer",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Examples:
-  python run_poc.py --quick-test     # Quick 30-min test
-  python run_poc.py --full-eval      # Complete 3-4 hour analysis
-  python run_poc.py --test-components # Test individual components
-        """
-    )
-    
-    parser.add_argument(
-        '--quick-test', 
-        action='store_true',
-        help='Run quick 30-minute test version'
-    )
-    
-    parser.add_argument(
-        '--full-eval',
-        action='store_true', 
-        help='Run complete 3-4 hour evaluation'
-    )
-    
-    parser.add_argument(
-        '--test-components',
-        action='store_true',
-        help='Test individual components for debugging'
-    )
-    
-    parser.add_argument(
-        '--verbose',
-        action='store_true',
-        help='Enable verbose logging'
-    )
-    
+        Examples:
+        python run_poc.py --quick-test       # Quick 30-min test
+        python run_poc.py --full-eval        # Complete 3-4 hour analysis
+        python run_poc.py --test-components  # Test individual components
+                """
+            )
+
+    parser.add_argument('--quick-test', action='store_true', help='Run quick 30-minute test version')
+    parser.add_argument('--full-eval', action='store_true', help='Run complete 3-4 hour evaluation')
+    parser.add_argument('--test-components', action='store_true', help='Test individual components for debugging')
+    parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
+
     args = parser.parse_args()
-    
+
+    # 🆕 Interactive prompt if no mode is specified (for VS Code play button)
+    if not (args.quick_test or args.full_eval or args.test_components):
+        print("\nNo run mode specified. Choose one:")
+        print("1) Quick Test (default)")
+        print("2) Full Evaluation")
+        print("3) Test Components")
+        choice = input("Enter choice [1]: ").strip() or "1"
+
+        if choice == "2":
+            args.full_eval = True
+        elif choice == "3":
+            args.test_components = True
+        else:
+            args.quick_test = True
+
+        # Ask for verbose flag
+        verbose_choice = input("Enable verbose logging? (y/N): ").strip().lower()
+        args.verbose = verbose_choice in ("y", "yes")
+
     # Configure logging level
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
-    
-    # Validate arguments
-    mode_count = sum([args.quick_test, args.full_eval, args.test_components])
-    if mode_count != 1:
-        print("❌ Error: Please specify exactly one mode (--quick-test, --full-eval, or --test-components)")
-        parser.print_help()
-        sys.exit(1)
-    
+
+    # 🔄 Force all output files into the same folder as run_poc.py
+    script_dir = Path(__file__).parent.resolve()
+    try:
+        from src.tests.training_poc import external_trainer
+        external_trainer.ExternalTrainer.results_dir = script_dir / "results"
+        external_trainer.ExternalTrainer.results_dir.mkdir(exist_ok=True)
+    except Exception as e:
+        logger.warning(f"Could not override results directory: {e}")
+
     # Run selected mode
     try:
         if args.quick_test:
@@ -213,15 +215,14 @@ Examples:
         elif args.test_components:
             asyncio.run(individual_tests())
             results = {"status": "component_tests_completed"}
-        
+
         print_summary()
-        
-        # Print key results
+
         if isinstance(results, dict) and 'go_no_go_decision' in results:
             decision = results['go_no_go_decision']['recommendation']
             print(f"\n🎯 FINAL DECISION: {decision['decision']} ({decision['confidence']} confidence)")
             print(f"📋 Criteria passed: {decision['criteria_passed']}")
-        
+
     except KeyboardInterrupt:
         print("\n⚠️ POC interrupted by user")
         sys.exit(1)
@@ -230,6 +231,7 @@ Examples:
         print(f"\n❌ POC FAILED: {str(e)}")
         print("💡 Try running with --test-components to debug individual parts")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

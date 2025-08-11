@@ -22,11 +22,130 @@ from dataclasses import dataclass, field
 from enum import Enum
 import numpy as np
 
+@dataclass
+class IndianNameGenerator:
+    """Generates culturally appropriate Indian names based on region and demographics"""
+    
+    def __init__(self):
+        self.name_pools = {
+            "north": {
+                "male": {
+                    "first": ["Rajesh", "Amit", "Suresh", "Vikash", "Deepak", "Ashok", "Manoj", "Sanjay", "Ravi", "Anil", 
+                             "Vinod", "Pawan", "Rakesh", "Mukesh", "Dinesh", "Yogesh", "Ramesh", "Naresh", "Mahesh", "Hitesh",
+                             "Rohit", "Sachin", "Ajay", "Vijay", "Sandeep", "Pradeep", "Kuldeep", "Mandeep", "Jasbir", "Harpreet",
+                             "Amarjeet", "Gurpreet", "Manpreet", "Simran", "Arjun", "Karan", "Varun", "Tarun", "Arun", "Nitin"],
+                    "last": ["Sharma", "Gupta", "Singh", "Kumar", "Verma", "Agarwal", "Jain", "Tiwari", "Yadav", "Mishra",
+                            "Shukla", "Pandey", "Srivastava", "Chandra", "Saxena", "Kapoor", "Malhotra", "Aggarwal", "Bansal", "Goyal",
+                            "Mittal", "Singhal", "Garg", "Arora", "Bhatia", "Chopra", "Sethi", "Khanna", "Tandon", "Sood"]
+                },
+                "female": {
+                    "first": ["Sunita", "Priya", "Kavita", "Meera", "Sita", "Radha", "Geeta", "Asha", "Kiran", "Usha",
+                             "Pooja", "Ritu", "Nisha", "Seema", "Reema", "Neeta", "Anita", "Babita", "Mamta", "Sangita",
+                             "Rekha", "Lata", "Poonam", "Sarita", "Sushma", "Shashi", "Pushpa", "Kamla", "Shanti", "Devi",
+                             "Simran", "Jaspreet", "Manpreet", "Harpreet", "Gurpreet", "Preeti", "Neeti", "Kriti", "Aditi", "Smriti"],
+                    "last": ["Sharma", "Gupta", "Singh", "Devi", "Verma", "Agarwal", "Jain", "Tiwari", "Kumari", "Mishra",
+                            "Shukla", "Pandey", "Srivastava", "Chandra", "Saxena", "Kapoor", "Malhotra", "Aggarwal", "Bansal", "Goyal",
+                            "Mittal", "Singhal", "Garg", "Arora", "Bhatia", "Chopra", "Sethi", "Khanna", "Tandon", "Sood"]
+                }
+            },
+            "south": {
+                "male": {
+                    "first": ["Raman", "Suresh", "Venkat", "Krishnan", "Murugan", "Arun", "Karthik", "Srinivas", "Raj", "Vasu",
+                             "Anand", "Mohan", "Gopal", "Ravi", "Shankar", "Babu", "Giri", "Prasad", "Chandra", "Kumar",
+                             "Ramesh", "Mahesh", "Ganesh", "Dinesh", "Naresh", "Rajesh", "Sunil", "Satish", "Santosh", "Prakash",
+                             "Ashwin", "Arjun", "Vikram", "Deepak", "Pavan", "Naveen", "Praveen", "Harish", "Girish", "Jagdish"],
+                    "last": ["Iyer", "Reddy", "Nair", "Pillai", "Rao", "Kumar", "Menon", "Subramanian", "Naidu", "Chandra",
+                            "Krishnan", "Raman", "Swamy", "Sastry", "Murthy", "Acharya", "Bhatt", "Joshi", "Pandit", "Sharma",
+                            "Varma", "Gupta", "Das", "Chetty", "Setty", "Gowda", "Hegde", "Shenoy", "Kamath", "Bhat"]
+                },
+                "female": {
+                    "first": ["Lakshmi", "Kamala", "Meena", "Devi", "Saroja", "Shanti", "Valli", "Radha", "Sita", "Gita",
+                             "Priya", "Kavya", "Divya", "Vidya", "Suma", "Sushma", "Pushpa", "Latha", "Usha", "Asha",
+                             "Meera", "Geeta", "Seeta", "Nita", "Anita", "Sunita", "Lalitha", "Malathi", "Savitha", "Kavitha",
+                             "Shree", "Shri", "Padma", "Parvati", "Saraswati", "Durga", "Kali", "Rukmini", "Vasanti", "Revathi"],
+                    "last": ["Iyer", "Reddy", "Nair", "Pillai", "Rao", "Devi", "Menon", "Subramanian", "Kumari", "Chandra",
+                            "Krishnan", "Raman", "Swamy", "Sastry", "Murthy", "Acharya", "Bhatt", "Joshi", "Pandit", "Sharma",
+                            "Varma", "Gupta", "Das", "Chetty", "Setty", "Gowda", "Hegde", "Shenoy", "Kamath", "Bhat"]
+                }
+            },
+            "west": {
+                "male": {
+                    "first": ["Mahesh", "Suresh", "Ramesh", "Kiran", "Vijay", "Anil", "Prakash", "Dilip", "Santosh", "Ganesh",
+                             "Ashok", "Vinod", "Mukesh", "Rajesh", "Naresh", "Dinesh", "Yogesh", "Hitesh", "Ritesh", "Jitesh",
+                             "Nilesh", "Rakesh", "Umesh", "Bhavesh", "Haresh", "Paresh", "Sunil", "Arun", "Tarun", "Varun",
+                             "Arjun", "Karan", "Rohan", "Sohan", "Mohan", "Gokul", "Vipul", "Rahul", "Sahil", "Nikhil"],
+                    "last": ["Patel", "Shah", "Desai", "Joshi", "Mehta", "Modi", "Parekh", "Thakkar", "Vora", "Dave",
+                            "Trivedi", "Pandya", "Shukla", "Amin", "Bhatt", "Chokshi", "Gandhi", "Banker", "Kapadia", "Dalal",
+                            "Doshi", "Kothari", "Agrawal", "Jain", "Gupta", "Sharma", "Soni", "Gada", "Vyas", "Raval"]
+                },
+                "female": {
+                    "first": ["Nita", "Meera", "Kiran", "Sita", "Gita", "Hansa", "Daksha", "Naina", "Asha", "Usha",
+                             "Priya", "Kavita", "Sunita", "Anita", "Babita", "Mamta", "Seema", "Reema", "Neeta", "Geeta",
+                             "Pooja", "Ritu", "Nisha", "Rekha", "Lata", "Sarita", "Sangita", "Lalita", "Malti", "Bharti",
+                             "Shanti", "Purnima", "Chandni", "Jyoti", "Deepa", "Sneha", "Neha", "Megha", "Varsha", "Manisha"],
+                    "last": ["Patel", "Shah", "Desai", "Joshi", "Mehta", "Devi", "Parekh", "Thakkar", "Ben", "Dave",
+                            "Trivedi", "Pandya", "Shukla", "Amin", "Bhatt", "Chokshi", "Gandhi", "Banker", "Kapadia", "Dalal",
+                            "Doshi", "Kothari", "Agrawal", "Jain", "Gupta", "Sharma", "Soni", "Gada", "Vyas", "Raval"]
+                }
+            },
+            "east": {
+                "male": {
+                    "first": ["Subhas", "Raman", "Tapan", "Goutam", "Debasish", "Pranab", "Kalyan", "Soumen", "Dipak", "Partha",
+                             "Suman", "Ratan", "Biman", "Gagan", "Nayan", "Kiran", "Biren", "Hiren", "Chiren", "Viren",
+                             "Animesh", "Ramesh", "Suresh", "Naresh", "Mahesh", "Ganesh", "Rajesh", "Dinesh", "Umesh", "Ritesh",
+                             "Abhijit", "Sujit", "Ajit", "Amit", "Sumit", "Rohit", "Mohit", "Lalit", "Kailash", "Prakash"],
+                    "last": ["Das", "Ghosh", "Mukherjee", "Chatterjee", "Banerjee", "Roy", "Sarkar", "Pal", "Dutta", "Sen",
+                            "Biswas", "Chakraborty", "Bhattacharya", "Mitra", "Bose", "Sinha", "Basu", "Nag", "Kar", "Paul",
+                            "Mondal", "Halder", "Majumdar", "Kundu", "Ganguly", "Chowdhury", "Bhowmik", "Sanyal", "Guha", "Bera"]
+                },
+                "female": {
+                    "first": ["Mala", "Sita", "Gita", "Rina", "Lila", "Maya", "Devi", "Kiran", "Shanti", "Purnima",
+                             "Suma", "Ruma", "Proma", "Shroma", "Bina", "Lina", "Mina", "Tina", "Nina", "Hina",
+                             "Dipti", "Tripti", "Shruti", "Smriti", "Kriti", "Preeti", "Neeti", "Geeti", "Aditi", "Swati",
+                             "Ratna", "Aparna", "Suparna", "Suvarna", "Swarna", "Shubhra", "Subhra", "Sabita", "Sunita", "Anita"],
+                    "last": ["Das", "Ghosh", "Mukherjee", "Chatterjee", "Banerjee", "Devi", "Sarkar", "Pal", "Dutta", "Sen",
+                            "Biswas", "Chakraborty", "Bhattacharya", "Mitra", "Bose", "Sinha", "Basu", "Nag", "Kar", "Paul",
+                            "Mondal", "Halder", "Majumdar", "Kundu", "Ganguly", "Chowdhury", "Bhowmik", "Sanyal", "Guha", "Bera"]
+                }
+            }
+        }
+    
+    def generate_name(self, location: int, age_group: int, education: int) -> Dict[str, str]:
+        """Generate culturally appropriate name based on persona characteristics"""
+        
+        # Map location to region
+        region_mapping = {1: "east", 2: "north", 3: "west", 4: "south", 5: "north"}  # Urban defaults to north
+        region = region_mapping.get(location, "north")
+        
+        # Simple gender assignment (could be enhanced with additional gender slider)
+        gender = random.choice(["male", "female"])
+        
+        # Select name pools
+        first_names = self.name_pools[region][gender]["first"]
+        last_names = self.name_pools[region][gender]["last"]
+        
+        # Age-based name selection (older people might have more traditional names)
+        if age_group >= 4:  # Elderly
+            first_name = random.choice(first_names[:6])  # More traditional names (first 6)
+        else:
+            first_name = random.choice(first_names)
+        
+        last_name = random.choice(last_names)
+        
+        return {
+            "first_name": first_name,
+            "last_name": last_name,
+            "full_name": f"{first_name} {last_name}",
+            "gender": gender,
+            "region": region
+        }
+
 # Simplified data structures for POC
 @dataclass
 class PatientPersona:
     """Simplified patient persona for POC"""
     id: str
+    name_info: Dict[str, str]  # Generated name information
     age_group: int  # 1-5 scale
     location: int   # 1-5 scale (rural to urban)
     symptom_severity: int  # 1-5 scale
@@ -42,6 +161,7 @@ class PatientPersona:
     def to_training_example(self) -> Dict[str, Any]:
         """Convert persona to training example"""
         # Create realistic patient message
+        patient_name = self.name_info["first_name"]
         severity_words = {
             1: "mild", 2: "moderate", 3: "concerning", 4: "severe", 5: "unbearable"
         }
@@ -53,9 +173,9 @@ class PatientPersona:
         # Build symptom description
         symptom_desc = []
         for symptom, intensity in self.current_symptoms.items():
-            symptom_desc.append(f"{severity_words.get(self.symptom_severity, 'moderate')} {symptom}")
+            symptom_desc.append(f"{severity_words.get(self.symptom_severity, 'moderate')} {symptom} with intensity level: {intensity}")
         
-        patient_message = f"I'm feeling {emotion_words.get(self.emotion_state, 'concerned')} because I have {', '.join(symptom_desc)}. "
+        patient_message = f"Hi,{patient_name} this side.\n I'm feeling {emotion_words.get(self.emotion_state, 'concerned')} because I have {', '.join(symptom_desc)}. "
         
         # Add communication style variation
         if self.communication_style == "hesitant":
@@ -69,6 +189,7 @@ class PatientPersona:
             "user_message": patient_message,
             "expected_outcome": self.expected_outcome,
             "persona_metadata": {
+                "name": self.name_info["full_name"],
                 "age_group": self.age_group,
                 "location": self.location,
                 "education": self.education,
@@ -116,6 +237,8 @@ class PersonaGenerator:
     """Generates diverse patient personas for training"""
     
     def __init__(self):
+        
+        self.name_generator = IndianNameGenerator()
         self.correlation_patterns = {
             # Age patterns
             ("age_group", "symptom_severity"): 0.4,     # Older people tend to have more severe symptoms
@@ -275,8 +398,15 @@ class PersonaGenerator:
         else:
             medical_history = random.choice(self.medical_histories)
         
+        # Generate culturally appropriate name
+        name_info = self.name_generator.generate_name(
+            location=base_chars["location"],
+            age_group=base_chars["age_group"], 
+            education=base_chars["education"]
+        )        
         return PatientPersona(
             id=f"persona_{index}_{uuid.uuid4().hex[:8]}",
+             name_info=name_info,
             age_group=base_chars["age_group"],
             location=base_chars["location"],
             symptom_severity=base_chars["symptom_severity"],
