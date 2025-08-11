@@ -15,7 +15,6 @@ Supported Optimizers:
 # Import existing DSPy modules
 import sys
 from pathlib import Path
-sys.path.append(str(Path(__file__).parent.parent.parent / "src"))
 
 import asyncio
 import time

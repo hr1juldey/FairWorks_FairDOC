@@ -17,15 +17,14 @@ import sys
 from pathlib import Path
 from datetime import datetime
 
-# Add src to path for imports
-sys.path.append(str(Path(__file__).parent.parent.parent / "src"))
+
 
 # Import POC modules
-from src.tests.training_poc.external_trainer import ExternalTrainer
-from src.tests.training_poc.patient_generator import PersonaGenerator
-from src.tests.training_poc.optimizer_comparison import OptimizerBenchmark
-from src.tests.training_poc.evaluation_suite import MedicalEvaluationSuite
-from src.tests.training_poc.time_cost_analysis import TrainingCostAnalyzer
+from tests.training_poc.external_trainer import ExternalTrainer
+from tests.training_poc.patient_generator import PersonaGenerator
+from tests.training_poc.optimizer_comparison import OptimizerBenchmark
+from tests.training_poc.evaluation_suite import MedicalEvaluationSuite
+from tests.training_poc.time_cost_analysis import TrainingCostAnalyzer
 
 # Configure logging
 logging.basicConfig(

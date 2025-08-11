@@ -2,9 +2,15 @@
 Fairdoc AI Triage System - Test Configuration
 Clean, modular test setup for V1/V2 compatibility testing
 """
+"""
+Fairdoc AI Triage System - Test Configuration
+Clean, modular test setup for V1/V2 compatibility testing
+"""
 
 import asyncio
 import os
+import sys
+from pathlib import Path
 import pytest
 import pytest_asyncio
 from typing import Dict, Any, Generator
@@ -19,6 +25,26 @@ pytest_plugins = ('pytest_asyncio',)
 
 logger = structlog.get_logger(__name__)
 
+# ✅ CRITICAL: POC Path Resolution Fix
+def setup_poc_paths():
+    """Ensure POC modules can import from src correctly"""
+    project_root = Path(__file__).parent.parent.parent  # Go up to fairdoc_ai_triage/
+    src_path = project_root / "src"
+    poc_path = src_path / "tests" / "training_poc"
+    
+    # Add paths in correct order
+    paths_to_add = [
+        str(project_root),
+        str(src_path),
+        str(poc_path)
+    ]
+    
+    for path in paths_to_add:
+        if path not in sys.path:
+            sys.path.insert(0, path)
+
+# Apply path fix immediately
+setup_poc_paths()
 
 # Centralized test environment variables
 TEST_ENV_VARS = {
@@ -240,6 +266,47 @@ async def mock_ollama_service():
         "reasoning": "Test reasoning for medical decision"
     }
     yield mock_service
+
+@pytest.fixture(scope="session", autouse=True) 
+def poc_environment():
+    """POC-specific environment setup"""
+    logger.info("🚀 Initializing POC test environment")
+    
+    # Ensure DSPy is available
+    try:
+        from src.app2.core.dspy_config_v2 import ensure_dspy_configured
+        from src.app2.core.config_v2 import settings_v2
+        
+        success = ensure_dspy_configured(settings_v2.FAIRDOC_V2_DSPy_MODEL)
+        if success:
+            logger.info("✅ DSPy configured for POC tests")
+        else:
+            logger.warning("⚠️ DSPy configuration failed - some tests may skip")
+            
+    except ImportError as e:
+        logger.warning(f"⚠️ DSPy modules not available: {e}")
+    
+    yield
+    logger.info("🧹 POC environment cleanup completed")
+
+@pytest.fixture
+def poc_quick_mode() -> bool:
+    """Enable quick mode for POC tests"""
+    return True
+
+@pytest.fixture  
+def poc_results_dir() -> Path:
+    """Results directory for POC outputs"""
+    results_dir = Path(__file__).parent / "results"
+    results_dir.mkdir(exist_ok=True)
+    return results_dir
+
+# POC-specific markers
+pytestmark = [
+    pytest.mark.poc,
+    pytest.mark.asyncio,
+]
+
 
 # === Sample Test Data Fixtures (Fixed PT022) ===
 

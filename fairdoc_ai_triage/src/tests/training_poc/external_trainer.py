@@ -21,12 +21,11 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass, asdict
-from numpy import numpy as np
+import numpy as np
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Import existing DSPy modules from production code
-import sys
-sys.path.append(str(Path(__file__).parent.parent.parent / "src"))
+
 
 from src.app2.services.dspy.medical_agent import MedicalTriageAgent
 from src.app2.services.dspy.question_generator import MedicalQuestionGenerator
