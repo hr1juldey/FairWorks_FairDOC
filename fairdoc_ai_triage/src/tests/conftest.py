@@ -25,26 +25,30 @@ pytest_plugins = ('pytest_asyncio',)
 
 logger = structlog.get_logger(__name__)
 
-# ✅ CRITICAL: POC Path Resolution Fix
-def setup_poc_paths():
-    """Ensure POC modules can import from src correctly"""
-    project_root = Path(__file__).parent.parent.parent  # Go up to fairdoc_ai_triage/
-    src_path = project_root / "src"
-    poc_path = src_path / "tests" / "training_poc"
+# Ensure proper path setup for all tests
+def pytest_configure(config):
+    """Configure pytest with proper Python path setup."""
     
-    # Add paths in correct order
-    paths_to_add = [
-        str(project_root),
-        str(src_path),
-        str(poc_path)
-    ]
+    # Get project structure paths
+    current_file = Path(__file__).resolve()
+    tests_dir = current_file.parent          # tests/
+    src_dir = tests_dir.parent               # src/
     
-    for path in paths_to_add:
-        if path not in sys.path:
-            sys.path.insert(0, path)
-
-# Apply path fix immediately
-setup_poc_paths()
+    # Add src directory to Python path (for app2 imports)
+    if str(src_dir) not in sys.path:
+        sys.path.insert(0, str(src_dir))
+    
+    # Add tests directory to Python path (for test utilities)
+    if str(tests_dir) not in sys.path:
+        sys.path.insert(0, str(tests_dir))
+    
+    # Set PYTHONPATH environment variable
+    current_pythonpath = os.environ.get('PYTHONPATH', '')
+    if str(src_dir) not in current_pythonpath:
+        if current_pythonpath:
+            os.environ['PYTHONPATH'] = f"{src_dir}:{current_pythonpath}"
+        else:
+            os.environ['PYTHONPATH'] = str(src_dir)
 
 # Centralized test environment variables
 TEST_ENV_VARS = {
@@ -90,6 +94,20 @@ def setup_test_environment():
     os.environ.update(original_env)
 
 # Replace this in your conftest.py
+
+@pytest.fixture(scope="session", autouse=True) 
+def project_paths():
+    """Provide project path information for tests."""
+    current_file = Path(__file__).resolve()
+    tests_dir = current_file.parent
+    src_dir = tests_dir.parent
+    
+    return {
+        'src_dir': src_dir,
+        'tests_dir': tests_dir,
+        'training_poc_dir': tests_dir / 'training_poc'
+    }
+
 # Add this to conftest.py - LLM Warmup Integration
 
 @pytest.fixture(scope="session", autouse=True)
@@ -133,7 +151,7 @@ def warmup_llm_models():
     
     logger.info("🧹 LLM warmup session completed")
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='session', autouse=True)
 def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
     """Create an instance of the default event loop for the test session."""
     try:
@@ -267,45 +285,7 @@ async def mock_ollama_service():
     }
     yield mock_service
 
-@pytest.fixture(scope="session", autouse=True) 
-def poc_environment():
-    """POC-specific environment setup"""
-    logger.info("🚀 Initializing POC test environment")
-    
-    # Ensure DSPy is available
-    try:
-        from src.app2.core.dspy_config_v2 import ensure_dspy_configured
-        from src.app2.core.config_v2 import settings_v2
-        
-        success = ensure_dspy_configured(settings_v2.FAIRDOC_V2_DSPy_MODEL)
-        if success:
-            logger.info("✅ DSPy configured for POC tests")
-        else:
-            logger.warning("⚠️ DSPy configuration failed - some tests may skip")
-            
-    except ImportError as e:
-        logger.warning(f"⚠️ DSPy modules not available: {e}")
-    
-    yield
-    logger.info("🧹 POC environment cleanup completed")
 
-@pytest.fixture
-def poc_quick_mode() -> bool:
-    """Enable quick mode for POC tests"""
-    return True
-
-@pytest.fixture  
-def poc_results_dir() -> Path:
-    """Results directory for POC outputs"""
-    results_dir = Path(__file__).parent / "results"
-    results_dir.mkdir(exist_ok=True)
-    return results_dir
-
-# POC-specific markers
-pytestmark = [
-    pytest.mark.poc,
-    pytest.mark.asyncio,
-]
 
 
 # === Sample Test Data Fixtures (Fixed PT022) ===
