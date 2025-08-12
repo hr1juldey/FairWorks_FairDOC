@@ -144,6 +144,7 @@ addopts = [
     "--strict-config",
     "--cov=src/app",
     "--cov=src/app2",
+    "--cov=src/tests",
     "--cov-report=html",
     "--cov-report=term-missing:skip-covered",
     "--tb=short",

@@ -34,10 +34,10 @@ from src.app2.core.dspy_config_v2 import get_llm_provider, ensure_dspy_configure
 from src.app2.core.config_v2 import settings_v2
 
 # Import persona generator (will be created)
-from patient_generator import PersonaGenerator, PatientScenario
-from optimizer_comparison import OptimizerBenchmark
-from evaluation_suite import MedicalEvaluationSuite
-from time_cost_analysis import TrainingCostAnalyzer
+from src.tests.training_poc.patient_generator import PersonaGenerator, PatientScenario
+from src.tests.training_poc.optimizer_comparison import OptimizerBenchmark
+from src.tests.training_poc.evaluation_suite import MedicalEvaluationSuite
+from src.tests.training_poc.time_cost_analysis import TrainingCostAnalyzer
 
 # Configure logging
 logging.basicConfig(

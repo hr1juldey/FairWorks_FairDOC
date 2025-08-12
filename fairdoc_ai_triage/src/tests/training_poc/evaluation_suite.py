@@ -138,7 +138,7 @@ class MedicalEvaluationSuite:
         """Generate diverse test cases for evaluation"""
         
         # Import persona generator
-        from patient_generator import PersonaGenerator
+        from src.tests.training_poc.patient_generator import PersonaGenerator
         
         generator = PersonaGenerator()
         personas = await generator.generate_diverse_batch(

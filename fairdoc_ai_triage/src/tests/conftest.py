@@ -18,6 +18,21 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from unittest.mock import AsyncMock
+
+from dotenv import load_dotenv
+
+# Load environment variables from .env.example as early as possible
+# Get the path to the fairdoc_ai_triage directory
+fairdoc_ai_triage_dir = Path(__file__).resolve().parents[2]
+dotenv_path = fairdoc_ai_triage_dir / ".env.example"
+
+if dotenv_path.exists():
+    load_dotenv(dotenv_path=dotenv_path)
+else:
+    print(f"WARNING: No .env.example file found at {dotenv_path}. Tests might fail due to missing environment variables.")
+
+_original_env = os.environ.copy()
+
 from src.app2.core.config_v2 import settings_v2
 import structlog
 # Configure pytest-asyncio

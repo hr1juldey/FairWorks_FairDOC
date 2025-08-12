@@ -321,15 +321,15 @@ class PersonaGenerator:
             
             # Apply correlations
             tech_savviness = max(1, min(5, int(
-                education * 0.4 + location * 0.3 - age * 0.2 + random.normal(0, 0.5)
+                education * 0.4 + location * 0.3 - age * 0.2 + np.random.normal(0, 0.5)
             )))
             
             symptom_severity = max(1, min(5, int(
-                age * 0.3 + random.normal(2.5, 1)
+                age * 0.3 + np.random.normal(2.5, 1)
             )))
             
             emotion_state = max(1, min(5, int(
-                symptom_severity * 0.6 + random.normal(0, 0.5)
+                symptom_severity * 0.6 + np.random.normal(0, 0.5)
             )))
             
             characteristics.append({
