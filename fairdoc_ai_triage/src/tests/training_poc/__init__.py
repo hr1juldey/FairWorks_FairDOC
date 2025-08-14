@@ -53,23 +53,23 @@ except ImportError as e:
 
 # Make the package importable
 __all__ = [
-    'external_trainer',
-    'patient_generator', 
-    'optimizer_comparison',
-    'evaluation_suite',
-    'time_cost_analysis',
-    'run_poc'
+    'test_external_trainer',
+    'test_patient_generator', 
+    'test_optimizer_comparison',
+    'test_evaluation_suite',
+    'test_time_cost_analysis',
+    'test_run_poc'
 ]
 
 # Optional: Pre-import modules to catch any issues early
 try:
     # These imports will work now because we've set up the path correctly
-    from . import patient_generator
-    from . import external_trainer
-    from . import optimizer_comparison
-    from . import evaluation_suite
-    from . import time_cost_analysis
-    from . import run_poc
+    from . import test_patient_generator
+    from . import test_external_trainer
+    from . import test_optimizer_comparison
+    from . import test_evaluation_suite
+    from . import test_time_cost_analysis
+    from . import test_run_poc
     
     # print("[POC Init] ✅ Successfully imported all POC modules")
     
@@ -78,11 +78,11 @@ except ImportError as e:
 
 # Export key classes for easier importing
 try:
-    from .patient_generator import PersonaGenerator, PatientScenario
-    from .external_trainer import ExternalTrainer
-    from .optimizer_comparison import OptimizerBenchmark
-    from .evaluation_suite import MedicalEvaluationSuite
-    from .time_cost_analysis import TrainingCostAnalyzer
+    from .test_patient_generator import PersonaGenerator, PatientScenario
+    from .test_external_trainer import ExternalTrainer
+    from .test_optimizer_comparison import OptimizerBenchmark
+    from .test_evaluation_suite import MedicalEvaluationSuite
+    from .test_time_cost_analysis import TrainingCostAnalyzer
     
     __all__.extend([
         'PersonaGenerator',

@@ -1,6 +1,6 @@
 import pytest
 import asyncio
-from src.tests.training_poc.run_poc import individual_tests
+from test_run_poc import individual_tests
 
 @pytest.mark.asyncio
 async def test_individual_poc_components():

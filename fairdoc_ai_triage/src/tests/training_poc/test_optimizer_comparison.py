@@ -37,7 +37,7 @@ from dspy.teleprompt import (
 from src.app2.services.dspy.medical_agent import MedicalTriageAgent
 from src.app2.services.dspy.question_generator import MedicalQuestionGenerator
 from src.app2.core.dspy_config_v2 import get_llm_provider, ensure_dspy_configured
-from src.tests.training_poc.patient_generator import PersonaGenerator
+from test_patient_generator import PersonaGenerator
 
 logger = logging.getLogger(__name__)
 

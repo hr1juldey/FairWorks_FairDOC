@@ -20,11 +20,11 @@ from datetime import datetime
 
 
 # Import POC modules
-from tests.training_poc.external_trainer import ExternalTrainer
-from tests.training_poc.patient_generator import PersonaGenerator
-from tests.training_poc.optimizer_comparison import OptimizerBenchmark
-from tests.training_poc.evaluation_suite import MedicalEvaluationSuite
-from tests.training_poc.time_cost_analysis import TrainingCostAnalyzer
+from test_external_trainer import ExternalTrainer
+from test_patient_generator import PersonaGenerator
+from test_optimizer_comparison import OptimizerBenchmark
+from test_evaluation_suite import MedicalEvaluationSuite
+from test_time_cost_analysis import TrainingCostAnalyzer
 
 # Configure logging
 logging.basicConfig(
@@ -199,9 +199,9 @@ def main():
     # 🔄 Force all output files into the same folder as run_poc.py
     script_dir = Path(__file__).parent.resolve()
     try:
-        from src.tests.training_poc import external_trainer
-        external_trainer.ExternalTrainer.results_dir = script_dir / "results"
-        external_trainer.ExternalTrainer.results_dir.mkdir(exist_ok=True)
+        from . import test_external_trainer
+        test_external_trainer.ExternalTrainer.results_dir = script_dir / "results"
+        test_external_trainer.ExternalTrainer.results_dir.mkdir(exist_ok=True)
     except Exception as e:
         logger.warning(f"Could not override results directory: {e}")
 
