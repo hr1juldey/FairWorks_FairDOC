@@ -202,7 +202,7 @@ class MedicalQuestionSignature(dspy.Signature):
     conversation_history: str = dspy.InputField(desc="Previous conversation context")
     nice_protocols: str = dspy.InputField(desc="Relevant NICE emergency protocols")
     emergency_indicators: str = dspy.InputField(desc="Red-flag symptoms detected")
-
+    reasoning_guidance: str = dspy.InputField(desc="Specific guidance for reasoning approach")
     medical_reasoning: str = dspy.OutputField(desc="Clinical reasoning for question priority")
     emergency_assessment: str = dspy.OutputField(desc="Emergency risk assessment reasoning")
     
@@ -234,7 +234,7 @@ class MedicalQuestionModule(dspy.Module):
         super().__init__()
 
         # Chain-of-thought generators
-        self.question_generator = dspy.ChainOfThoughtWithHint(MedicalQuestionSignature)
+        self.question_generator = dspy.ChainOfThought(MedicalQuestionSignature)
         self.question_prioritizer = dspy.ChainOfThought(QuestionPrioritizationSignature)
 
         # Few-shot examples
@@ -290,7 +290,7 @@ class MedicalQuestionModule(dspy.Module):
             conversation_history=conversation_context,
             nice_protocols=nice_protocols,
             emergency_indicators=", ".join(emergency_indicators),
-            hint=f"Apply NICE emergency protocols for {urgency_level} priority assessment",
+            reasoning_guidance=f"Apply NICE emergency protocols for {urgency_level} priority assessment",
         )
 
         # Combine and prioritise questions

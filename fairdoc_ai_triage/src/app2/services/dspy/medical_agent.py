@@ -40,7 +40,8 @@ class MedicalTriageSignature(dspy.Signature):
     current_symptoms: str = dspy.InputField(desc="Patient's current symptoms description")
     conversation_history: dspy.History = dspy.InputField(desc="Previous conversation turns")
     nice_protocols: str = dspy.InputField(desc="Relevant NICE protocol guidelines")
-    
+    reasoning_guidance: str = dspy.InputField(desc="Specific reasoning guidance")
+
     # Reasoning output (for Reasoning LLM thinking)
     medical_reasoning: str = dspy.OutputField(desc="Step-by-step medical reasoning process")
     
@@ -65,7 +66,7 @@ class MedicalReasoningModule(dspy.Module):
     def __init__(self):
         super().__init__()
         # Use DSPy's ChainOfThoughtWithHint for enhanced reasoning
-        self.medical_cot = dspy.ChainOfThoughtWithHint(MedicalTriageSignature)
+        self.medical_cot = dspy.ChainOfThought(MedicalTriageSignature)
         self.emergency_detector = dspy.ChainOfThought(EmergencyDetectionSignature)
     
     def forward(self, current_symptoms, conversation_history, nice_protocols):
@@ -82,11 +83,12 @@ class MedicalReasoningModule(dspy.Module):
             hint = "Proceed with standard triage assessment"
         
         # Main medical reasoning with hint
+        # Option 1: Add hint as input field
         result = self.medical_cot(
             current_symptoms=current_symptoms,
             conversation_history=conversation_history,
             nice_protocols=nice_protocols,
-            hint=hint  # DSPy hint for guided reasoning
+            reasoning_guidance=hint  # Pass as regular input field
         )
         
         return result, emergency_check
