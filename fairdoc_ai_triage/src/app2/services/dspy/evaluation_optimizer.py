@@ -8,8 +8,13 @@ import asyncio
 from typing import List, Dict, Any, Optional
 import structlog
 import dspy
+import inspect
+import logging
+import time
 from dspy.evaluate import Evaluate
 from dspy import BootstrapFewShot, COPRO, MIPROv2
+
+from concurrent.futures import TimeoutError as FuturesTimeoutError
 
 from src.app2.models.database.gold_standards import GoldStandardDialogue
 from src.app2.models.database.gold_standards_seed import (
@@ -88,59 +93,113 @@ class EvaluationProgram(dspy.Module):
         self.medical_agent = medical_agent
         self.accuracy_module = MedicalAccuracyModule()
     
-    def forward(self, gold_standard):
-        """Process gold standard evaluation - now properly async-compatible"""
+    def forward(self, gold_standard, wait_timeout: float = 10.0):
+        """Process gold standard evaluation - works both in sync and async contexts.
+
+        Args:
+            gold_standard: dict with keys "conversation_dialogue" and optionally "relevant_protocols"
+            wait_timeout: max seconds to wait for an in-flight coroutine when scheduling against
+                        a running loop in another thread. Uses a small polling loop if scheduling
+                        in the same thread (best-effort).
+        """
         # Reset agent for clean evaluation
         self.medical_agent.reset_conversation()
-        
-        # Process conversation through medical agent
+
         dialogue = gold_standard["conversation_dialogue"]
         protocols = " | ".join(gold_standard.get("relevant_protocols", []))
-        
+
         final_result = None
+
         for turn in dialogue:
             user_message = turn["user_message"]
-            
-            # FIXED: Safe async execution that works in both contexts
+
             try:
-                # Check if we're already in an async context
-                loop = asyncio.get_running_loop()
-                # We're in async context - create a task
-                task = loop.create_task(self.medical_agent.process_turn(
-                    symptoms=user_message,
-                    nice_context=protocols
-                ))
-                # Wait for it synchronously (DSPy requires sync)
-                result = loop.run_until_complete(task)
-            except RuntimeError:
-                # No running loop - create new event loop for this evaluation
-                result = asyncio.run(self.medical_agent.process_turn(
-                    symptoms=user_message,
-                    nice_context=protocols
-                ))
-            except Exception as e:
-                logger.error("Evaluation turn failed", error=str(e))
-                # Fallback result to prevent evaluation crash
+                # Try to get a running loop (None if no running loop)
+                try:
+                    
+                    loop = asyncio.get_running_loop()
+                    in_running_loop = True
+                except RuntimeError:
+                    loop = None
+                    in_running_loop = False
+
+                # Decide whether process_turn is sync or async
+                is_coro_fn = inspect.iscoroutinefunction(self.medical_agent.process_turn)
+
+                if not is_coro_fn:
+                    # synchronous handler -> call directly
+                    result = self.medical_agent.process_turn(
+                        symptoms=user_message,
+                        nice_context=protocols
+                    )
+                else:
+                    # coroutine handler
+                    coro = self.medical_agent.process_turn(
+                        symptoms=user_message,
+                        nice_context=protocols
+                    )
+
+                    if not in_running_loop:
+                        # No running loop in this thread: safe to use asyncio.run
+                        result = asyncio.run(coro)
+                    else:
+                        # There is a running loop. Try to schedule safely.
+                        # Best option: if the running loop is in another thread, use run_coroutine_threadsafe
+                        try:
+                            future = asyncio.run_coroutine_threadsafe(coro, loop)
+                            # block until done or timeout
+                            result = future.result(timeout=wait_timeout)
+                        except Exception as exc_threadsafe:
+                            # Could be that the loop is the same thread (cannot use run_coroutine_threadsafe),
+                            # or other scheduling issues. Fall back to scheduling a task and polling gently.
+                            try:
+                                # Schedule a task on the running loop
+                                future_task = asyncio.ensure_future(coro, loop=loop)
+                            except Exception:
+                                # As a last resort, re-raise the original exception to be caught by outer handler
+                                raise exc_threadsafe
+
+                            # Poll with a small sleep to avoid CPU spin (best-effort)
+                            start = time.time()
+                            while not future_task.done():
+                                if time.time() - start > wait_timeout:
+                                    raise FuturesTimeoutError("Timeout waiting for coroutine to complete")
+                                # yield thread to event loop / other threads
+                                time.sleep(0.002)
+
+                            # Get result or exception
+                            result = future_task.result()
+
+            except FuturesTimeoutError as te:
+                logger.error("Timeout while waiting for medical_agent.process_turn", error=str(te))
                 result = {
                     "medical_outcome": "inconclusive",
                     "confidence_score": 30,
                     "red_flags_detected": [],
                     "is_complete": False
                 }
-            
+            except Exception as e:
+                logger.error("Evaluation turn failed", error=str(e))
+                result = {
+                    "medical_outcome": "inconclusive",
+                    "confidence_score": 30,
+                    "red_flags_detected": [],
+                    "is_complete": False
+                }
+
             final_result = result
-            
-            # Stop if emergency or completion
+
+            # Stop early on completion or emergency
             if result.get("is_complete") or result.get("outcome") == "emergency":
                 break
-        
+
         # Evaluate result against gold standard
         evaluation_result = self.accuracy_module(
             prediction=final_result,
             gold_standard=gold_standard
         )
-        
         return evaluation_result
+
 
 class OptimizationProgram(dspy.Module):
     """DSPy program for model optimization using teleprompters"""
@@ -167,19 +226,35 @@ class OptimizationProgram(dspy.Module):
         elif optimizer_type == "mipro":
             optimizer = MIPROv2(
                 metric=self._medical_accuracy_metric,
+                auto=None,  # Must set to None to use custom parameters
                 num_candidates=3,
                 init_temperature=0.1
             )
+        elif optimizer_type == "labeled_fewshot":
+            # Add missing LabeledFewShot optimizer
+            from dspy.teleprompt import LabeledFewShot
+            optimizer = LabeledFewShot(k=8)
+        elif optimizer_type == "ensemble":
+            # Add missing Ensemble optimizer
+            optimizer = dspy.Ensemble()
         else:
             raise ValueError(f"Unknown optimizer type: {optimizer_type}")
-        
+
         # Optimize the medical agent using gold standards
-        optimized_program = optimizer.compile(
-            self.evaluation_program,
-            trainset=training_examples
-        )
-        
+        if optimizer_type == "copro":
+            # COPRO requires eval_kwargs parameter
+            optimized_program = optimizer.compile(
+                self.evaluation_program,
+                trainset=training_examples,
+                eval_kwargs={"num_threads": 1}
+            )
+        else:
+            optimized_program = optimizer.compile(
+                self.evaluation_program,
+                trainset=training_examples
+            )
         return optimized_program
+
     
     def _medical_accuracy_metric(self, gold_standard, prediction, trace=None):
         """Custom DSPy metric for medical evaluation"""
@@ -311,22 +386,22 @@ class EvaluationOptimizer:
     async def _load_evaluation_examples(self, limit: int) -> List[Dict[str, Any]]:
         """Load evaluation examples from gold standards"""
         examples = []
-        
         # Load from seed data
         seed_examples = GOLD_STANDARDS_SEED_DATA[:limit]
         examples.extend(seed_examples)
-        
+
         # Load additional from database if needed
         if len(examples) < limit:
             try:
                 async with get_async_session() as session:
-                    db_examples = await GoldStandardDialogue.get_evaluation_set(
-                        session, limit=limit - len(examples)
-                    )
-                    examples.extend([ex.to_training_example() for ex in db_examples])
+                    # Fix: Remove the limit parameter that doesn't exist in the method signature
+                    db_examples = GoldStandardDialogue.get_evaluation_set(session)
+                    # Limit results manually
+                    limited_examples = db_examples[:(limit - len(examples))]
+                    examples.extend([ex.to_training_example() for ex in limited_examples])
             except Exception as e:
                 logger.warning("⚠️ Database load failed, using seed data", error=str(e))
-        
+
         logger.info("📋 Loaded evaluation examples", count=len(examples))
         return examples
 

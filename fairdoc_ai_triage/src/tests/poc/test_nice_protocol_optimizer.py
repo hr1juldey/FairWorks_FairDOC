@@ -189,11 +189,21 @@ def test_nice_optimization_strategies(nice_protocol_module, optimizer_type):
     if optimizer_type == "labeled_fewshot":
         optimizer = dspy.LabeledFewShot(k=3)
     elif optimizer_type == "knn":
-        optimizer = dspy.KNNFewShot(k=5)
+        # Fixed code:
+        from sentence_transformers import SentenceTransformer
+        optimizer = dspy.KNNFewShot(
+            k=5,
+            trainset=training_examples,
+            vectorizer=dspy.Embedder(SentenceTransformer("all-MiniLM-L6-v2").encode)
+        )
+
     else:  # ensemble
-        optimizer = dspy.Ensemble([nice_protocol_module])
-    
+        # Fixed code:
+        optimizer = dspy.Ensemble()  # Create empty ensemble first
+        # Then compile with programs list
+        optimized_program = optimizer.compile([nice_protocol_module])
     assert optimizer is not None
+    assert optimized_program is not None
     assert len(training_examples) == 1
 
 
@@ -208,7 +218,9 @@ def test_emergency_classification_accuracy():
     
     for symptoms, expected_level in test_cases:
         # Test case format validation
-        assert symptoms and expected_level
+
+        assert symptoms 
+        assert expected_level
         assert expected_level in ["low", "medium", "high", "critical"]
 
 
@@ -224,6 +236,8 @@ def test_protocol_reasoning_quality():
     reasoning_words = sample_reasoning.lower().split()
     
     found_terms = sum(1 for term in clinical_terms if term in reasoning_words)
+    # Use module variable to avoid unused variable warning
+    assert isinstance(module, NICEProtocolModule)
     assert found_terms >= 2, "Reasoning should contain clinical terminology"
 
 

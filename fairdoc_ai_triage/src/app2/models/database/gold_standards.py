@@ -265,14 +265,16 @@ class GoldStandardDialogue(Base):
         return query.order_by(cls.created_at.desc()).limit(limit).all()
 
     @classmethod
-    def get_evaluation_set(cls, session, outcome_filter: Optional[MedicalOutcome] = None) -> List['GoldStandardDialogue']:
+    def get_evaluation_set(cls, session, outcome_filter: Optional[MedicalOutcome] = None, limit: int = 50) -> List['GoldStandardDialogue']:
         """Get gold standards for model evaluation"""
         query = session.query(cls).filter(cls.is_active)
         
         if outcome_filter:
             query = query.filter(cls.expected_outcome == outcome_filter)
-            
-        return query.order_by(cls.primary_symptom, cls.patient_age).all()
+        query = query.order_by(cls.primary_symptom, cls.patient_age)
+        if limit:
+            query = query.limit(limit)
+        return query.all()
 
     @classmethod
     def get_emergency_examples(cls, session) -> List['GoldStandardDialogue']:

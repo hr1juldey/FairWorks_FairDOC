@@ -64,16 +64,23 @@ class PatientBehaviorModule(dspy.Module):
     def forward(self, gene_profile: PatientGeneProfile, emergency_type: str):
         """Predict behavior from gene expression"""
         profile_str = f"Age: {gene_profile.age}, Gender: {gene_profile.gender}, Education: {gene_profile.education_level}"
-        
+
         result = self.behavior_predictor(
             gene_profile=profile_str,
             emergency_context=emergency_type
         )
-        
+
+        # Fix: Extract numeric value from text response
+        delay_text = str(result.decision_delay_minutes)
+        # Extract first number from the response
+        import re
+        delay_match = re.search(r'\d+', delay_text)
+        delay_minutes = int(delay_match.group()) if delay_match else 5
+
         return dspy.Prediction(
             behavioral_phenotype=result.behavioral_phenotype,
             communication_preference=result.communication_preference,
-            decision_delay=int(result.decision_delay_minutes),
+            decision_delay=delay_minutes,
             family_involvement=result.family_involvement_level
         )
 
@@ -175,7 +182,11 @@ def test_dspy_optimization_strategies(gene_expression_module, optimizer_type):
     if optimizer_type == "bootstrap":
         optimizer = dspy.BootstrapFewShot(max_bootstrapped_demos=3)
     elif optimizer_type == "mipro":
-        optimizer = dspy.MIPROv2(num_candidates=2, init_temperature=0.1)
+        # Create dummy metric for test initialization
+        def dummy_metric(example, pred, trace=None):
+            return 0.8
+        optimizer = dspy.MIPROv2(metric=dummy_metric, auto=None, num_candidates=2, init_temperature=0.1)
+
     else:  # copro
         optimizer = dspy.COPRO(breadth=2, depth=1)
     
@@ -196,12 +207,13 @@ def test_regional_behavior_patterns():
         'east': {'family_consultation': 0.7, 'delay_minutes': 35, 'detailed_discussion': True},
         'west': {'family_consultation': 0.5, 'delay_minutes': 20, 'efficiency_focus': True}
     }
-    
+
     for region, patterns in regions.items():
-        assert 'family_consultation' in patterns
-        assert 'delay_minutes' in patterns
-        assert patterns['delay_minutes'] >= 20
-        assert patterns['family_consultation'] <= 1.0
+        assert 'family_consultation' in patterns, f"Missing family_consultation in {region}"
+        assert 'delay_minutes' in patterns, f"Missing delay_minutes in {region}"
+        assert patterns['delay_minutes'] >= 20, f"Invalid delay_minutes for {region}: {patterns['delay_minutes']}"
+        assert patterns['family_consultation'] <= 1.0, f"Invalid family_consultation for {region}: {patterns['family_consultation']}"
+
 
 
 def test_wealth_psychology_classification():

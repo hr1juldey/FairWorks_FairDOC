@@ -132,4 +132,24 @@ class ConversationQueue:
         await self.redis.lrem(f"{self.queue_prefix}:pending", 0, old_id)
         await self.redis.lpush(f"{self.queue_prefix}:pending", new_id)
         
-        return True
+        return 
+    
+    async def _override_conversation_id(self, old_id: str, new_id: str) -> None:
+        """Override conversation ID for testing purposes"""
+        old_key = f"{self.state_prefix}:{old_id}"
+        new_key = f"{self.state_prefix}:{new_id}"
+        
+        # Get existing state
+        state = await self.redis.get(old_key)
+        if state:
+            # Update the conversation_id in the state
+            state_dict = json.loads(state)
+            state_dict["conversation_id"] = new_id
+            
+            # Save under new key
+            await self.redis.set(new_key, json.dumps(state_dict))
+            
+            # Delete old key
+            await self.redis.delete(old_key)
+            
+            logger.info("🔄 Conversation ID overridden", old_id=old_id, new_id=new_id)
