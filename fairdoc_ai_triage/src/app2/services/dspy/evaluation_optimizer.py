@@ -59,7 +59,7 @@ class MedicalAccuracyModule(dspy.Module):
         # Evaluate prediction accuracy
         accuracy_result = self.accuracy_evaluator(
             predicted_outcome=prediction.get("medical_outcome", "unknown"),
-            expected_outcome=gold_standard["expected_outcome"].value,
+            expected_outcome=gold_standard["expected_outcome"],  # .value
             confidence_score=prediction.get("confidence_score", 0)
         )
         
@@ -93,7 +93,7 @@ class EvaluationProgram(dspy.Module):
         self.medical_agent = medical_agent
         self.accuracy_module = MedicalAccuracyModule()
     
-    def forward(self, gold_standard, wait_timeout: float = 10.0):
+    def forward(self, gold_standard, wait_timeout: float = 60.0):
         """Process gold standard evaluation - works both in sync and async contexts.
 
         Args:
@@ -165,7 +165,7 @@ class EvaluationProgram(dspy.Module):
                                 if time.time() - start > wait_timeout:
                                     raise FuturesTimeoutError("Timeout waiting for coroutine to complete")
                                 # yield thread to event loop / other threads
-                                time.sleep(0.002)
+                                time.sleep(0.001)
 
                             # Get result or exception
                             result = future_task.result()
@@ -221,13 +221,15 @@ class OptimizationProgram(dspy.Module):
             optimizer = COPRO(
                 metric=self._medical_accuracy_metric,
                 breadth=3,
-                depth=2
+                depth=2,
+                num_trials=10  # ADD: Required parameter
             )
         elif optimizer_type == "mipro":
             optimizer = MIPROv2(
                 metric=self._medical_accuracy_metric,
                 auto=None,  # Must set to None to use custom parameters
-                num_candidates=3,
+                num_candidates=4,
+                num_trials=12,  # ADD: Required parameter
                 init_temperature=0.1
             )
         elif optimizer_type == "labeled_fewshot":
@@ -265,7 +267,7 @@ class OptimizationProgram(dspy.Module):
         base_score = prediction.overall_score
         
         # Bonus for emergency detection accuracy
-        if gold_standard["expected_outcome"].value == "emergency_route_to_doctor":
+        if gold_standard["expected_outcome"] == "emergency_route_to_doctor":  # .value
             if prediction.accuracy.is_correct:
                 base_score += 0.2  # Bonus for correct emergency detection
         
@@ -395,7 +397,7 @@ class EvaluationOptimizer:
             try:
                 async with get_async_session() as session:
                     # Fix: Remove the limit parameter that doesn't exist in the method signature
-                    db_examples = GoldStandardDialogue.get_evaluation_set(session)
+                    db_examples = await GoldStandardDialogue.get_evaluation_set(session)
                     # Limit results manually
                     limited_examples = db_examples[:(limit - len(examples))]
                     examples.extend([ex.to_training_example() for ex in limited_examples])

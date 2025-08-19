@@ -195,12 +195,14 @@ class MedicalTriageAgent:
         self.turn_count += 1
         
         try:
-            # Use DSPy program for structured reasoning
-            program_result = self.triage_program(
-                symptoms=symptoms,
-                nice_context=nice_context,
-                history=history
-            )
+            async with asyncio.timeout(120.0):  # ⏳ 120-second timeout
+
+                # Use DSPy program for structured reasoning
+                program_result = self.triage_program(
+                    symptoms=symptoms,
+                    nice_context=nice_context,
+                    history=history
+                )
             
             # Extract results from DSPy program output
             medical_result = program_result['medical_reasoning']
@@ -234,11 +236,26 @@ class MedicalTriageAgent:
             )
             
             return response
-            
+        
+        except asyncio.TimeoutError:
+            logger.error("⏰ Medical agent processing timeout")
+            return {
+                "outcome": "inconclusive",
+                "confidence": 20,
+                "next_question": "I'm sorry, processing took too long. Could you repeat your main symptoms?",
+                "reasoning": "System timeout occurred after 120 seconds.",
+                "thinking": "",
+                "red_flags": [],
+                "is_complete": False,
+                "emergency_detected": False,
+                "error_handled": True,
+                "timeout": True
+            }   
         except Exception as e:
             logger.error("❌ Error processing medical turn", error=str(e))
             return self._create_error_response(str(e))
     
+
     def _parse_dspy_response(self, medical_result, emergency_result) -> Dict[str, Any]:
         """Parse DSPy program results with proper conversation management"""
         # Extract red flags as list with safe attribute access

@@ -11,11 +11,10 @@ from uuid import UUID, uuid4
 
 from sqlalchemy import (
     Column, String, DateTime, Integer, Float, Boolean, 
-    Text, JSON, ForeignKey, Index, CheckConstraint, Enum as SQLEnum
+    Text, JSON, ForeignKey, Index, CheckConstraint, Enum as SQLEnum, select, func
 )
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID, JSONB
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
 from src.app2.core.database_v2 import BaseV2 as Base
 
 from src.app2.models.schemas.medical_triage import MedicalOutcome, RedFlagIndicator
@@ -245,33 +244,50 @@ class ConversationStateV2(Base):
         self.completed_at = func.now()
         self.updated_at = func.now()
 
+    # NEW
     @classmethod
-    def get_active_conversations(cls, session) -> List['ConversationStateV2']:
+    async def get_active_conversations(cls, session) -> List['ConversationStateV2']:
         """Get all active (non-completed) conversations"""
-        return session.query(cls).filter(
+        
+        
+        stmt = select(cls).filter(
             cls.status.in_([
                 ConversationStatus.NEW,
                 ConversationStatus.IN_PROGRESS,
                 ConversationStatus.AWAITING_RESPONSE
             ])
-        ).order_by(cls.updated_at.desc()).all()
+        ).order_by(cls.updated_at.desc())
+        
+        result = await session.execute(stmt)
+        return result.scalars().all()
 
     @classmethod
-    def get_emergency_conversations(cls, session, hours_back: int = 24) -> List['ConversationStateV2']:
+    async def get_emergency_conversations(cls, session, hours_back: int = 24) -> List['ConversationStateV2']:
         """Get recent emergency conversations for review"""
+        
+        
         cutoff = func.now() - func.interval(f'{hours_back} hours')
-        return session.query(cls).filter(
+        stmt = select(cls).filter(
             cls.is_emergency,
             cls.created_at >= cutoff
-        ).order_by(cls.created_at.desc()).all()
+        ).order_by(cls.created_at.desc())
+        
+        result = await session.execute(stmt)
+        return result.scalars().all()
 
     @classmethod
-    def get_pending_review(cls, session) -> List['ConversationStateV2']:
+    async def get_pending_review(cls, session) -> List['ConversationStateV2']:
         """Get conversations awaiting human review"""
-        return session.query(cls).filter(
+        
+        
+        stmt = select(cls).filter(
             cls.requires_human_review,
             cls.status != ConversationStatus.COMPLETED
-        ).order_by(cls.created_at.asc()).all()
+        ).order_by(cls.created_at.asc())
+        
+        result = await session.execute(stmt)
+        return result.scalars().all()
+
 
     def __repr__(self) -> str:
         return f"<ConversationStateV2(id={self.conversation_id}, status={self.status}, turns={self.turn_count})>"

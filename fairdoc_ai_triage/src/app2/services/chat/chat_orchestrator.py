@@ -43,8 +43,8 @@ class ChatOrchestrator:
     
     def __init__(self, question_generator=None):
         # Initialize service dependencies
-
-
+        
+        
         # NEW: Ensure DSPy is configured centrally before creating any DSPy agents
 
         model_name = settings_v2.FAIRDOC_V2_DSPy_MODEL
@@ -56,6 +56,12 @@ class ChatOrchestrator:
         except Exception as e:
             logger.warning(f"⚠️ DSPy configuration issue in async context: {e}. Continuing with initialization.")
 
+        
+        # ADD: Initialize missing attributes BEFORE any other setup
+        self.conversation_queue = ConversationQueue()
+        self.nice_lookup = NICELookupService()
+        self.stakeholder_router = StakeholderRouter()
+        
         # Initialize components - they will handle their own DSPy configuration if needed
         if question_generator is None:
             try:

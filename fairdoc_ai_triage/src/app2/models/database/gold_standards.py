@@ -11,7 +11,7 @@ from uuid import UUID, uuid4
 
 from sqlalchemy import (
     Column, String, DateTime, Integer, Float, Boolean,
-    Text, Index, CheckConstraint, Enum as SQLEnum
+    Text, Index, CheckConstraint, Enum as SQLEnum, select
 )
 
 from sqlalchemy.orm import validates  # ✅ Correct import
@@ -254,35 +254,47 @@ class GoldStandardDialogue(Base):
         
         return results
 
-    @classmethod 
-    def get_training_set(cls, session, symptom_filter: Optional[str] = None, limit: int = 50) -> List['GoldStandardDialogue']:
+
+    # NEW (async compatible)
+    @classmethod
+    async def get_training_set(cls, session, symptom_filter: Optional[str] = None, limit: int = 50) -> List['GoldStandardDialogue']:
         """Get active gold standards for training"""
-        query = session.query(cls).filter(cls.is_active)
         
+        stmt = select(cls).filter(cls.is_active)
         if symptom_filter:
-            query = query.filter(cls.primary_symptom == symptom_filter)
-            
-        return query.order_by(cls.created_at.desc()).limit(limit).all()
-
-    @classmethod
-    def get_evaluation_set(cls, session, outcome_filter: Optional[MedicalOutcome] = None, limit: int = 50) -> List['GoldStandardDialogue']:
-        """Get gold standards for model evaluation"""
-        query = session.query(cls).filter(cls.is_active)
+            stmt = stmt.filter(cls.primary_symptom == symptom_filter)
+        stmt = stmt.order_by(cls.created_at.desc()).limit(limit)
         
-        if outcome_filter:
-            query = query.filter(cls.expected_outcome == outcome_filter)
-        query = query.order_by(cls.primary_symptom, cls.patient_age)
-        if limit:
-            query = query.limit(limit)
-        return query.all()
+        result = await session.execute(stmt)
+        return result.scalars().all()
 
     @classmethod
-    def get_emergency_examples(cls, session) -> List['GoldStandardDialogue']:
+    async def get_evaluation_set(cls, session, outcome_filter: Optional[MedicalOutcome] = None, limit: int = 50) -> List['GoldStandardDialogue']:
+        """Get gold standards for model evaluation"""
+        from sqlalchemy import select
+        
+        stmt = select(cls).filter(cls.is_active)
+        if outcome_filter:
+            stmt = stmt.filter(cls.expected_outcome == outcome_filter)
+        stmt = stmt.order_by(cls.primary_symptom, cls.patient_age)
+        if limit:
+            stmt = stmt.limit(limit)
+        
+        result = await session.execute(stmt)
+        return result.scalars().all()
+
+    @classmethod
+    async def get_emergency_examples(cls, session) -> List['GoldStandardDialogue']:
         """Get gold standards specifically for emergency scenarios"""
-        return session.query(cls).filter(
+        from sqlalchemy import select
+        
+        stmt = select(cls).filter(
             cls.is_active,
             cls.expected_outcome == MedicalOutcome.EMERGENCY
-        ).order_by(cls.created_at.desc()).all()
+        ).order_by(cls.created_at.desc())
+        
+        result = await session.execute(stmt)
+        return result.scalars().all()
 
     def __repr__(self) -> str:
         return f"<GoldStandardDialogue(id={self.standard_id}, symptom={self.primary_symptom}, outcome={self.expected_outcome})>"

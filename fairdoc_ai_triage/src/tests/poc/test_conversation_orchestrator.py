@@ -10,6 +10,8 @@ import asyncio
 from typing import Dict, List, Optional
 from uuid import uuid4
 
+from pydantic import ValidationError
+
 from src.app2.services.chat.chat_orchestrator import ChatOrchestrator
 from src.app2.models.schemas.multiturn_chat import (
     MultiTurnChatRequest, StakeholderRole, ChatProvider
@@ -246,21 +248,28 @@ async def test_redis_state_management(chat_orchestrator):
     assert state["conversation_id"] == str(conversation_id)
 
 
+# Fix in src/tests/poc/test_conversation_orchestrator.py
 def test_context_engineering_versioning():
     """Test context versioning like Git for conversation state"""
     from src.app2.models.schemas.multiturn_chat import ConversationState
     
-    # Test immutable state versioning
+    # Test immutable state versioning (this is CORRECT behavior)
     state1 = ConversationState(
         conversation_id=uuid4(),
-        context_hash="abc123",
+        context_hash="abc123", 
         turn_count=1,
-        current_status="new"  # Use lowercase enum value
+        current_status="new"
     )
     
-    # Should be immutable (frozen=True) - use specific exception
-    with pytest.raises((AttributeError, TypeError)):
+    # FIXED: This SHOULD fail - test the correct behavior
+    with pytest.raises((AttributeError, TypeError, ValidationError)):
         state1.turn_count = 2  # Should fail due to frozen=True
+    
+    # Test correct way to create new version
+    state2 = state1.model_copy(update={"turn_count": 2, "context_hash": "def456"})
+    assert state2.turn_count == 2
+    assert state1.turn_count == 1  # Original unchanged
+    print("✅ Context versioning immutability working correctly")
 
 
 def test_conversation_completion_logic():

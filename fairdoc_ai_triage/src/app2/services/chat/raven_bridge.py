@@ -34,7 +34,7 @@ class RavenBridge:  # pylint: disable=too-few-public-methods
 
     async def _get_client(self) -> httpx.AsyncClient:
         if self._client is None:
-            self._client = httpx.AsyncClient(timeout=5.0)
+            self._client = httpx.AsyncClient(timeout=10.0)
         return self._client
 
     async def send_message(

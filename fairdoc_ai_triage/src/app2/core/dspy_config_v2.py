@@ -199,13 +199,23 @@ class DSPyLLMProvider:
         
         model_path = self._available_models[model_key]
         
+
+        # Filter params based on provider
+        if 'ollama/' in model_path:
+            # Remove OpenAI-specific params for Ollama
+            filtered_kwargs = {k: v for k, v in kwargs.items() 
+                             if k not in ['n', 'response_format', 'logprobs']}
+        else:
+            filtered_kwargs = kwargs
+
         # Create LLM with config
         llm_params = {
             'model': model_path,
             'api_base': settings_v2.OLLAMA_BASE_URL,
             'temperature': kwargs.get('temperature', 0.0),
             'max_tokens': kwargs.get('max_tokens', 4000),
-            **kwargs
+            # **kwargs,
+            **filtered_kwargs
         }
         
         try:
