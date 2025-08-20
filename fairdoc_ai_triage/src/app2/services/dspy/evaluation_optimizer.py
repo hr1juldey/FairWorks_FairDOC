@@ -55,25 +55,38 @@ class MedicalAccuracyModule(dspy.Module):
         self.accuracy_evaluator = dspy.ChainOfThought(MedicalAccuracySignature)
         self.red_flag_evaluator = dspy.ChainOfThought(RedFlagDetectionSignature)
     
-    def forward(self, prediction, gold_standard):
-        # Evaluate prediction accuracy
-        accuracy_result = self.accuracy_evaluator(
-            predicted_outcome=prediction.get("medical_outcome", "unknown"),
-            expected_outcome=gold_standard["expected_outcome"],  # .value
-            confidence_score=prediction.get("confidence_score", 0)
-        )
+    def forward(self, training_examples, optimizer_type="bootstrap"):
+        """FIX: Staged optimization with fallbacks"""
+        optimizers_to_try = [
+            ("bootstrap", self._create_bootstrap_optimizer),
+            ("labeled_fewshot", self._create_labeled_fewshot_optimizer),
+            ("simple", self._create_simple_optimizer)  # New fallback
+        ]
         
-        # Evaluate red flag detection
-        red_flag_result = self.red_flag_evaluator(
-            detected_flags=", ".join(prediction.get("red_flags_detected", [])),
-            expected_flags=", ".join(gold_standard.get("expected_red_flags", []))
-        )
+        for opt_name, opt_creator in optimizers_to_try:
+            try:
+                logger.info(f"Trying optimizer: {opt_name}")
+                optimizer = opt_creator()
+                optimized_program = optimizer.compile(
+                    self.evaluation_program,
+                    trainset=training_examples[:10]  # Start small
+                )
+                logger.info(f"✅ Optimization successful with {opt_name}")
+                return optimized_program
+                
+            except Exception as e:
+                logger.warning(f"Optimizer {opt_name} failed: {e}")
+                continue
         
-        return dspy.Prediction(
-            accuracy=accuracy_result,
-            red_flags=red_flag_result,
-            overall_score=self._calculate_composite_score(accuracy_result, red_flag_result)
-        )
+        # All optimizers failed - return unoptimized program
+        logger.error("All optimizers failed, returning unoptimized program")
+        return self.evaluation_program
+
+def _create_simple_optimizer(self):
+    """Fallback optimizer that always succeeds"""
+    from dspy.teleprompt import LabeledFewShot
+    return LabeledFewShot(k=2)  # Minimal optimization
+
     
     def _calculate_composite_score(self, accuracy_result, red_flag_result):
         """Calculate composite evaluation score"""
@@ -258,24 +271,223 @@ class OptimizationProgram(dspy.Module):
         return optimized_program
 
     
-    def _medical_accuracy_metric(self, gold_standard, prediction, trace=None):
-        """Custom DSPy metric for medical evaluation"""
-        if not prediction or not hasattr(prediction, 'overall_score'):
-            return 0.0
+    def _medical_accuracy_metric(self, gold_standard: Dict[str, Any], prediction: Any, trace: Optional[Any] = None) -> float:
+        """
+        Enhanced DSPy-compliant medical accuracy metric with comprehensive scoring.
         
-        # Primary metric: composite accuracy score
-        base_score = prediction.overall_score
+        Addresses Issue 2.2: Gold Standards Field Mismatch with robust field handling.
+        Scores holistic medical care quality: confidence, efficiency, compassion, expertise.
         
-        # Bonus for emergency detection accuracy
-        if gold_standard["expected_outcome"] == "emergency_route_to_doctor":  # .value
-            if prediction.accuracy.is_correct:
-                base_score += 0.2  # Bonus for correct emergency detection
+        Scoring Components (0.0-1.0 total):
+        - Outcome accuracy (primary): 0.60 - Exact match of medical outcomes
+        - Red-flag detection quality: 0.20 - Safety-critical symptom detection  
+        - Confidence calibration: 0.10 - Appropriate confidence levels
+        - Conversation efficiency: 0.05 - Timely, complete consultations
+        - Compassion & clarity: 0.05 - Empathetic communication quality
         
-        # Penalty for missed critical red flags
-        if hasattr(prediction, 'red_flags') and prediction.red_flags.missed_critical:
-            base_score -= 0.3
+        Args:
+            gold_standard: Dict containing 'expected_outcome' and medical context
+            prediction: DSPy prediction with nested accuracy/red_flags structure  
+            trace: DSPy trace object for detailed debugging
+            
+        Returns:
+            float: Comprehensive medical care score (0.0-1.0)
+        """
         
-        return max(0.0, min(1.0, base_score))
+        # Helper functions for robust processing
+        def _normalize_outcome(val: Any) -> str:
+            """Normalize medical outcomes with enum/string handling"""
+            if hasattr(val, 'value'):
+                val = val.value
+            elif hasattr(val, 'name'):
+                val = val.name
+            s = str(val or '').lower().strip()
+            
+            # Medical domain-specific outcome mappings
+            mapping = {
+                'emergency_route_to_doctor': 'emergency',
+                'emergency_route': 'emergency',
+                'emergency': 'emergency',
+                'routine_doctor_consultation': 'routine',
+                'routine': 'routine',
+                'self_care_advice': 'self_care',
+                'selfcare': 'self_care',
+                'self_care': 'self_care',
+                'need_more_questions': 'inconclusive',
+                'inconclusive': 'inconclusive',
+                'spam_or_irrelevant': 'spam',
+                'spam': 'spam',
+            }
+            return mapping.get(s, s)
+        
+        def _safe_float(x, default=0.0):
+            """Safe float conversion with fallback"""
+            try:
+                return float(x)
+            except Exception:
+                return default
+        
+        # Initialize trace context for debugging
+        trace_id = getattr(trace, 'trace_id', 'unknown') if trace else 'unknown'
+        
+        if trace:
+            logger.debug(f"[TRACE-{trace_id}] Medical accuracy evaluation started")
+        
+        try:
+            # 1. Validate prediction structure
+            if prediction is None:
+                if trace:
+                    logger.warning(f"[TRACE-{trace_id}] NULL prediction received")
+                return 0.0
+            
+            # 2. Validate gold standard structure  
+            if not isinstance(gold_standard, dict):
+                if trace:
+                    logger.error(f"[TRACE-{trace_id}] Gold standard not dict: {type(gold_standard)}")
+                return 0.0
+            
+            # 3. Extract expected outcome with robust handling
+            expected_raw = gold_standard.get('expected_outcome')
+            if expected_raw is None:
+                if trace:
+                    logger.error(f"[TRACE-{trace_id}] Missing expected_outcome in keys: {list(gold_standard.keys())}")
+                return 0.0
+            
+            expected = _normalize_outcome(expected_raw)
+            
+            # 4. Extract predicted outcome via multiple fallback paths
+            predicted_raw = None
+            if hasattr(prediction, 'accuracy') and hasattr(prediction.accuracy, 'predicted_outcome'):
+                predicted_raw = prediction.accuracy.predicted_outcome
+            elif hasattr(prediction, 'predicted_outcome'):
+                predicted_raw = prediction.predicted_outcome
+            elif hasattr(prediction, 'outcome'):
+                predicted_raw = prediction.outcome
+            
+            if predicted_raw is None:
+                if trace:
+                    logger.warning(f"[TRACE-{trace_id}] No predicted outcome found; attrs={dir(prediction)}")
+                return 0.0
+            
+            predicted = _normalize_outcome(predicted_raw)
+            
+            # 5. Primary outcome accuracy (60% weight)
+            is_correct = (predicted == expected)
+            outcome_score = 1.0 if is_correct else 0.0
+            
+            # 6. Red-flag detection quality (20% weight)
+            redflags_score = 0.0
+            missed_penalty = 0.0
+            if hasattr(prediction, 'red_flags'):
+                rf = prediction.red_flags
+                detection_score = getattr(rf, 'detection_score', None)
+                redflags_score = _safe_float(detection_score, 0.0)
+                
+                # Strong penalty for missing critical flags
+                if getattr(rf, 'missed_critical', False):
+                    missed_penalty = 0.3
+            
+            redflags_component = max(0.0, redflags_score - missed_penalty)
+            
+            # 7. Confidence calibration (10% weight)
+            confidence = None
+            for attr in ['confidence_score', 'confidence']:
+                if hasattr(prediction, attr):
+                    confidence = _safe_float(getattr(prediction, attr))
+                    break
+            
+            conf_component = 0.0
+            if confidence is not None:
+                # Normalize to [0,1] if given in 0-100 style
+                conf_normalized = confidence / 100.0 if confidence > 1.0 else max(0.0, min(1.0, confidence))
+                
+                if is_correct:
+                    # Reward calibrated confidence when correct
+                    conf_component = 0.5 * conf_normalized + 0.5 * (conf_normalized ** 2)
+                else:
+                    # Penalize overconfidence when wrong
+                    conf_component = max(0.0, 1.0 - conf_normalized)
+            
+            # 8. Conversation efficiency (5% weight)
+            efficiency_component = 0.0
+            turns = getattr(trace, 'num_turns', None) if trace else None
+            completed = getattr(trace, 'completed', None) if trace else None
+            
+            if turns and isinstance(turns, int) and turns > 0:
+                # Reward fewer turns; gentle decay
+                eff_base = max(0.0, min(1.0, 1.0 / (1.0 + 0.1 * (turns - 1))))
+                efficiency_component = eff_base if is_correct else (0.5 * eff_base)
+            
+            if completed:
+                efficiency_component = min(1.0, efficiency_component + 0.1)
+            
+            # 9. Compassion & clarity proxy (5% weight)
+            compassion_component = 0.0
+            reasoning = None
+            
+            # Extract reasoning text via multiple paths
+            if hasattr(prediction, 'accuracy') and hasattr(prediction.accuracy, 'accuracy_reasoning'):
+                reasoning = prediction.accuracy.accuracy_reasoning
+            elif hasattr(prediction, 'reasoning'):
+                reasoning = prediction.reasoning
+            
+            if reasoning:
+                text = str(reasoning).lower()
+                length_bonus = min(1.0, len(text) / 400.0)  # Saturate at ~400 chars
+                
+                # Check for empathetic language cues
+                empathy_cues = ['please', 'sorry', 'understand', 'concern', 'help', 'support', 'recommend', 'advise']
+                empathy_bonus = 0.2 if any(cue in text for cue in empathy_cues) else 0.0
+                compassion_component = max(0.0, min(1.0, 0.6 * length_bonus + empathy_bonus))
+            
+            # 10. Calculate weighted final score
+            weights = {
+                'outcome': 0.60,      # Primary medical accuracy
+                'redflags': 0.20,     # Safety-critical detection
+                'confidence': 0.10,   # Calibrated uncertainty
+                'efficiency': 0.05,   # Timely completion
+                'compassion': 0.05    # Communication quality
+            }
+            
+            final_score = (
+                weights['outcome'] * outcome_score +
+                weights['redflags'] * redflags_component +
+                weights['confidence'] * conf_component +
+                weights['efficiency'] * efficiency_component +
+                weights['compassion'] * compassion_component
+            )
+            
+            # Clamp to [0, 1]
+            final_score = max(0.0, min(1.0, final_score))
+            
+            # 11. Detailed trace logging for debugging
+            if trace:
+                logger.info(f"[TRACE-{trace_id}] Medical evaluation complete:")
+                logger.info(f"[TRACE-{trace_id}] - Expected: '{expected}' | Predicted: '{predicted}'")
+                logger.info(f"[TRACE-{trace_id}] - Components: outcome={outcome_score:.2f}, "
+                        f"redflags={redflags_component:.2f}, conf={conf_component:.2f}, "
+                        f"eff={efficiency_component:.2f}, comp={compassion_component:.2f}")
+                logger.info(f"[TRACE-{trace_id}] - Final Score: {final_score:.3f}")
+                
+                if not is_correct:
+                    logger.debug(f"[TRACE-{trace_id}] MISMATCH DETAILS:")
+                    logger.debug(f"[TRACE-{trace_id}] - Raw expected: '{expected_raw}'")
+                    logger.debug(f"[TRACE-{trace_id}] - Raw predicted: '{predicted_raw}'")
+            
+            return final_score
+            
+        except Exception as e:
+            error_msg = f"Medical accuracy metric failed: {str(e)}"
+            logger.error(error_msg)
+            
+            if trace:
+                logger.error(f"[TRACE-{trace_id}] EXCEPTION DETAILS:")
+                logger.error(f"[TRACE-{trace_id}] - Gold standard type: {type(gold_standard)}")
+                logger.error(f"[TRACE-{trace_id}] - Prediction type: {type(prediction)}")
+                logger.error(f"[TRACE-{trace_id}] - Exception: {repr(e)}")
+            
+            return 0.0  # Safe fallback
+
 
 class EvaluationOptimizer:
     """Production-ready DSPy evaluation and optimization with native modules"""
@@ -429,40 +641,56 @@ class EvaluationOptimizer:
             }
 
     async def _background_evaluation_worker(self, limit: int) -> Dict[str, Any]:
-        """Isolated worker for background evaluation"""
-        # Load gold standards asynchronously
-        gold_standards = await self._load_evaluation_examples(limit)
+        """FIX: Increase timeout and add progressive fallback"""
+        EVALUATION_TIMEOUT = 300  # 5 minutes instead of 2
+        FALLBACK_TIMEOUT = 60     # Quick fallback
         
+        gold_standards = await self._load_evaluation_examples(limit)
+
         if not gold_standards:
             return {"error": "No evaluation data", "examples": 0}
-        
-        # Convert to DSPy examples
+
         dspy_examples = [
             dspy.Example(gold_standard=gs).with_inputs("gold_standard")
             for gs in gold_standards
         ]
-        
-        # Use DSPy evaluation with single thread to avoid conflicts
-        evaluator = Evaluate(
-            devset=dspy_examples,
-            metric=self.optimization_program._medical_accuracy_metric,
-            num_threads=1,  # Single thread for safety
-            display_progress=False  # Silent for background operation
-        )
-        
-        # Run evaluation
-        evaluation_score = evaluator(self.evaluation_program)
-        
+
+        evaluation_results = []
+
+        for example in dspy_examples:
+            try:
+                # Try with full timeout first
+                result = await asyncio.wait_for(
+                    self.evaluation_program(example.gold_standard),
+                    timeout=EVALUATION_TIMEOUT
+                )
+            except asyncio.TimeoutError:
+                logger.warning(f"Evaluation timeout, trying fallback for {example}")
+                try:
+                    # Fallback with simplified evaluation
+                    result = await asyncio.wait_for(
+                        self._simplified_evaluation(example.gold_standard),
+                        timeout=FALLBACK_TIMEOUT
+                    )
+                except asyncio.TimeoutError:
+                    # Record failed evaluation
+                    result = self._create_timeout_result(example)
+            
+            evaluation_results.append(result)
+
+        # Combine results appropriately
+        combined_score = sum(getattr(r, 'overall_score', 0) for r in evaluation_results) / len(evaluation_results)
         return {
             "model_name": self.model_name,
-            "evaluation_type": "background_async",
+            "evaluation_type": "background_async_fixed",
             "metrics": {
-                "overall_accuracy": evaluation_score,
+                "overall_accuracy": combined_score,
                 "examples_evaluated": len(dspy_examples)
             },
             "timestamp": asyncio.get_event_loop().time(),
             "safe_for_production": True
         }
+
     
     async def scheduled_optimization_run(self, 
                                     evaluation_limit: int = 100,

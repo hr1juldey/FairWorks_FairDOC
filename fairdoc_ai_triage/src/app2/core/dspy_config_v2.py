@@ -52,6 +52,9 @@ class DSPyLLMProvider:
     
     def _setup(self):
         """Initialize the provider with dynamic model discovery"""
+        # Add thread-local storage
+        self._thread_local = threading.local()
+        
         # Discover available models
         self._available_models = self._discover_models()
         
@@ -228,15 +231,23 @@ class DSPyLLMProvider:
             raise
     
     def get_llm(self, model: str = None, **kwargs) -> dspy.LM:
-        """Get LLM instance with load balancing"""
+        """Thread-safe LM instance retrieval"""
+        if not hasattr(self._thread_local, 'llm_cache'):
+            self._thread_local.llm_cache = {}
+        
         target_model = model or self._default_model
+        cache_key = f"{target_model}_{hash(str(sorted(kwargs.items())))}"
+        
+        if cache_key not in self._thread_local.llm_cache:
+            self._thread_local.llm_cache[cache_key] = self._get_llm_instance(target_model, **kwargs)
         
         # Update metrics
         self._metrics[target_model].active_requests += 1
         self._metrics[target_model].total_requests += 1
         self._metrics[target_model].last_used = time.time()
         
-        return self._get_llm_instance(target_model, **kwargs)
+        return self._thread_local.llm_cache[cache_key]
+
     
     def get_best_available_llm(self, exclude: List[str] = None, **kwargs) -> dspy.LM:
         """Get least loaded available LLM"""
@@ -337,6 +348,7 @@ def ensure_dspy_configured(model_name: str = None) -> bool:
                     # Use context instead of configure in async environments
                     # Note: This sets up the context but doesn't override global config
                     # The actual usage will use dspy.context() when needed
+                    dspy.configure(lm=llm_instance)
                     logger.info(f"✅ DSPy prepared for async context with model: {model_name}")
                     return True
             except RuntimeError:

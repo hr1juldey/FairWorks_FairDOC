@@ -179,54 +179,60 @@ class MedicalTriageAgent:
         
         logger.info(f"✅ DSPy configured via centralized provider: {self.model_name}")
 
-    async def process_turn(
-        self,
-        symptoms: str,
-        nice_context: str,
-        history: Optional[dspy.History] = None
-    ) -> Dict[str, Any]:
-        """Process medical turn using DSPy program"""
-        if not symptoms.strip():
-            raise ValueError("Symptoms cannot be empty")
-        
-        if history is None:
-            history = self.conversation_history
-        
-        self.turn_count += 1
-        
-        try:
-            async with asyncio.timeout(120.0):  # ⏳ 120-second timeout
+async def process_turn(
+    self,
+    symptoms: str,
+    nice_context: str,
+    history: Optional[dspy.History] = None
+) -> Dict[str, Any]:
+    """Process medical turn using DSPy program"""
+    if not symptoms.strip():
+        raise ValueError("Symptoms cannot be empty")
 
-                # Use DSPy program for structured reasoning
+    if history is None:
+        history = self.conversation_history
+
+    self.turn_count += 1
+
+    try:
+        async with asyncio.timeout(120.0):  # ⏳ 120-second timeout
+            # FIX: Ensure LM is available in async context
+            from src.app2.core.dspy_config_v2 import get_llm_provider
+            llm_provider = get_llm_provider()
+            llm_instance = llm_provider.get_llm(self.model_name)
+            
+            with dspy.context(lm=llm_instance):
+                # ALL DSPy operations must be within this context
                 program_result = self.triage_program(
                     symptoms=symptoms,
                     nice_context=nice_context,
                     history=history
                 )
-            
+
             # Extract results from DSPy program output
             medical_result = program_result['medical_reasoning']
             emergency_result = program_result['emergency_analysis']
-            
+
             # Parse response using DSPy's native structure
             response = self._parse_dspy_response(medical_result, emergency_result)
 
             # Generate specialized questions using question generator
             if not response.get("is_complete") and response["outcome"] == "inconclusive":
-                question_result = self.question_generator.suggest_questions(
-                    symptom_text=symptoms,
-                    conversation_context=str(history),
-                    nice_protocols=nice_context,
-                    max_questions=2
-                )
+                with dspy.context(lm=llm_instance):
+                    question_result = self.question_generator.suggest_questions(
+                        symptom_text=symptoms,
+                        conversation_context=str(history),
+                        nice_protocols=nice_context,
+                        max_questions=2
+                    )
+
                 if question_result["questions"]:
                     response["next_question"] = question_result["questions"][0]
                     response["reasoning"] += f" | Question reasoning: {question_result.get('medical_reasoning', '')}"
 
-            
             # Update conversation history
             self._update_history(history, symptoms, response)
-            
+
             logger.info(
                 "🔄 Medical turn processed",
                 turn=self.turn_count,
@@ -234,26 +240,28 @@ class MedicalTriageAgent:
                 confidence=response["confidence"],
                 thinking_captured=len(response.get("thinking", "")) > 0
             )
-            
+
             return response
-        
-        except asyncio.TimeoutError:
-            logger.error("⏰ Medical agent processing timeout")
-            return {
-                "outcome": "inconclusive",
-                "confidence": 20,
-                "next_question": "I'm sorry, processing took too long. Could you repeat your main symptoms?",
-                "reasoning": "System timeout occurred after 120 seconds.",
-                "thinking": "",
-                "red_flags": [],
-                "is_complete": False,
-                "emergency_detected": False,
-                "error_handled": True,
-                "timeout": True
-            }   
-        except Exception as e:
-            logger.error("❌ Error processing medical turn", error=str(e))
-            return self._create_error_response(str(e))
+
+    except asyncio.TimeoutError:
+        logger.error("⏰ Medical agent processing timeout")
+        return {
+            "outcome": "inconclusive",
+            "confidence": 20,
+            "next_question": "I'm sorry, processing took too long. Could you repeat your main symptoms?",
+            "reasoning": "System timeout occurred after 120 seconds.",
+            "thinking": "",
+            "red_flags": [],
+            "is_complete": False,
+            "emergency_detected": False,
+            "error_handled": True,
+            "timeout": True
+        }
+
+    except Exception as e:
+        logger.error("❌ Error processing medical turn", error=str(e))
+        return self._create_error_response(str(e))
+
     
 
     def _parse_dspy_response(self, medical_result, emergency_result) -> Dict[str, Any]:

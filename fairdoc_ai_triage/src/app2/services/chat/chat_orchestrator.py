@@ -86,6 +86,33 @@ class ChatOrchestrator:
         await self.conversation_queue.initialize()
         logger.info("✅ Chat Orchestrator ready")
     
+
+    def _build_validated_history(self, conversation_state: Dict) -> dspy.History:
+        """FIX: Build validated conversation history"""
+        history = dspy.History(messages=[])
+        
+        for turn in conversation_state.get("conversation_history", []):
+            # Validate turn data before adding
+            if self._is_valid_turn(turn):
+                history.messages.append({
+                    "turn": turn.get("turn", 0),
+                    "current_symptoms": turn.get("user_response", ""),
+                    "outcome_classification": turn.get("outcome", "inconclusive"),
+                    "reasoning": turn.get("agent_reasoning", ""),
+                    "confidence": turn.get("confidence", 50),
+                    "red_flags": turn.get("red_flags", [])
+                })
+        
+        return history
+
+    
+
+    def _is_valid_turn(self, turn: Dict) -> bool:
+        """Validate turn data structure"""
+        required_fields = ["turn", "user_response", "outcome"]
+        return all(field in turn for field in required_fields)
+
+
     async def process_conversation_turn(self, request: MultiTurnChatRequest) -> Dict[str, Any]:
         """Process one turn of medical conversation with proper context management"""
         
@@ -118,35 +145,31 @@ class ChatOrchestrator:
         if not conversation_state:
             raise ValueError(f"Conversation {conversation_id} not found")
 
-
-        # ✅ CRITICAL FIX: Build conversation history for context
-        conversation_history = dspy.History(messages=[])
-        for turn in conversation_state.get("conversation_history", []):
-            conversation_history.messages.append({
-                "turn": turn["turn"],
-                "current_symptoms": turn["user_response"],
-                "outcome_classification": turn["outcome"],
-                "next_question": turn.get("agent_question"),
-                "reasoning": turn.get("agent_reasoning", ""),
-                "confidence": turn["confidence"],
-                "red_flags": turn.get("red_flags", [])
-            })
+        # ✅ FIX: Build proper DSPy history with validation
+        conversation_history = self._build_validated_history(conversation_state)
 
         # Step 3: Look up NICE protocols with enhanced matching
         nice_context = self.nice_lookup.find_relevant_protocols(request.user_message)
-        
-        # Step 4: Process with DSPy medical agent WITH CONTEXT
+
+        # Step 4: Process with DSPy medical agent WITH LM CONTEXT
         try:
-            agent_result = await self.medical_agent.process_turn(
-                symptoms=request.user_message,
-                nice_context=nice_context["protocol_text"],
-                history=conversation_history  # ✅ PASS CONTEXT
-            )
+            # ✅ FIX: Ensure LM context is available
+            from src.app2.core.dspy_config_v2 import get_llm_provider
+            llm_provider = get_llm_provider()
+            llm_instance = llm_provider.get_llm(settings_v2.DSPY_MODEL_NAME)
+            
+            with dspy.context(lm=llm_instance):
+                agent_result = await self.medical_agent.process_turn(
+                    symptoms=request.user_message,
+                    nice_context=nice_context["protocol_text"],
+                    history=conversation_history  # ✅ PASS VALIDATED CONTEXT
+                )
+
         except Exception as e:
             logger.error(f"❌ Medical agent processing error: {e}")
             # Provide fallback response to prevent conversation failure
             agent_result = {
-                "outcome": "inconclusive", 
+                "outcome": "inconclusive",
                 "confidence": 40,
                 "next_question": "I need more information about your symptoms. Could you describe them in more detail?",
                 "reasoning": f"Processing error handled: {str(e)[:50]}",
@@ -154,7 +177,6 @@ class ChatOrchestrator:
                 "is_complete": False,
                 "error_handled": True
             }
-
 
         # Step 5: Update conversation state
         updated_state = await self.conversation_queue.update_conversation_turn(
@@ -191,7 +213,9 @@ class ChatOrchestrator:
             )
         }
 
-    
+
+
+
     async def get_conversation_state(self, conversation_id: str) -> Optional[Dict]:
         """Get conversation state from Redis"""
         return await self.conversation_queue.get_conversation_state(conversation_id)
