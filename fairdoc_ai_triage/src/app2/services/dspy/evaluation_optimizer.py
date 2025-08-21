@@ -12,7 +12,7 @@ import inspect
 import logging
 import time
 from dspy.evaluate import Evaluate
-from dspy import BootstrapFewShot, COPRO, MIPROv2
+from dspy.teleprompt import BootstrapFewShot, COPRO, MIPROv2
 
 from concurrent.futures import TimeoutError as FuturesTimeoutError
 
@@ -235,7 +235,7 @@ class OptimizationProgram(dspy.Module):
                 metric=self._medical_accuracy_metric,
                 breadth=3,
                 depth=2,
-                num_trials=10  # ADD: Required parameter
+                num_trials=10,  # ADD: Required parameter
             )
         elif optimizer_type == "mipro":
             optimizer = MIPROv2(

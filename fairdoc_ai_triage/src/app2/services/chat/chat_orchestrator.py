@@ -30,6 +30,8 @@ from src.app2.services.dspy.question_generator import MedicalQuestionGenerator
 from src.app2.services.chat.stakeholder_router import StakeholderRouter
 from src.app2.core.config_v2 import settings_v2
 from src.app2.core.dspy_config_v2 import ensure_dspy_configured
+# Add at top
+from src.app2.utils.conversation_logger import conversation_logger
 
 logger = structlog.get_logger(__name__)
 
@@ -134,7 +136,11 @@ class ChatOrchestrator:
                     "red_flags": [],
                     "is_complete": False
                 },
-                "error": "Medical agent not available"
+                "error": "Medical agent not available",
+                "message_routes": [],  # ADDED
+                "context_maintained": False,  # ADDED
+                "requires_emergency_alert": False,
+                "requires_persistence": False
             }
 
         # Step 1: Get or create conversation
@@ -198,7 +204,23 @@ class ChatOrchestrator:
                     outcome=agent_result["outcome"],
                     turn=updated_state["turn_count"],
                     context_turns=len(conversation_history.messages))  # ✅ LOG CONTEXT
-
+        
+        # ADD: Clean conversation logging
+        try:
+            conversation_logger.log_conversation_turn(
+                conversation_id=conversation_id,
+                turn_number=updated_state["turn_count"],
+                patient_message=request.user_message,
+                agent_response=agent_result.get("next_question", "Assessment complete"),
+                medical_assessment=agent_result,
+                patient_info={
+                    "age": getattr(request, 'patient_age', None),
+                    "gender": getattr(request, 'patient_gender', None),
+                    "stakeholder": request.stakeholder_role
+                }
+            )
+        except Exception as e:
+            logger.warning(f"Conversation logging failed: {e}")
         return {
             "conversation_id": conversation_id,
             "agent_result": agent_result,
