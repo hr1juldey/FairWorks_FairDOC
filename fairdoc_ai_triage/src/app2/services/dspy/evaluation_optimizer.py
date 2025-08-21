@@ -55,48 +55,150 @@ class MedicalAccuracyModule(dspy.Module):
         self.accuracy_evaluator = dspy.ChainOfThought(MedicalAccuracySignature)
         self.red_flag_evaluator = dspy.ChainOfThought(RedFlagDetectionSignature)
     
-    def forward(self, training_examples, optimizer_type="bootstrap"):
-        """FIX: Staged optimization with fallbacks"""
-        optimizers_to_try = [
-            ("bootstrap", self._create_bootstrap_optimizer),
-            ("labeled_fewshot", self._create_labeled_fewshot_optimizer),
-            ("simple", self._create_simple_optimizer)  # New fallback
-        ]
+    def forward(self, prediction, gold_standard):
+        """Evaluate medical accuracy against gold standards"""
+        # Extract predicted outcome with multiple fallback paths
+        predicted_raw = None
+        if hasattr(prediction, 'accuracy') and hasattr(prediction.accuracy, 'predicted_outcome'):
+            predicted_raw = prediction.accuracy.predicted_outcome
+        elif hasattr(prediction, 'predicted_outcome'):
+            predicted_raw = prediction.predicted_outcome
+        elif hasattr(prediction, 'outcome'):
+            predicted_raw = prediction.outcome
+        elif isinstance(prediction, dict) and 'outcome' in prediction:
+            predicted_raw = prediction['outcome']
+        elif isinstance(prediction, dict) and 'medical_outcome' in prediction:
+            predicted_raw = prediction['medical_outcome']
+        elif isinstance(prediction, dict) and 'predicted_outcome' in prediction:
+            predicted_raw = prediction['predicted_outcome']
+        else:
+            # Try to get outcome from any attribute
+            for attr in dir(prediction):
+                if 'outcome' in attr.lower() and not attr.startswith('_'):
+                    predicted_raw = getattr(prediction, attr)
+                    break
         
-        for opt_name, opt_creator in optimizers_to_try:
+        # Extract expected outcome from gold standard
+        expected_raw = None
+        if isinstance(gold_standard, dict):
+            expected_raw = gold_standard.get('expected_outcome')
+        elif hasattr(gold_standard, 'expected_outcome'):
+            expected_raw = gold_standard.expected_outcome
+        
+        # Normalize outcomes for comparison
+        def _normalize_outcome(val):
+            """Normalize medical outcomes with enum/string handling"""
+            if hasattr(val, 'value'):
+                val = val.value
+            elif hasattr(val, 'name'):
+                val = val.name
+            s = str(val or '').lower().strip()
+            
+            # Medical domain-specific outcome mappings
+            mapping = {
+                'emergency_route_to_doctor': 'emergency',
+                'emergency_route': 'emergency',
+                'emergency': 'emergency',
+                'routine_doctor_consultation': 'routine',
+                'routine': 'routine',
+                'self_care_advice': 'self_care',
+                'selfcare': 'self_care',
+                'self_care': 'self_care',
+                'need_more_questions': 'inconclusive',
+                'inconclusive': 'inconclusive',
+                'spam_or_irrelevant': 'spam',
+                'spam': 'spam',
+            }
+            return mapping.get(s, s)
+        
+        predicted = _normalize_outcome(predicted_raw) if predicted_raw else ""
+        expected = _normalize_outcome(expected_raw) if expected_raw else ""
+        
+        # Calculate accuracy score
+        is_correct = (predicted == expected)
+        
+        # Extract confidence score
+        confidence = 50  # Default confidence
+        if hasattr(prediction, 'confidence_score'):
             try:
-                logger.info(f"Trying optimizer: {opt_name}")
-                optimizer = opt_creator()
-                optimized_program = optimizer.compile(
-                    self.evaluation_program,
-                    trainset=training_examples[:10]  # Start small
-                )
-                logger.info(f"✅ Optimization successful with {opt_name}")
-                return optimized_program
+                confidence = int(float(prediction.confidence_score))
+            except (ValueError, TypeError):
+                pass
+        elif isinstance(prediction, dict) and 'confidence_score' in prediction:
+            try:
+                confidence = int(float(prediction['confidence_score']))
+            except (ValueError, TypeError):
+                pass
+        
+        # Extract red flags
+        detected_flags = ""
+        expected_flags = ""
+        if hasattr(prediction, 'red_flags'):
+            if isinstance(prediction.red_flags, list):
+                detected_flags = ", ".join([str(f) for f in prediction.red_flags])
+            else:
+                detected_flags = str(prediction.red_flags)
+        elif isinstance(prediction, dict) and 'red_flags_detected' in prediction:
+            if isinstance(prediction['red_flags_detected'], list):
+                detected_flags = ", ".join([str(f) for f in prediction['red_flags_detected']])
+            else:
+                detected_flags = str(prediction['red_flags_detected'])
+        elif isinstance(prediction, dict) and 'red_flags' in prediction:
+            if isinstance(prediction['red_flags'], list):
+                detected_flags = ", ".join([str(f) for f in prediction['red_flags']])
+            else:
+                detected_flags = str(prediction['red_flags'])
                 
-            except Exception as e:
-                logger.warning(f"Optimizer {opt_name} failed: {e}")
-                continue
+        if isinstance(gold_standard, dict) and 'expected_red_flags' in gold_standard:
+            if isinstance(gold_standard['expected_red_flags'], list):
+                expected_flags = ", ".join([str(f) for f in gold_standard['expected_red_flags']])
+            else:
+                expected_flags = str(gold_standard['expected_red_flags'])
+        elif hasattr(gold_standard, 'expected_red_flags'):
+            if isinstance(gold_standard.expected_red_flags, list):
+                expected_flags = ", ".join([str(f) for f in gold_standard.expected_red_flags])
+            else:
+                expected_flags = str(gold_standard.expected_red_flags)
         
-        # All optimizers failed - return unoptimized program
-        logger.error("All optimizers failed, returning unoptimized program")
-        return self.evaluation_program
-
-def _create_simple_optimizer(self):
-    """Fallback optimizer that always succeeds"""
-    from dspy.teleprompt import LabeledFewShot
-    return LabeledFewShot(k=2)  # Minimal optimization
-
-    
-    def _calculate_composite_score(self, accuracy_result, red_flag_result):
-        """Calculate composite evaluation score"""
-        accuracy_weight = 0.7
-        red_flag_weight = 0.3
+        # Evaluate accuracy using DSPy Chain of Thought
+        try:
+            accuracy_result = self.accuracy_evaluator(
+                predicted_outcome=predicted,
+                expected_outcome=expected,
+                confidence_score=confidence
+            )
+        except Exception:
+            # Fallback if evaluator fails
+            accuracy_result = type('obj', (object,), {
+                'is_correct': is_correct,
+                'accuracy_reasoning': f"Direct comparison: {'Match' if is_correct else 'Mismatch'}"
+            })()
         
-        accuracy_score = 1.0 if accuracy_result.is_correct else 0.0
-        red_flag_score = red_flag_result.detection_score
+        # Evaluate red flags using DSPy Chain of Thought
+        try:
+            red_flag_result = self.red_flag_evaluator(
+                detected_flags=detected_flags,
+                expected_flags=expected_flags
+            )
+        except Exception:
+            # Fallback if evaluator fails
+            overlap = set(detected_flags.split(", ")) & set(expected_flags.split(", ")) if detected_flags and expected_flags else set()
+            detection_score = len(overlap) / max(len(expected_flags.split(", ")), 1) if expected_flags else 1.0
+            red_flag_result = type('obj', (object,), {
+                'detection_score': detection_score,
+                'missed_critical': False
+            })()
         
-        return accuracy_weight * accuracy_score + red_flag_weight * red_flag_score
+        # Return prediction with evaluation results
+        return dspy.Prediction(
+            is_correct=getattr(accuracy_result, 'is_correct', is_correct),
+            accuracy_reasoning=getattr(accuracy_result, 'accuracy_reasoning', ''),
+            detection_score=getattr(red_flag_result, 'detection_score', 0.0),
+            missed_critical=getattr(red_flag_result, 'missed_critical', False),
+            predicted_outcome=predicted,
+            expected_outcome=expected,
+            confidence_score=confidence
+        )
 
 class EvaluationProgram(dspy.Module):
     """DSPy program orchestrating complete evaluation workflow"""
