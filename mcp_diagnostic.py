@@ -100,7 +100,7 @@ def check_node_memory():
         print(f"  📋 NODE_OPTIONS: {node_options}")
     else:
         print("  ⚠️ NODE_OPTIONS not set (may cause memory issues)")
-        print("     💡 Recommended: export NODE_OPTIONS='--max-old-space-size=128'")
+        print("     💡 Recommended: export NODE_OPTIONS='--max-old-space-size=256'")
 
 def check_system_resources():
     """Check system resource usage"""

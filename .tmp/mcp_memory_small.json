@@ -1,0 +1,3 @@
+{"type": "entity", "name": "FairDoc_AI_System", "entityType": "project", "observations": ["Medical AI triage system", "FastAPI + Python backend", "DSPy optimization framework", "Located: /home/riju279/Documents/Code/Fairdoc/FairWorks_FairDOC"]}
+{"type": "entity", "name": "Riju279", "entityType": "developer", "observations": ["Primary developer", "Asia/Kolkata timezone", "Python/FastAPI expertise"]}
+{"type": "relation", "from": "Riju279", "to": "FairDoc_AI_System", "relationType": "develops"}
