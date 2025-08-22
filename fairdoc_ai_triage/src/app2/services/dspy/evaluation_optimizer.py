@@ -280,7 +280,7 @@ class EvaluationProgram(dspy.Module):
                                 if time.time() - start > wait_timeout:
                                     raise FuturesTimeoutError("Timeout waiting for coroutine to complete")
                                 # yield thread to event loop / other threads
-                                time.sleep(0.001)
+                                time.sleep(0.004)
 
                             # Get result or exception
                             result = future_task.result()
