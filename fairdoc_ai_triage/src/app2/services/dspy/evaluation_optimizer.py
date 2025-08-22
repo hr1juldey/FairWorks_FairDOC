@@ -200,22 +200,26 @@ class MedicalAccuracyModule(dspy.Module):
             confidence_score=confidence
         )
 
+# --- Replace existing EvaluationProgram.forward with this implementation ---
+
 class EvaluationProgram(dspy.Module):
     """DSPy program orchestrating complete evaluation workflow"""
-    
+
     def __init__(self, medical_agent: MedicalTriageAgent):
         super().__init__()
         self.medical_agent = medical_agent
         self.accuracy_module = MedicalAccuracyModule()
-    
-    def forward(self, gold_standard, wait_timeout: float = 60.0):
-        """Process gold standard evaluation - works both in sync and async contexts.
 
-        Args:
-            gold_standard: dict with keys "conversation_dialogue" and optionally "relevant_protocols"
-            wait_timeout: max seconds to wait for an in-flight coroutine when scheduling against
-                        a running loop in another thread. Uses a small polling loop if scheduling
-                        in the same thread (best-effort).
+    async def forward_async(self, gold_standard, wait_timeout: float = 60.0):
+        """
+        Async implementation of the evaluation loop. Always prefer to call this
+        with `await self.evaluation_program.forward_async(...)`.
+
+        This safely handles both async and sync medical_agent.process_turn:
+          - if process_turn is coroutine: await it
+          - if process_turn is sync: run it in a thread with asyncio.to_thread
+
+        Uses asyncio.wait_for for timeouts (no polling / no time.sleep).
         """
         # Reset agent for clean evaluation
         self.medical_agent.reset_conversation()
@@ -225,67 +229,31 @@ class EvaluationProgram(dspy.Module):
 
         final_result = None
 
+        # Decide whether process_turn is async
+        is_coro_fn = inspect.iscoroutinefunction(self.medical_agent.process_turn)
+
         for turn in dialogue:
             user_message = turn["user_message"]
 
             try:
-                # Try to get a running loop (None if no running loop)
-                try:
-                    
-                    loop = asyncio.get_running_loop()
-                    in_running_loop = True
-                except RuntimeError:
-                    loop = None
-                    in_running_loop = False
-
-                # Decide whether process_turn is sync or async
-                is_coro_fn = inspect.iscoroutinefunction(self.medical_agent.process_turn)
-
-                if not is_coro_fn:
-                    # synchronous handler -> call directly
-                    result = self.medical_agent.process_turn(
-                        symptoms=user_message,
-                        nice_context=protocols
-                    )
-                else:
-                    # coroutine handler
+                if is_coro_fn:
+                    # coroutine function: await it directly (with timeout)
                     coro = self.medical_agent.process_turn(
-                        symptoms=user_message,
-                        nice_context=protocols
+                        symptoms=user_message, nice_context=protocols
                     )
-
-                    if not in_running_loop:
-                        # No running loop in this thread: safe to use asyncio.run
-                        result = asyncio.run(coro)
-                    else:
-                        # There is a running loop. Try to schedule safely.
-                        # Best option: if the running loop is in another thread, use run_coroutine_threadsafe
-                        try:
-                            future = asyncio.run_coroutine_threadsafe(coro, loop)
-                            # block until done or timeout
-                            result = future.result(timeout=wait_timeout)
-                        except Exception as exc_threadsafe:
-                            # Could be that the loop is the same thread (cannot use run_coroutine_threadsafe),
-                            # or other scheduling issues. Fall back to scheduling a task and polling gently.
-                            try:
-                                # Schedule a task on the running loop
-                                future_task = asyncio.ensure_future(coro, loop=loop)
-                            except Exception:
-                                # As a last resort, re-raise the original exception to be caught by outer handler
-                                raise exc_threadsafe
-
-                            # Poll with a small sleep to avoid CPU spin (best-effort)
-                            start = time.time()
-                            while not future_task.done():
-                                if time.time() - start > wait_timeout:
-                                    raise FuturesTimeoutError("Timeout waiting for coroutine to complete")
-                                # yield thread to event loop / other threads
-                                time.sleep(0.004)
-
-                            # Get result or exception
-                            result = future_task.result()
-
-            except FuturesTimeoutError as te:
+                    # await with timeout
+                    result = await asyncio.wait_for(coro, timeout=wait_timeout)
+                else:
+                    # sync function: run it in a thread to avoid blocking the event loop
+                    result = await asyncio.wait_for(
+                        asyncio.to_thread(
+                            self.medical_agent.process_turn,
+                            user_message,
+                            protocols
+                        ),
+                        timeout=wait_timeout
+                    )
+            except asyncio.TimeoutError as te:
                 logger.error("Timeout while waiting for medical_agent.process_turn", error=str(te))
                 result = {
                     "medical_outcome": "inconclusive",
@@ -308,12 +276,38 @@ class EvaluationProgram(dspy.Module):
             if result.get("is_complete") or result.get("outcome") == "emergency":
                 break
 
-        # Evaluate result against gold standard
+        # Evaluate result against gold standard (this is synchronous chain-of-thought module call)
         evaluation_result = self.accuracy_module(
             prediction=final_result,
             gold_standard=gold_standard
         )
         return evaluation_result
+
+    def forward(self, gold_standard, wait_timeout: float = 60.0):
+        """
+        Synchronous wrapper for callers that don't run inside an event loop.
+
+        BEHAVIOR:
+         - If no event loop is running in the current thread: this will call asyncio.run(...)
+         - If an event loop is running in the current thread: raises RuntimeError and
+           instructs caller to use `await self.evaluation_program.forward_async(...)`.
+
+        Rationale: it's unsafe to synchronously block waiting for a coroutine
+        while the loop is running in the same thread (polling or sleeping would
+        block the loop and can deadlock).
+        """
+        try:
+            # If get_running_loop() returns, there is a running loop in current thread
+            asyncio.get_running_loop()
+            # We are here => loop is running in same thread; cannot synchronously block
+            raise RuntimeError(
+                "Cannot call forward() synchronously while an event loop is running in the same thread. "
+                "Use `await evaluation_program.forward_async(...)` instead."
+            )
+        except RuntimeError:
+            # No running loop in this thread: safe to use asyncio.run
+            return asyncio.run(self.forward_async(gold_standard, wait_timeout=wait_timeout))
+
 
 
 class OptimizationProgram(dspy.Module):
@@ -335,41 +329,63 @@ class OptimizationProgram(dspy.Module):
         elif optimizer_type == "copro":
             optimizer = COPRO(
                 metric=self._medical_accuracy_metric,
-                breadth=3,
-                depth=2,
-                num_trials=10,  # ADD: Required parameter
+                breadth=4,
+                depth=3,
+                # num_trials=10,  # ADD: Required parameter
             )
         elif optimizer_type == "mipro":
             optimizer = MIPROv2(
                 metric=self._medical_accuracy_metric,
                 auto=None,  # Must set to None to use custom parameters
                 num_candidates=4,
-                num_trials=12,  # ADD: Required parameter
+                # num_trials=12,  # ADD: Required parameter
                 init_temperature=0.1
             )
         elif optimizer_type == "labeled_fewshot":
             # Add missing LabeledFewShot optimizer
             from dspy.teleprompt import LabeledFewShot
-            optimizer = LabeledFewShot(k=8)
+            optimizer = LabeledFewShot(k=20)
         elif optimizer_type == "ensemble":
             # Add missing Ensemble optimizer
             optimizer = dspy.Ensemble()
         else:
             raise ValueError(f"Unknown optimizer type: {optimizer_type}")
 
+
+
+        # ==============================================
         # Optimize the medical agent using gold standards
-        if optimizer_type == "copro":
-            # COPRO requires eval_kwargs parameter
-            optimized_program = optimizer.compile(
-                self.evaluation_program,
-                trainset=training_examples,
-                eval_kwargs={"num_threads": 1}
-            )
-        else:
-            optimized_program = optimizer.compile(
-                self.evaluation_program,
-                trainset=training_examples
-            )
+        try:
+            if optimizer_type == "copro":
+                # COPRO requires eval_kwargs parameter
+                optimized_program = optimizer.compile(
+                    self.evaluation_program,
+                    trainset=training_examples,
+                    eval_kwargs={"num_threads": 1}
+                )
+            elif optimizer_type == "ensemble":
+                # Ensemble requires a list of programs
+                optimized_program = optimizer.compile(
+                    [self.evaluation_program],
+                    trainset=training_examples
+                )
+            elif optimizer_type == "mipro":
+                # MIPROv2 requires additional parameters
+                optimized_program = optimizer.compile(
+                    self.evaluation_program,
+                    trainset=training_examples,
+                    num_trials=30
+                )
+            else:
+                optimized_program = optimizer.compile(
+                    self.evaluation_program,
+                    trainset=training_examples
+                )
+        except Exception as compile_error:
+            logger.error(f"Optimizer compilation failed for {optimizer_type}: {compile_error}")
+            # Return the original program if optimization fails
+            optimized_program = self.evaluation_program
+
         return optimized_program
 
     
