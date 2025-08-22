@@ -32,7 +32,7 @@ CONFIG = {
             "timeout": 15,
             "command": "npx",
             "args": ["-y", "@modelcontextprotocol/server-filesystem", "/home/riju279/Documents/Code/Fairdoc/FairWorks_FairDOC"],
-            "max_memory_mb": 100,
+            "max_memory_mb": 300,
             "restart_on_crash": True
         },
         "perplexity": {
@@ -41,7 +41,7 @@ CONFIG = {
             "command": "node", 
             "args": ["/home/riju279/Documents/Cline/MCP/perplexity-mcp/build/index.js"],
             "env": {"PERPLEXITY_API_KEY": "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"},
-            "max_memory_mb": 150,
+            "max_memory_mb": 300,
             "restart_on_crash": True
         },
         "sequential-thinking": {
@@ -50,7 +50,7 @@ CONFIG = {
             "command": "npx",
             "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
             "env": {"DISABLE_THOUGHT_LOGGING": "true"},
-            "max_memory_mb": 80,
+            "max_memory_mb": 400,
             "restart_on_crash": True
         },
         "memory-limited": {
@@ -59,7 +59,7 @@ CONFIG = {
             "command": "npx",
             "args": ["-y", "@modelcontextprotocol/server-memory"],
             "env": {"MEMORY_FILE_PATH": "/tmp/mcp_memory_small.json"},
-            "max_memory_mb": 200,
+            "max_memory_mb": 600,
             "disabled": False,
             "restart_on_crash": True,
             "memory_cleanup": True
@@ -135,7 +135,7 @@ while True:
         print(json.dumps({'jsonrpc': '2.0', 'id': 0, 'error': {'code': -1, 'message': str(e)}}))
         sys.stdout.flush()
 """],
-            "max_memory_mb": 30,
+            "max_memory_mb": 300,
             "disabled": False,
             "restart_on_crash": True
         }
@@ -290,7 +290,7 @@ class MCPServer:
         try:
             process = psutil.Process(self.process.pid)
             memory_mb = process.memory_info().rss / 1024 / 1024
-            max_memory = self.config.get("max_memory_mb", 200)
+            max_memory = self.config.get("max_memory_mb", 600)
             
             if memory_mb > max_memory:
                 self.logger.warning(f"Memory usage {memory_mb:.1f}MB exceeds limit {max_memory}MB")
