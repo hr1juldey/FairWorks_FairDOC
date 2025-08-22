@@ -9,7 +9,7 @@ echo "================================"
 # Configuration
 VENV_PATH="/home/riju279/Documents/Code/Fairdoc/FairWorks_FairDOC/fairdoc_ai_triage/.venv"
 MEMORY_FILE="/home/riju279/Documents/Cline/MCP/memory-server/memory.json"
-MEMORY_FILE_SMALL="/tmp/mcp_memory_small.json"
+MEMORY_FILE_SMALL="./tmp/mcp_memory_small.json"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Create logs directory
