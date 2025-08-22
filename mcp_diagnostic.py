@@ -19,7 +19,7 @@ def check_processes():
     mcp_processes = []
     for proc in psutil.process_iter(['pid', 'name', 'cmdline', 'memory_info', 'create_time']):
         try:
-            cmdline = ' '.join(proc.info['cmdline'])
+            cmdline = ' '.join(proc.info['cmdline'] or [])
             if any(keyword in cmdline.lower() for keyword in ['mcp-server', 'modelcontextprotocol', 'uvx', '@modelcontextprotocol']):
                 memory_mb = proc.info['memory_info'].rss / 1024 / 1024
                 uptime = psutil.boot_time() - proc.info['create_time']
