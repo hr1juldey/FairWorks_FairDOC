@@ -3,19 +3,24 @@
 ## Problem 1: MedicalAccuracyModule.forward() Parameter Mismatch
 
 ### Issue
+
 The `EvaluationProgram` calls `self.accuracy_module` with `prediction` and `gold_standard` parameters, but the `MedicalAccuracyModule.forward()` method was incorrectly defined to take `training_examples` and `optimizer_type` parameters.
 
 ### Root Cause
+
 The `MedicalAccuracyModule` class was implemented with the wrong purpose. It should be evaluating predictions against gold standards, not performing optimization. The optimization is handled by the `OptimizationProgram`.
 
 ### Location
+
 File: `src/app2/services/dspy/evaluation_optimizer.py`
 Lines: Around 50-120 (MedicalAccuracyModule class)
 
 ### Fix
+
 Replace the incorrect `MedicalAccuracyModule` class definition with a proper implementation that accepts `prediction` and `gold_standard` parameters.
 
 **Find:**
+
 ```python
 class MedicalAccuracyModule(dspy.Module):
     """DSPy module for medical accuracy evaluation"""
@@ -59,6 +64,7 @@ def _create_simple_optimizer(self):
 ```
 
 **Replace with:**
+
 ```python
 class MedicalAccuracyModule(dspy.Module):
     """DSPy module for medical accuracy evaluation"""
@@ -217,19 +223,24 @@ class MedicalAccuracyModule(dspy.Module):
 ## Problem 2: Coroutine Reuse Issues
 
 ### Issue
+
 There are multiple instances of `RuntimeError: cannot reuse already awaited coroutine` indicating that coroutines are being reused after they've already been awaited.
 
 ### Root Cause
+
 The code is trying to reuse the same coroutine object multiple times without creating a fresh one each time.
 
 ### Location
+
 File: `src/app2/services/dspy/evaluation_optimizer.py`
 Lines: Around 130-200 (EvaluationProgram.forward method)
 
 ### Fix
+
 Ensure that coroutines are not reused by creating fresh coroutines each time.
 
 **Find:**
+
 ```python
 # Decide whether process_turn is sync or async
 is_coro_fn = inspect.iscoroutinefunction(self.medical_agent.process_turn)
@@ -280,6 +291,7 @@ else:
 ```
 
 **Replace with:**
+
 ```python
 # Create a fresh coroutine each time to avoid reuse issues
 def _execute_process_turn():
@@ -347,16 +359,20 @@ except Exception as e:
 ## Problem 3: Optimizer Parameter Issues
 
 ### Issue
+
 Several DSPy optimizers are being called with incorrect or missing parameters.
 
 ### Location
+
 File: `src/app2/services/dspy/evaluation_optimizer.py`
 Lines: Around 250-350 (OptimizationProgram.forward method)
 
 ### Fix
+
 Ensure all optimizers are called with correct parameters according to the DSPy API.
 
 **Find:**
+
 ```python
 elif optimizer_type == "copro":
     optimizer = COPRO(
@@ -383,6 +399,7 @@ elif optimizer_type == "ensemble":
 ```
 
 **Replace with:**
+
 ```python
 elif optimizer_type == "copro":
     optimizer = COPRO(
@@ -408,6 +425,7 @@ elif optimizer_type == "ensemble":
 ```
 
 **Find:**
+
 ```python
 # Optimize the medical agent using gold standards
 if optimizer_type == "copro":
@@ -425,6 +443,7 @@ else:
 ```
 
 **Replace with:**
+
 ```python
 # Optimize the medical agent using gold standards
 try:
@@ -462,9 +481,11 @@ except Exception as compile_error:
 ## Problem 4: Ollama Parameter Filtering
 
 ### Issue
+
 Ollama doesn't support certain parameters like 'n', but the code is passing them anyway.
 
 ### Location
+
 File: `src/app2/core/dspy_config_v2.py`
 Lines: Around 200-250
 
