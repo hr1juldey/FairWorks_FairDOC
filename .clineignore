@@ -1,0 +1,103 @@
+# Python virtual environments
+.venv/
+venv/
+env/
+ENV/
+.env/
+
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# uv package manager
+.uv/
+uv.lock
+
+# Docker
+.dockerignore
+Dockerfile*
+docker-compose*.yml
+.docker/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# FastAPI/Web specific
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Large data files
+*.csv
+*.xlsx
+# *.json
+data/
+uploads/
+
+# Temporary files
+# tmp/
+# temp/
+# *.tmp
+
+# Limit directory listing to prevent overwhelming LLM
+# This prevents listing more than 20 files at once
+**/migrations/
+**/static/
+**/media/
+**/node_modules/
+**/assets/
+**/public/
