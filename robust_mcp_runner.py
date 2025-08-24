@@ -8,6 +8,7 @@ Fixes for common MCP issues:
 - Proper MCP protocol handling
 - Resource management and cleanup
 - Individual server monitoring
+- Animated status display (no scrolling)
 """
 
 import os
@@ -23,6 +24,7 @@ from pathlib import Path
 from queue import Queue, Empty
 from datetime import datetime
 import logging
+import shutil
 
 # Streamlined config - disable problematic servers initially
 CONFIG = {
@@ -142,6 +144,162 @@ while True:
     }
 }
 
+class TerminalDisplay:
+    """Handle animated terminal display without scrolling"""
+    
+    def __init__(self):
+        self.display_active = False
+        self.lines_drawn = 0
+        
+    def start_display(self):
+        """Initialize display mode"""
+        self.display_active = True
+        # Hide cursor and save position
+        print("\033[?25l", end="", flush=True)  # Hide cursor
+        print("\033[s", end="", flush=True)     # Save cursor position
+        
+    def stop_display(self):
+        """Cleanup display mode"""
+        if self.display_active:
+            print("\033[?25h", end="", flush=True)  # Show cursor
+            print("\033[u", end="", flush=True)     # Restore cursor position
+            self.display_active = False
+            
+    def clear_lines(self, num_lines):
+        """Clear previous lines"""
+        for _ in range(num_lines):
+            print("\033[1A\033[2K", end="")  # Move up and clear line
+            
+    def draw_header(self):
+        """Draw the status header"""
+        term_width = shutil.get_terminal_size().columns
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        # Title bar
+        title = "🖥️  MCP SERVER MANAGER"
+        padding = (term_width - len(title)) // 2
+        print("═" * term_width)
+        print(" " * padding + title)
+        print(f"📊 Status Dashboard - {timestamp}")
+        print("═" * term_width)
+        
+        # Column headers
+        print(f"{'STATUS':^8} {'SERVER':^20} {'PID':^8} {'UPTIME':^10} {'MEMORY':^10} {'RESTARTS':^10} {'HEALTH':^10}")
+        print("─" * term_width)
+        
+        return 6  # Number of header lines
+    
+    def format_uptime(self, seconds):
+        """Format uptime in human readable format"""
+        if seconds < 60:
+            return f"{seconds:.0f}s"
+        elif seconds < 3600:
+            return f"{seconds / 60:.0f}m"
+        else:
+            hours = int(seconds // 3600)
+            minutes = int((seconds % 3600) // 60)
+            return f"{hours}h{minutes}m"
+    
+    def format_memory(self, pid):
+        """Get formatted memory usage"""
+        try:
+            process = psutil.Process(pid)
+            memory_mb = process.memory_info().rss / 1024 / 1024
+            if memory_mb < 100:
+                return f"{memory_mb:.1f}MB"
+            else:
+                return f"{memory_mb:.0f}MB"
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            return "N/A"
+    
+    def get_health_indicator(self, server):
+        """Get health status with animated indicator"""
+        status = server.get_status()
+        
+        if status["status"] == "running":
+            # Animated indicators for running servers
+            indicators = ["●", "◐", "◑", "◒", "◓"]
+            idx = int(time.time() * 2) % len(indicators)  # 2 updates per second
+            return f"🟢{indicators[idx]}"
+        elif status["status"] == "dead":
+            return "🔴 ●"
+        else:
+            return "⚪ ●"
+    
+    def update_display(self, servers):
+        """Update the entire display"""
+        if not self.display_active:
+            return
+            
+        # Clear previous display
+        if self.lines_drawn > 0:
+            self.clear_lines(self.lines_drawn)
+            
+        lines_count = 0
+        
+        # Draw header
+        header_lines = self.draw_header()
+        lines_count += header_lines
+        
+        # Draw server status
+        total_servers = len(servers)
+        running_servers = 0
+        total_memory = 0
+        total_restarts = 0
+        
+        for name, server in servers.items():
+            status = server.get_status()
+            
+            # Status emoji
+            if status["status"] == "running":
+                status_icon = "✅"
+                running_servers += 1
+            elif status["status"] == "dead":
+                status_icon = "❌"
+            else:
+                status_icon = "⏸️"
+            
+            # Server info
+            pid = str(status.get("pid", "N/A"))
+            uptime = self.format_uptime(status.get("uptime", 0))
+            memory = self.format_memory(status.get("pid")) if status.get("pid") else "N/A"
+            restarts = str(status.get("restarts", 0))
+            total_restarts += status.get("restarts", 0)
+            health = self.get_health_indicator(server)
+            
+            # Extract memory value for totaling
+            if status.get("pid"):
+                try:
+                    process = psutil.Process(status["pid"])
+                    total_memory += process.memory_info().rss / 1024 / 1024
+                except Exception:
+                    pass
+            
+            # Format server name (truncate if needed)
+            server_name = name[:18] if len(name) > 18 else name
+            
+            print(f"{status_icon:^8} {server_name:^20} {pid:^8} {uptime:^10} {memory:^10} {restarts:^10} {health:^10}")
+            lines_count += 1
+        
+        # Summary line
+        term_width = shutil.get_terminal_size().columns
+        print("─" * term_width)
+        
+        summary = f"🚀 {running_servers}/{total_servers} Running | 💾 {total_memory:.0f}MB Total | 🔄 {total_restarts} Restarts"
+        padding = (term_width - len(summary)) // 2
+        print(" " * padding + summary)
+        lines_count += 2
+        
+        # Footer with controls
+        footer = "Press Ctrl+C to exit | 📁 Logs: mcp_logs_v2/"
+        padding = (term_width - len(footer)) // 2
+        print(" " * padding + footer)
+        print("═" * term_width)
+        lines_count += 2
+        
+        self.lines_drawn = lines_count
+        sys.stdout.flush()
+
 class MCPServer:
     def __init__(self, name, config, log_dir, venv_path=None):
         self.name = name
@@ -223,8 +381,7 @@ class MCPServer:
                 self.log_file.write(log_entry + "\n")
                 self.log_file.flush()
                 
-                # Print to console with server name prefix
-                print(f"🔗 {self.name[:15]:15} | {message}")
+                # Don't print to console in display mode - goes to logs only
                 
             except Empty:
                 continue
@@ -405,14 +562,14 @@ class MCPManager:
         self.running = True
         self.log_dir = Path("mcp_logs_v2")
         self.log_dir.mkdir(exist_ok=True)
+        self.display = TerminalDisplay()
         
         # Setup manager logging
         logging.basicConfig(
             level=logging.INFO,
             format='%(asctime)s [%(name)s] %(levelname)s: %(message)s',
             handlers=[
-                logging.FileHandler(self.log_dir / "manager.log"),
-                logging.StreamHandler()
+                logging.FileHandler(self.log_dir / "manager.log")
             ]
         )
         self.logger = logging.getLogger("mcp.manager")
@@ -451,35 +608,33 @@ class MCPManager:
                 self.logger.error(f"Health monitor error: {e}")
                 time.sleep(10)
     
-    def print_status(self):
-        """Print current status of all servers"""
-        print("\n" + "=" * 60)
-        print("🖥  MCP Server Status")
-        print("=" * 60)
+    def display_loop(self):
+        """Main display update loop"""
+        self.display.start_display()
         
-        for name, server in self.servers.items():
-            status = server.get_status()
-            
-            if status["status"] == "running":
-                uptime = f"{status['uptime']:.0f}s"
-                restarts = f"↻{status['restarts']}" if status['restarts'] > 0 else ""
-                print(f"✅ {name:20} | PID {status['pid']:6} | ⏱ {uptime:6} {restarts}")
-            elif status["status"] == "dead":
-                uptime = f"{status.get('uptime', 0):.0f}s"
-                exit_code = status.get('exit_code', 'unknown')
-                restarts = f"↻{status.get('restarts', 0)}"
-                print(f"❌ {name:20} | EXIT {exit_code:6} | ⏱ {uptime:6} {restarts}")
-            else:
-                print(f"⏸  {name:20} | NOT_STARTED")
+        try:
+            while self.running:
+                self.display.update_display(self.servers)
+                time.sleep(0.5)  # Update display twice per second
+                
+                # Check if any servers are still running
+                running_count = sum(1 for server in self.servers.values() 
+                                  if server.get_status()["status"] == "running")
+                
+                if running_count == 0:
+                    break
+                    
+        finally:
+            self.display.stop_display()
     
     def stop_all(self):
         """Stop all servers"""
         self.running = False
+        self.display.stop_display()
         self.logger.info("Stopping all servers...")
         
         for name, server in self.servers.items():
-            self.logger.info(f"Servers {name} is stopping")
-            time.sleep(5)
+            self.logger.info(f"Stopping {name}")
             server.stop()
             
         self.logger.info("All servers stopped")
@@ -487,48 +642,40 @@ class MCPManager:
 def main():
     parser = argparse.ArgumentParser(description="Robust MCP Server Manager")
     parser.add_argument("--venv", type=str, help="Virtual environment path")
-    parser.add_argument("--detach", action="store_true", help="Run in background")
+    parser.add_argument("--detach", action="store_true", help="Run in background (no display)")
     args = parser.parse_args()
     
     manager = MCPManager(venv_path=args.venv)
     
     # Setup signal handlers
     def signal_handler(signum, frame):
-        print(f"\n📨 Received signal {signum}")
+        print(f"\n🔨 Received signal {signum}")
         manager.stop_all()
         sys.exit(0)
     
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     
-    print("🎯 Robust MCP Server Manager")
-    print(f"📁 Logs: {manager.log_dir.absolute()}")
+    if not args.detach:
+        print("🎯 Robust MCP Server Manager")
+        print(f"📁 Logs: {manager.log_dir.absolute()}")
+        print("Starting servers...")
+        time.sleep(2)
     
     # Start servers
     manager.start_all()
     
     if args.detach:
-        print("🔄 Running in detached mode")
+        print("📄 Running in detached mode")
         return 0
     
     # Start health monitor
     health_thread = threading.Thread(target=manager.health_monitor, daemon=True)
     health_thread.start()
     
-    # Status loop
+    # Start animated display
     try:
-        while True:
-            time.sleep(10)
-            manager.print_status()
-            
-            # Check if any servers are still running
-            running_count = sum(1 for server in manager.servers.values() 
-                              if server.get_status()["status"] == "running")
-            
-            if running_count == 0:
-                print("\n💀 All servers died, exiting...")
-                break
-                
+        manager.display_loop()
     except KeyboardInterrupt:
         pass
     finally:
