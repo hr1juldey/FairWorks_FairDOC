@@ -232,15 +232,19 @@ class EvaluationProgram(dspy.Module):
         # Decide whether process_turn is async
         is_coro_fn = inspect.iscoroutinefunction(self.medical_agent.process_turn)
 
+        # Helper function to create fresh coroutines
+        def _create_fresh_coroutine():
+            return self.medical_agent.process_turn(
+                symptoms=user_message, nice_context=protocols
+            )
+
         for turn in dialogue:
             user_message = turn["user_message"]
 
             try:
                 if is_coro_fn:
-                    # coroutine function: await it directly (with timeout)
-                    coro = self.medical_agent.process_turn(
-                        symptoms=user_message, nice_context=protocols
-                    )
+                    # coroutine function: create fresh coroutine each time
+                    coro = _create_fresh_coroutine()
                     # await with timeout
                     result = await asyncio.wait_for(coro, timeout=wait_timeout)
                 else:

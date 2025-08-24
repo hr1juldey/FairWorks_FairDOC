@@ -206,13 +206,8 @@ class DSPyLLMProvider:
         # Filter params based on provider
         if 'ollama/' in model_path:
             # Remove OpenAI-specific params for Ollama
-            filtered_kwargs = {k: v for k, v in kwargs.items() 
-                            if k not in ['n', 'response_format', 'logprobs']}
-            
-            # Also ensure we don't pass num_candidates as 'n'
-            if 'num_candidates' in filtered_kwargs:
-                # Rename num_candidates to a supported parameter or remove it
-                filtered_kwargs.pop('num_candidates', None)
+            filtered_kwargs = {k: v for k, v in kwargs.items()
+                            if k not in ['n', 'response_format', 'logprobs', 'num_candidates']}
         else:
             filtered_kwargs = kwargs
 
@@ -222,8 +217,7 @@ class DSPyLLMProvider:
             'api_base': settings_v2.OLLAMA_BASE_URL,
             'temperature': kwargs.get('temperature', 0.0),
             'max_tokens': kwargs.get('max_tokens', 4000),
-            **kwargs,
-            # **filtered_kwargs
+            **filtered_kwargs
         }
         
         try:
