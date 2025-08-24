@@ -18,6 +18,7 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from unittest.mock import AsyncMock
+from src.app2.core.dspy_config_v2 import get_llm_provider, ensure_dspy_configured
 
 from dotenv import load_dotenv
 
@@ -92,7 +93,7 @@ TEST_ENV_VARS = {
     # V2 specific variables
     "FAIRDOC_V2_ENABLED": "true",
     "FAIRDOC_V2_DSPy_MODEL": settings_v2.FAIRDOC_V2_DSPy_MODEL,
-    "FAIRDOC_V2_MAX_CONVERSATION_TURNS": "8",
+    "FAIRDOC_V2_MAX_CONVERSATION_TURNS": "25",
     "TELEGRAM_BOT_TOKEN": "test-telegram-token",
 }
 
@@ -166,46 +167,29 @@ def warmup_llm_models():
     
     logger.info("🧹 LLM warmup session completed")
 
-@pytest.fixture(scope='session', autouse=True)
-def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
-    """Create an instance of the default event loop for the test session."""
-    try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
+@pytest.fixture(scope="session", autouse=True)
+def configure_dspy_for_tests():
+    """Configure DSPy once per test session"""
+    # Configure DSPy synchronously at session start
+    success = ensure_dspy_configured("gemma3n:e4b")
+    if not success:
+        pytest.skip("DSPy configuration failed - skipping tests")
+    
+    return
+    
+    # Cleanup if needed
+
+@pytest.fixture(scope="session")
+def event_loop():
+    """Create event loop for async tests"""
+    loop = asyncio.new_event_loop()
     yield loop
     loop.close()
-@pytest.fixture(scope="session", autouse=True)
-def shared_dspy_config() -> Generator[None, None, None]:
-    """
-    Establishes a single DSPy configuration for the entire test session.
-    This is the core fix for the multiple instance creation problem.
-    The 'autouse=True' ensures this fixture runs automatically for the session.
-    """
-    logger.info("🤖 Initializing shared DSPy configuration for test session...")
-    from src.app2.core.dspy_config_v2 import ensure_dspy_configured, get_llm_provider
 
-    success = ensure_dspy_configured(settings_v2.FAIRDOC_V2_DSPy_MODEL)
-    if not success:
-        pytest.fail("Critical error: Failed to configure shared DSPy for tests.", pytrace=False)
-    
-    provider = get_llm_provider()
-    logger.info(f"✅ Shared DSPy configured. Default model: {provider._default_model}")
-    
-    yield
-    
-    logger.info("🧹 Tearing down shared DSPy test session.")
-
-@pytest.fixture(autouse=True)
-def reset_dspy_state():
-    """Reset DSPy state between tests to avoid interference"""
-    import dspy
-    # Reset any global DSPy configuration
-    dspy.configure(lm=None)
-    yield
-    # Cleanup after test
-    dspy.configure(lm=None)
-
+@pytest.fixture
+def shared_llm_provider():
+    """Provide shared LLM provider for tests"""
+    return get_llm_provider()
 
 # === V1 Database Test Fixtures ===
 

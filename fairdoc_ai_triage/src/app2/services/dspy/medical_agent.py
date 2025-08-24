@@ -196,18 +196,14 @@ class MedicalTriageAgent:
 
         try:
             async with asyncio.timeout(120.0):  # ⏳ 120-second timeout
-                # FIX: Ensure LM is available in async context
-                from src.app2.core.dspy_config_v2 import get_llm_provider
-                llm_provider = get_llm_provider()
-                llm_instance = llm_provider.get_llm(self.model_name)
-                
-                with dspy.context(lm=llm_instance):
-                    # ALL DSPy operations must be within this context
-                    program_result = self.triage_program(
-                        symptoms=symptoms,
-                        nice_context=nice_context,
-                        history=history
-                    )
+
+                # ✅ FIX: Don't try to configure DSPy in async context
+                # Just use the already configured global context
+                program_result = self.triage_program(
+                    symptoms=symptoms,
+                    nice_context=nice_context,
+                    history=history
+                )
 
                 # Extract results from DSPy program output
                 medical_result = program_result['medical_reasoning']
@@ -218,13 +214,13 @@ class MedicalTriageAgent:
 
                 # Generate specialized questions using question generator
                 if not response.get("is_complete") and response["outcome"] == "inconclusive":
-                    with dspy.context(lm=llm_instance):
-                        question_result = self.question_generator.suggest_questions(
-                            symptom_text=symptoms,
-                            conversation_context=str(history),
-                            nice_protocols=nice_context,
-                            max_questions=2
-                        )
+                    
+                    question_result = self.question_generator.suggest_questions(
+                        symptom_text=symptoms,
+                        conversation_context=str(history),
+                        nice_protocols=nice_context,
+                        max_questions=8
+                    )
 
                     if question_result["questions"]:
                         response["next_question"] = question_result["questions"][0]

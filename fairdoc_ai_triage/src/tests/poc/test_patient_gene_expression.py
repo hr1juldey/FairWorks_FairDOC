@@ -86,9 +86,9 @@ class PatientBehaviorModule(dspy.Module):
 
 
 @pytest.fixture
-def gene_expression_module():
-    """Initialize gene expression module"""
-    ensure_dspy_configured("gemma3n:e4b")
+def gene_expression_module(shared_llm_provider):
+    """Initialize gene expression module with shared DSPy config"""
+    # DON'T call ensure_dspy_configured again
     return PatientBehaviorModule()
 
 

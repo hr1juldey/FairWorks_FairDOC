@@ -210,7 +210,7 @@ class EvaluationProgram(dspy.Module):
         self.medical_agent = medical_agent
         self.accuracy_module = MedicalAccuracyModule()
 
-    async def forward_async(self, gold_standard, wait_timeout: float = 60.0):
+    async def forward_async(self, gold_standard, wait_timeout: float = 120.0):
         """
         Async implementation of the evaluation loop. Always prefer to call this
         with `await self.evaluation_program.forward_async(...)`.
@@ -287,30 +287,31 @@ class EvaluationProgram(dspy.Module):
         )
         return evaluation_result
 
-    def forward(self, gold_standard, wait_timeout: float = 60.0):
+    def forward(self, gold_standard, wait_timeout: float = 120.0):
         """
-        Synchronous wrapper for callers that don't run inside an event loop.
-
-        BEHAVIOR:
-         - If no event loop is running in the current thread: this will call asyncio.run(...)
-         - If an event loop is running in the current thread: raises RuntimeError and
-           instructs caller to use `await self.evaluation_program.forward_async(...)`.
-
-        Rationale: it's unsafe to synchronously block waiting for a coroutine
-        while the loop is running in the same thread (polling or sleeping would
-        block the loop and can deadlock).
+        Synchronous wrapper that properly handles async context
         """
         try:
-            # If get_running_loop() returns, there is a running loop in current thread
-            asyncio.get_running_loop()
-            # We are here => loop is running in same thread; cannot synchronously block
-            raise RuntimeError(
-                "Cannot call forward() synchronously while an event loop is running in the same thread. "
-                "Use `await evaluation_program.forward_async(...)` instead."
-            )
+            # Check if we're in an async context
+            loop = asyncio.get_running_loop()
+            
+            # We're in async context - create a task instead of using asyncio.run
+            if loop and loop.is_running():
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    future = executor.submit(
+                        asyncio.run, 
+                        self.forward_async(gold_standard, wait_timeout)
+                    )
+                    return future.result(timeout=wait_timeout)
+            
         except RuntimeError:
-            # No running loop in this thread: safe to use asyncio.run
-            return asyncio.run(self.forward_async(gold_standard, wait_timeout=wait_timeout))
+            # No running loop - safe to use asyncio.run
+            return asyncio.run(self.forward_async(gold_standard, wait_timeout))
+        
+        # Fallback
+        return asyncio.run(self.forward_async(gold_standard, wait_timeout))
+
 
 
 
@@ -327,7 +328,7 @@ class OptimizationProgram(dspy.Module):
         if optimizer_type == "bootstrap":
             optimizer = BootstrapFewShot(
                 metric=self._medical_accuracy_metric,
-                max_bootstrapped_demos=8,
+                max_bootstrapped_demos=32,
                 max_labeled_demos=16
             )
         elif optimizer_type == "copro":

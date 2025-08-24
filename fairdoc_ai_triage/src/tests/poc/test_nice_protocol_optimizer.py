@@ -74,9 +74,9 @@ class NICEProtocolModule(dspy.Module):
 
 
 @pytest.fixture
-def nice_protocol_module():
-    """Initialize NICE protocol module"""
-    ensure_dspy_configured("gemma3n:e4b")
+def nice_protocol_module(shared_llm_provider):
+    """Initialize NICE protocol module with shared DSPy config"""
+    # DON'T call ensure_dspy_configured again
     return NICEProtocolModule()
 
 

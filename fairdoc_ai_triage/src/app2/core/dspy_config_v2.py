@@ -336,24 +336,22 @@ def ensure_dspy_configured(model_name: str = None) -> bool:
 
         # If model_name specified, try to get that specific model
         if model_name:
-            # Try to create LLM instance to verify it works
-            llm_instance = provider.get_llm(model_name)
-            
-            # Check if we're in an async context
+            # Check if we're in an async context first
             try:
                 import asyncio
                 loop = asyncio.get_running_loop()
                 if loop and loop.is_running():
-                    # Use context instead of configure in async environments
-                    # Note: This sets up the context but doesn't override global config
-                    # The actual usage will use dspy.context() when needed
-                    dspy.configure(lm=llm_instance)
+                    # We're in async context - DO NOT call dspy.configure()
+                    # Instead, just prepare the LLM instance for context usage
+                    llm_instance = provider.get_llm(model_name)
                     logger.info(f"✅ DSPy prepared for async context with model: {model_name}")
                     return True
             except RuntimeError:
+                # No running loop - safe to configure normally
                 pass
             
             # Normal synchronous configuration
+            llm_instance = provider.get_llm(model_name)
             dspy.configure(lm=llm_instance)
             logger.info(f"✅ DSPy configured with model: {model_name}")
         else:

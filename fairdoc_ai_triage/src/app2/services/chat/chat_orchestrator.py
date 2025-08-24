@@ -157,13 +157,14 @@ class ChatOrchestrator:
         # Step 3: Look up NICE protocols with enhanced matching
         nice_context = self.nice_lookup.find_relevant_protocols(request.user_message)
 
-        # Step 4: Process with DSPy medical agent WITH LM CONTEXT
+        # Step 4: Process with DSPy medical agent WITH PROPER ASYNC CONTEXT
         try:
-            # ✅ FIX: Ensure LM context is available
-            from src.app2.core.dspy_config_v2 import get_llm_provider
+            # ✅ FIX: Use context manager for async DSPy operations
+            from src.app2.core.dspy_config_v2 import get_llm_provider            
             llm_provider = get_llm_provider()
             llm_instance = llm_provider.get_llm(settings_v2.DSPY_MODEL_NAME)
             
+            # Use context manager instead of configure in async environment
             with dspy.context(lm=llm_instance):
                 agent_result = await self.medical_agent.process_turn(
                     symptoms=request.user_message,
