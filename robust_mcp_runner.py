@@ -34,7 +34,7 @@ CONFIG = {
             "timeout": 15,
             "command": "npx",
             "args": ["-y", "@modelcontextprotocol/server-filesystem", "/home/riju279/Documents/Code/Fairdoc/FairWorks_FairDOC"],
-            "max_memory_mb": 300,
+            "max_memory_mb": 900,
             "restart_on_crash": True
         },
         "perplexity": {
@@ -43,7 +43,7 @@ CONFIG = {
             "command": "node", 
             "args": ["/home/riju279/Documents/Cline/MCP/perplexity-mcp/build/index.js"],
             "env": {"PERPLEXITY_API_KEY": "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"},
-            "max_memory_mb": 300,
+            "max_memory_mb": 500,
             "restart_on_crash": True
         },
         "sequential-thinking": {
@@ -52,7 +52,7 @@ CONFIG = {
             "command": "npx",
             "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
             "env": {"DISABLE_THOUGHT_LOGGING": "true"},
-            "max_memory_mb": 400,
+            "max_memory_mb": 900,
             "restart_on_crash": True
         },
         "memory-limited": {
@@ -61,7 +61,7 @@ CONFIG = {
             "command": "npx",
             "args": ["-y", "@modelcontextprotocol/server-memory"],
             "env": {"MEMORY_FILE_PATH": "/tmp/mcp_memory_small.json"},
-            "max_memory_mb": 600,
+            "max_memory_mb": 1200,
             "disabled": False,
             "restart_on_crash": True,
             "memory_cleanup": True
@@ -105,7 +105,7 @@ while True:
                 'jsonrpc': '2.0',
                 'id': req['id'], 
                 'result': {
-                    'protocolVersion': '2024-11-05',
+                    'protocolVersion': '2025-11-05',
                     'capabilities': {'tools': {}}
                 }
             }
@@ -137,7 +137,7 @@ while True:
         print(json.dumps({'jsonrpc': '2.0', 'id': 0, 'error': {'code': -1, 'message': str(e)}}))
         sys.stdout.flush()
 """],
-            "max_memory_mb": 300,
+            "max_memory_mb": 120,
             "disabled": False,
             "restart_on_crash": True
         }

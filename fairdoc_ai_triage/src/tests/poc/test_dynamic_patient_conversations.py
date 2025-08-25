@@ -909,7 +909,7 @@ async def test_advanced_dynamic_patient_system():
             print(f"\n💬 CONVERSATION SAMPLE - {patient.patient_id}")
             print("-" * 100)
             for j, turn in enumerate(conversation.turns[:4]):  # First 4 turns
-                print(f"Turn {turn.turn_number} ({turn.emotional_tone}):")
+                print(f"Turn {j + 1} ({turn.emotional_tone}):")  # Using j+1 for 1-indexed turn display
                 print(f"👤 Patient: {turn.patient_message}")
                 if turn.agent_response:
                     print(f"🤖 Agent: {turn.agent_response}")
@@ -940,7 +940,7 @@ async def test_advanced_dynamic_patient_system():
         avg_behavioral = np.mean([c.behavioral_consistency_score for c in conversations])
         avg_authenticity = np.mean([c.communication_authenticity for c in conversations])
         
-        print(f"📊 Conversation Quality:")
+        print("📊 Conversation Quality:")
         print(f"  Average turns: {avg_turns:.1f}")
         print(f"  Outcome accuracy: {avg_accuracy:.2f}")
         print(f"  Red flag detection: {avg_red_flag:.2f}")
@@ -953,32 +953,37 @@ async def test_advanced_dynamic_patient_system():
         ethnicities = [c.patient.genetic_profile.ethnicity for c in conversations]
         wealth_categories = [c.patient.genetic_profile.wealth_psychology_category for c in conversations]
         
-        print(f"\n🧬 Genetic Diversity:")
+        print("\n🧬 Genetic Diversity:")
         print(f"  Regions: {set(regions)}")
         print(f"  Ethnicities: {set(ethnicities)}")
         print(f"  Wealth psychology: {set(wealth_categories)}")
         
-        # Save results
-        results_path = Path("advanced_dynamic_patient_results.json")
-        with open(results_path, "w") as f:
-            json.dump({
-                "system_type": "advanced_dynamic_dspy",
-                "conversations": [asdict(c) for c in conversations],
-                "summary": {
-                    "avg_turns": float(avg_turns),
-                    "avg_accuracy": float(avg_accuracy),
-                    "avg_red_flag_detection": float(avg_red_flag),
-                    "avg_symptom_tracking": float(avg_symptom),
-                    "avg_behavioral_consistency": float(avg_behavioral),
-                    "avg_communication_authenticity": float(avg_authenticity),
-                    "total_patients": len(conversations),
-                    "genetic_diversity": {
-                        "regions": list(set(regions)),
-                        "ethnicities": list(set(ethnicities)),
-                        "wealth_categories": list(set(wealth_categories))
-                    }
+    # Save results - Fixed path handling
+    script_dir = Path(__file__).resolve().parent  # Get directory of this script
+    patients_dir = script_dir / "patients"
+    patients_dir.mkdir(exist_ok=True)  # Create directory if it doesn't exist
+
+    results_path = patients_dir / "advanced_dynamic_patient_results.json"
+    with open(results_path, "w") as f:
+        json.dump({
+            "system_type": "advanced_dynamic_dspy",
+            "conversations": [asdict(c) for c in conversations],
+            "summary": {
+                "avg_turns": float(avg_turns),
+                "avg_accuracy": float(avg_accuracy),
+                "avg_red_flag_detection": float(avg_red_flag),
+                "avg_symptom_tracking": float(avg_symptom),
+                "avg_behavioral_consistency": float(avg_behavioral),
+                "avg_communication_authenticity": float(avg_authenticity),
+                "total_patients": len(conversations),
+                "genetic_diversity": {
+                    "regions": list(set(regions)),
+                    "ethnicities": list(set(ethnicities)),
+                    "wealth_categories": list(set(wealth_categories))
                 }
-            }, f, indent=2, default=str)
+            }
+        }, f, indent=2, default=str)
+
         
         print(f"💾 Results saved to {results_path}")
     
@@ -1010,23 +1015,23 @@ async def test_large_scale_advanced_patient_evaluation():
     for i, patient in enumerate(patients):
         if i % 10 == 0:
             elapsed = time.time() - start_time
-            print(f"Progress: {i}/100 patients ({elapsed/60:.1f}m elapsed)")
+            print(f"Progress: {i}/100 patients ({elapsed / 60:.1f}m elapsed)")
         
         try:
             conversation = await runner.run_complete_conversation(patient)
             conversations.append(conversation)
             
             if i % 25 == 0:
-                print(f"🧬 Patient {i+1}: {patient.genetic_profile.ethnicity} {patient.genetic_profile.state_region} - {conversation.final_outcome} in {len(conversation.turns)} turns")
+                print(f"🧬 Patient {i + 1}: {patient.genetic_profile.ethnicity} {patient.genetic_profile.state_region} - {conversation.final_outcome} in {len(conversation.turns)} turns")
         
         except Exception as e:
-            print(f"❌ Patient {i+1} failed: {str(e)}")
+            print(f"❌ Patient {i + 1} failed: {str(e)}")
     
     total_time = time.time() - start_time
     
     # Comprehensive analysis
     print(f"\n🏆 FINAL ADVANCED RESULTS - {len(conversations)} Patients")
-    print(f"⏱️  Total time: {total_time/3600:.2f} hours")
+    print(f"⏱️  Total time: {total_time / 3600:.2f} hours")
     
     # Analysis by genetic factors
     genetic_analysis = {}
@@ -1036,7 +1041,7 @@ async def test_large_scale_advanced_patient_evaluation():
             genetic_analysis[region] = []
         genetic_analysis[region].append(conv)
     
-    print(f"\n🧬 Performance by Genetic Region:")
+    print("\n🧬 Performance by Genetic Region:")
     for region, convs in genetic_analysis.items():
         avg_acc = np.mean([c.accuracy_score for c in convs])
         avg_turns = np.mean([len(c.turns) for c in convs])
@@ -1051,7 +1056,7 @@ async def test_large_scale_advanced_patient_evaluation():
             wealth_analysis[wealth_cat] = []
         wealth_analysis[wealth_cat].append(conv)
     
-    print(f"\n💰 Performance by Wealth Psychology:")
+    print("\n💰 Performance by Wealth Psychology:")
     for category, convs in wealth_analysis.items():
         avg_acc = np.mean([c.accuracy_score for c in convs])
         avg_behav = np.mean([c.behavioral_consistency_score for c in convs])
@@ -1086,7 +1091,13 @@ async def test_large_scale_advanced_patient_evaluation():
         }
     }
     
-    with open("advanced_genetic_system_evaluation.json", "w") as f:
+    # Save comprehensive results - Fixed path handling
+    script_dir = Path(__file__).resolve().parent  # Get directory of this script
+    patients_dir = script_dir / "patients"
+    patients_dir.mkdir(exist_ok=True)  # Create directory if it doesn't exist
+
+    results_file = patients_dir / "advanced_genetic_system_evaluation.json"
+    with open(results_file, "w") as f:
         json.dump(results, f, indent=2, default=str)
     
     print("💾 Full genetic analysis saved to advanced_genetic_system_evaluation.json")
