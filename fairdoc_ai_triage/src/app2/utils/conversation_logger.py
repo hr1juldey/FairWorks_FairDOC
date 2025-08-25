@@ -87,7 +87,7 @@ class ConversationLogger:
     
     def _log_to_console(self, turn_data: Dict[str, Any]):
         """Clean console logging for development"""
-        conv_id = turn_data["conversation_id"][:8]
+        conv_id = turn_data["conversation_id"][:16]
         turn = turn_data["turn_number"]
         
         print(f"\n🩺 CONVERSATION {conv_id} - Turn {turn}")
@@ -103,7 +103,7 @@ class ConversationLogger:
             print(f"🚩 Red Flags: {', '.join(assessment['red_flags'])}")
             
         if assessment['reasoning']:
-            print(f"💭 Reasoning: {assessment['reasoning'][:100]}...")
+            print(f"💭 Reasoning: {assessment['reasoning'][:500]}...")
             
         if assessment['is_complete']:
             print(f"✅ Conversation Complete: {assessment['outcome']}")

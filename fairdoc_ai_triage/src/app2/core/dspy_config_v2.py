@@ -215,7 +215,7 @@ class DSPyLLMProvider:
         llm_params = {
             'model': model_path,
             'api_base': settings_v2.OLLAMA_BASE_URL,
-            'temperature': kwargs.get('temperature', 0.1),
+            'temperature': kwargs.get('temperature', 0.3),
             'max_tokens': kwargs.get('max_tokens', 8000),
             **filtered_kwargs
         }

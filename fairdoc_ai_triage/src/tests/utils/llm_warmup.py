@@ -31,7 +31,7 @@ class WarmupConfig:
     """LLM warmup configuration"""
     model_name: str
     base_url: str = "http://localhost:11434"
-    timeout_seconds: int = 60
+    timeout_seconds: int = 180
     warmup_method: WarmupMethod = WarmupMethod.REST_API
     verify_response: bool = True
     max_retries: int = 3
